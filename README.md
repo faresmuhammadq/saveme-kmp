@@ -16,8 +16,22 @@ This is a Kotlin Multiplatform project targeting Android, iOS.
 
 Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
 
-- Android app: `./gradlew :androidApp:assembleDebug`
+- Android app: `./gradlew :androidApp:assembleDevDebug` (flavors: `dev`, `staging`, `prod`)
 - iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+
+### Development backend
+
+The `dev` flavor talks to the backend running from `../saveme-backend` in its container, over
+plain HTTP on your LAN. Set its address once, outside git, in `local.properties` or
+`~/.gradle/gradle.properties`:
+
+```properties
+devApiHost=192.168.1.20:8080
+```
+
+Use your machine's LAN IP (`ip -4 addr show`) and the container's published port. Without it the
+app falls back to `10.0.2.2:8080` (the host as seen from the Android emulator). Full validation
+steps: [specs/001-design-system-auth/quickstart.md](specs/001-design-system-auth/quickstart.md).
 
 ### Running tests
 

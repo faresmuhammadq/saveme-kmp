@@ -49,9 +49,11 @@ Unknown ──(store read)──▶ SignedOut(reason?) ◀──(sign-out | 401 
 
 `SignedOut.reason`: `None` | `SessionEnded` (401) | `PasswordReset` | `UserSignedOut` — picks the explanation text on the sign-in screen (US2-5).
 
-### Per-screen UI state (one ViewModel each)
+### Per-screen MVI contracts (constitution P-16)
 
-| Screen | State fields | Events |
+Each screen has `<Screen>Contract.kt` with an immutable `State`, a sealed `Intent` (everything the user or lifecycle can do), a sealed `Effect` (one-shot: navigation, snackbar, open URL) and a pure `reduce(state, change)`. Navigation always leaves the store as an `Effect`, never as state.
+
+| Screen | State fields | Intents |
 |---|---|---|
 | SignIn | email, password, passwordVisible, emailError?, submitting, banner? (InvalidCredentials / Locked(minutes) / Offline / Generic(requestId)), deletionCancelledNotice | EmailChanged, PasswordChanged, ToggleVisibility, Submit, ForgotPassword, CreateAccount |
 | Register | email, password, displayName, fieldErrors: Map<Field, ErrorCode>, submitting, banner? | …Changed, Submit, GoToSignIn |
@@ -61,6 +63,16 @@ Unknown ──(store read)──▶ SignedOut(reason?) ◀──(sign-out | 401 
 | ResetPassword | token, password, passwordVisible, fieldError?, submitting, status (`Editing` \| `Done` \| `LinkInvalid`) | PasswordChanged, Submit, RequestNewLink |
 | SignedInHome (placeholder) | email, emailVerified, resendCooldownUntil?, banner? | Resend, SignOut, ConfirmSignOut |
 | PasteLink (dev) | text, parseError | TextChanged, Open |
+| Entry | isDebugTools | SignInClicked, CreateAccountClicked, DevToolsClicked |
+| UpdateRequired | minimumVersion | OpenStoreClicked |
+| ComponentCatalog (dev) | language (en/ar), fontScale (1.0/1.5/2.0) | LanguageSelected, FontScaleSelected, Back |
+| DevTools (dev) | — | ComponentsClicked, PasteLinkClicked |
+
+Effects per screen (examples): SignIn → `NavigateHome`, `NavigateForgotPassword(email)`, `NavigateRegister`, `NavigateUpdateRequired(minimumVersion)`; Register → `NavigateCheckInbox(email)`, `NavigateSignIn(email)`; ResetPassword → `NavigateSignIn(email?)`, `NavigateForgotPassword`; Home → `ShowSnackbar(message)`. Screens that have nothing to hold keep an empty-ish `State` and exist only to turn clicks into `Effect`s — still one store per screen (P-16.1).
+
+### ApiEvents — `core.network` (application scope)
+
+`SharedFlow<ApiEvent>`: `SessionEnded` (401 on a credentialed call) · `UpdateRequired(minimumVersion)` (426) · `EmailNotVerified` (403 EMAIL_NOT_VERIFIED). Emitted by the HTTP layer; observed by `SessionManager` (domain) and `AppNavHost` (navigation). `core` never imports a feature (P-10.7).
 
 `ClientValidation` (shared by forms, FR-019): email well-formed and ≤ 254; password 8–128 and not equal (case-insensitive, trimmed) to email; display name blank or 1–100.
 

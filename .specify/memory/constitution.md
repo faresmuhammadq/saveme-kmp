@@ -1,8 +1,24 @@
+<!--
+Sync Impact Report
+- Version change: 1.0.0 → 1.1.0 (MINOR: principle added, P-10 materially expanded)
+- Principles added: P-16 MVI presentation
+- Principles modified: P-10 Shared-first architecture — added rules 6–7 (data never imports
+  domain; core never imports a feature), closing the cycle flagged by /speckit-analyze D1/D2
+- Sections modified: Architecture & Packages — `core.presentation` (MVI base), `feature.ui`
+  layout; Quality Gates — gate 7 (MVI tests)
+- Sections removed: none
+- Templates: plan-template.md Constitution Check table is principle-driven ✅; spec-template.md,
+  tasks-template.md need no change ✅
+- Follow-up: specs/001-design-system-auth plan.md (Constitution Check row P-16, R-10) and
+  tasks.md (ViewModel tasks → MVI contract; D1/D2 rewording) must be updated
+- Deferred TODOs: none
+-->
+
 # Mobile App Constitution
 
 <!-- The product codename appears in this file only as display text; see P-11. -->
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
 
 ## Purpose & Precedence
 
@@ -171,9 +187,14 @@ backups or UI is as damaging as a server breach.
 4. A feature package MUST NOT import another feature's `data` or `ui` package; cross-feature
    access goes through the other feature's `domain` API.
 5. `designsystem` MUST NOT depend on any `feature` package or `core.network`.
+6. `data` MUST NOT import `domain` or `ui`; repositories return results and never call domain
+   services. Orchestration (e.g. "store the session after sign-in") lives in `domain`.
+7. `core` MUST NOT import any `feature` package. Cross-cutting signals from `core` (session
+   ended, update required, email not verified) are exposed as `core` events or injected callbacks.
 
 *Rationale*: boundaries written as import rules can be checked by a test instead of memory, and
-keep iOS a compile target rather than a rewrite.
+keep iOS a compile target rather than a rewrite. A one-way graph is also what keeps MVI stores
+(P-16) thin: they call domain, domain calls data, nothing calls back up.
 
 ### P-11 Naming
 
@@ -237,6 +258,39 @@ guard for RTL and font scaling.
 *Rationale*: the risk is not building the wrong thing but building too many things before
 shipping the first one.
 
+### P-16 MVI presentation
+
+**Status**: Active | **Non-negotiable**: yes | **Mirrors backend**: —
+
+Every screen follows Model–View–Intent with unidirectional data flow:
+`Intent → (domain call) → Result → reduce → State → render`, plus one-shot `Effect`s.
+
+1. Each screen MUST have exactly one store: a ViewModel implementing the shared contract in
+   `core.presentation` (`MviViewModel<State, Intent, Effect>`).
+2. **State**: the store MUST expose exactly one `StateFlow<State>`, where `State` is an immutable
+   `data class` (only `val`s, immutable collections) holding everything the screen renders.
+3. **Intent**: all user actions and screen lifecycle signals MUST be members of one `sealed
+   interface Intent` and enter through a single `fun onIntent(intent: Intent)`. The View MUST
+   NOT call any other store method.
+4. **Reducer**: state changes MUST go through a pure function `reduce(state, change): State`
+   (no I/O, no coroutines, no randomness, no clock). Only the store may emit a new state.
+5. **Effects**: one-shot events (navigate, show snackbar, open URL) MUST be members of one
+   `sealed interface Effect`, delivered through a `Flow<Effect>` backed by a buffered `Channel`,
+   never stored in `State`.
+6. **Side work**: API, storage and navigation work MUST run in the store's intent handling via
+   `domain` use cases or services; their outcomes return to the reducer as changes. Stores MUST
+   NOT import `data` packages (P-10).
+7. **View split**: each screen MUST have a `…Route` composable (obtains the store, collects
+   state with lifecycle awareness, handles effects) and a stateless `…Screen(state, onIntent)`
+   composable that holds no business state and is previewable with a literal `State`.
+8. Stores MUST NOT hold Compose types, `Context`, platform objects, or navigation controllers.
+9. Tests: every reducer MUST have unit tests over `(state, change) → state`; every store MUST
+   have tests that send intents and assert the resulting state sequence and effects.
+
+*Rationale*: a single immutable state and a single entry point make every screen reproducible
+from a list of intents, which is what makes form, error and offline behaviour testable in
+common code and identical on Android and iOS.
+
 ## Architecture & Packages
 
 All code under root package `com.fares.saveme` (grandfathered, P-11).
@@ -244,8 +298,8 @@ All code under root package `com.fares.saveme` (grandfathered, P-11).
 | Package | Owns | May depend on |
 |---|---|---|
 | `designsystem` | tokens, theme, components, money formatting, component catalogue | Compose only |
-| `core` | config, platform info, network client, error model, storage, DI | — |
-| `feature.<context>` (`data`, `domain`, `ui`) | one bounded context each, named as in the backend (identity/auth, wallets, …) | `core`, `designsystem`, other features' `domain` |
+| `core` | config, platform info, network client, error model, storage, DI, `core.presentation` (MVI base contract) | — |
+| `feature.<context>` (`data`, `domain`, `ui`) | one bounded context each, named as in the backend (identity/auth, wallets, …); `ui/<screen>/` holds `Contract.kt` (State, Intent, Effect), the store, `…Route` and `…Screen` (P-16) | `core`, `designsystem`, other features' `domain` |
 | `navigation` | routes, back stacks, deep-link intake | features' `ui` entry points |
 | `devtools` | development-only screens (catalogue entry, paste link) | anything; excluded from release builds |
 
@@ -277,6 +331,7 @@ A change is mergeable when all hold:
 5. The release variant contains no cleartext permission, no dev-only screens, no `http` link
    filters (P-09.3).
 6. No new dependency without owner approval.
+7. Every new screen follows P-16 and ships reducer and store tests (P-16.9).
 
 ## Constitution Check
 
@@ -285,7 +340,7 @@ Every `plan.md` includes this section, filled in before Phase 0 and again after 
 ```markdown
 ## Constitution Check
 
-*Constitution v1.0.0. GATE: before Phase 0 and again after Phase 1.*
+*Constitution v1.1.0. GATE: before Phase 0 and again after Phase 1.*
 
 | Principle | Result | Evidence / justification |
 |---|---|---|
@@ -326,4 +381,4 @@ Client IDs are independent of backend IDs; the *Mirrors backend* line records th
 **Consistency**: run `/speckit-analyze` before implementing each feature. Contradictions between
 this constitution, the backend contract and a feature's spec are defects to resolve before code.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26

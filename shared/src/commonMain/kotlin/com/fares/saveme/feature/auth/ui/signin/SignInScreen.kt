@@ -1,0 +1,100 @@
+package com.fares.saveme.feature.auth.ui.signin
+
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import com.fares.saveme.designsystem.component.AlertTone
+import com.fares.saveme.designsystem.component.AppIconButton
+import com.fares.saveme.designsystem.component.AppScreen
+import com.fares.saveme.designsystem.component.AppTextButton
+import com.fares.saveme.designsystem.component.AppTextField
+import com.fares.saveme.designsystem.component.AppTopAppBar
+import com.fares.saveme.designsystem.component.InlineAlert
+import com.fares.saveme.designsystem.component.PasswordField
+import com.fares.saveme.designsystem.component.PrimaryButton
+import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.designsystem.theme.AppTheme
+import com.fares.saveme.feature.auth.ui.message
+import com.fares.saveme.feature.auth.ui.text
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import saveme.shared.generated.resources.*
+
+@Composable
+fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
+    AppScreen(
+        topBar = {
+            AppTopAppBar(
+                title = stringResource(Res.string.sign_in_title),
+                navigationIcon = { AppIconButton(AppIcons.ArrowBack, stringResource(Res.string.cd_back), { onIntent(SignInIntent.Back) }) },
+            )
+        },
+    ) {
+        state.banner?.let { banner ->
+            InlineAlert(
+                tone = when (banner) {
+                    SignInBanner.SessionEnded, SignInBanner.PasswordReset -> AlertTone.Info
+                    SignInBanner.Offline, is SignInBanner.RateLimited -> AlertTone.Warning
+                    else -> AlertTone.Error
+                },
+                text = bannerText(banner),
+                actionLabel = if (banner is SignInBanner.Locked) stringResource(Res.string.sign_in_forgot_password) else null,
+                onAction = if (banner is SignInBanner.Locked) ({ onIntent(SignInIntent.ForgotPasswordClicked) }) else null,
+            )
+        }
+        AppTextField(
+            value = state.email,
+            onValueChange = { onIntent(SignInIntent.EmailChanged(it)) },
+            label = stringResource(Res.string.field_email),
+            errorText = state.emailError.text(),
+            enabled = !state.submitting,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+        )
+        PasswordField(
+            value = state.password,
+            onValueChange = { onIntent(SignInIntent.PasswordChanged(it)) },
+            label = stringResource(Res.string.field_password),
+            visible = state.passwordVisible,
+            onToggleVisible = { onIntent(SignInIntent.TogglePasswordVisibility) },
+            errorText = state.passwordError.text(),
+            enabled = !state.submitting,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onIntent(SignInIntent.Submit) }),
+        )
+        PrimaryButton(stringResource(Res.string.sign_in_title), { onIntent(SignInIntent.Submit) }, loading = state.submitting)
+        AppTextButton(stringResource(Res.string.sign_in_forgot_password), { onIntent(SignInIntent.ForgotPasswordClicked) })
+        AppTextButton(stringResource(Res.string.sign_in_create_account), { onIntent(SignInIntent.CreateAccountClicked) })
+    }
+}
+
+@Composable
+private fun bannerText(banner: SignInBanner): String = when (banner) {
+    SignInBanner.InvalidCredentials -> stringResource(Res.string.error_invalid_credentials)
+    is SignInBanner.Locked -> banner.minutes?.let { pluralStringResource(Res.plurals.error_account_locked, it, it) }
+        ?: stringResource(Res.string.error_rate_limited_soon)
+    is SignInBanner.RateLimited -> banner.minutes?.let { pluralStringResource(Res.plurals.error_rate_limited, it, it) }
+        ?: stringResource(Res.string.error_rate_limited_soon)
+    SignInBanner.Validation -> stringResource(Res.string.error_validation)
+    SignInBanner.Offline -> stringResource(Res.string.error_offline)
+    SignInBanner.SessionEnded -> stringResource(Res.string.error_session_ended)
+    SignInBanner.PasswordReset -> stringResource(Res.string.error_password_reset_done)
+    SignInBanner.PlatformUnsupported -> stringResource(Res.string.error_platform_unsupported)
+    is SignInBanner.Error -> errorText(banner.code.message(), banner.requestId)
+}
+
+@Composable
+internal fun errorText(resource: org.jetbrains.compose.resources.StringResource, requestId: String?): String =
+    if (resource == Res.string.error_generic_reference) {
+        requestId?.let { stringResource(Res.string.error_generic_reference, it) } ?: stringResource(Res.string.error_generic)
+    } else {
+        stringResource(resource)
+    }
+
+@Preview
+@Composable
+private fun SignInScreenPreview() {
+    AppTheme { SignInScreen(SignInState(email = "sara@example.com", banner = SignInBanner.InvalidCredentials)) {} }
+}
