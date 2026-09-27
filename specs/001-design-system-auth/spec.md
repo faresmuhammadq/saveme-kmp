@@ -8,6 +8,8 @@
 
 **Input**: User description: "build ui compose reusable components from this artifact https://claude.ai/artifact/T312v5J2QNbUMiVwFQep3c , then build auth flows screens and integrate the api the docs are here @../saveme-backend/docs/"
 
+**Backend contract**: `saveme-backend@5e5e969`
+
 **Sources**:
 - Design: "Save Me Mobile Design System" canvas — boards *Mobile foundations* (tokens, type, spacing, shape, money, RTL) and *Mobile components*.
 - API contract: `saveme-backend/docs/openapi/paths/identity.yaml`, `docs/api-conventions.md`, `docs/security-baseline.md`, `docs/openapi/error-catalog.yaml`, `docs/glossary.md`.

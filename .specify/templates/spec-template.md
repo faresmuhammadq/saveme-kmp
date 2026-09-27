@@ -8,6 +8,8 @@
 
 **Input**: User description: "$ARGUMENTS"
 
+**Backend contract**: `saveme-backend@[SHORT SHA printed by /speckit-contract-check]`
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -139,6 +141,10 @@
 ### 5. API
 
 [The endpoints: method, path, the path file under docs/openapi/paths/, and the error codes each returns from the catalogue. Shapes are defined in the path file, not repeated here.]
+
+#### Contract changes since last spec
+
+[From /speckit-contract-check: each error-code or API-convention change that affects the client, with the FR that handles it or "follow-up: not in scope of this spec". Delete this subsection when nothing changed.]
 
 ### 6. Authorization and entitlements
 

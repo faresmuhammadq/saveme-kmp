@@ -1,0 +1,8 @@
+hooks:
+  before_specify:
+    - extension: backend-contract
+      command: speckit.contract.check
+      description: Check the backend error catalogue and API conventions for changes since the last spec
+      prompt: Report error-code and API-convention changes in saveme-backend since the last spec's recorded commit
+      optional: false
+      enabled: true
