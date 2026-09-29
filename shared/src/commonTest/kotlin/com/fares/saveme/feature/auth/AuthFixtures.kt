@@ -37,7 +37,7 @@ fun signInSuccessBody(deletionCancelled: Boolean = false, verified: Boolean = tr
                  "signed_in_at":"2026-09-26T10:00:00Z","last_used_at":null,"ended_at":null,"current":true},
       "account":{"id":"0192f7a0-0000-7000-8000-000000000001","email":"sara@example.com","email_verified":$verified,
                  "state":"active","deletion_scheduled_for":null},
-      "entitlements":{"plan":"billing.plans.free","features":{"wallet_sharing":false,"wallets_max":3}},
+      "entitlements":{"plan":{"id":"01a0e69a-962e-7239-9101-0671bf5529d6","name":"Free"},"features":{"wallet_sharing":false,"wallets_max":3}},
       "deletion_cancelled":$deletionCancelled,
       "something_new":"ignored"},
      "meta":{}}

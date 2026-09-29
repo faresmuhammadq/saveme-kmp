@@ -108,7 +108,7 @@ internal fun AccountSnapshotDto.toDomain() = AccountSnapshot(
     emailVerified = account.emailVerified,
     state = if (account.state == "pending_deletion") AccountState.PendingDeletion else AccountState.Active,
     deletionScheduledFor = account.deletionScheduledFor?.let { runCatching { Instant.parse(it) }.getOrNull() },
-    plan = entitlements.plan,
+    plan = entitlements.plan.name,
     features = entitlements.features.mapValues { (_, v) ->
         v.booleanOrNull?.let { FeatureValue.Flag(it) } ?: FeatureValue.Quota(v.longOrNull ?: 0)
     },

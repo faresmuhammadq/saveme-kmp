@@ -42,9 +42,16 @@ data class AccountDto(
     @SerialName("deletion_scheduled_for") val deletionScheduledFor: String? = null,
 )
 
+/** billing.yaml `PlanRef`: the governing plan, for display only. Gate on features. */
+@Serializable
+data class PlanRefDto(
+    val id: String,
+    val name: String,
+)
+
 @Serializable
 data class EntitlementSummaryDto(
-    val plan: String,
+    val plan: PlanRefDto,
     val features: Map<String, JsonPrimitive> = emptyMap(),
 )
 
