@@ -1,0 +1,23 @@
+# US1-S3: Given device B's session was ended, When device B makes any request, Then device B returns to sign-in with the "session ended" message (spec 001 FR-023).
+# e2e-seed: verified-user
+# Here the phone is device B; device A is an API session that ends it.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: A }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: endOtherSessions, SLOT: A }
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Devices signed in"
+- extendedWaitUntil:
+    visible: "Your session ended. Sign in again."
+    timeout: 20000
+- assertVisible:
+    id: "signIn.email"

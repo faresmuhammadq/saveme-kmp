@@ -3,6 +3,8 @@ package com.fares.saveme.feature.auth.ui.signin
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +51,7 @@ fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
             value = state.email,
             onValueChange = { onIntent(SignInIntent.EmailChanged(it)) },
             label = stringResource(Res.string.field_email),
+            modifier = Modifier.testTag("signIn.email"),
             errorText = state.emailError.text(),
             enabled = !state.submitting,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -57,6 +60,7 @@ fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
             value = state.password,
             onValueChange = { onIntent(SignInIntent.PasswordChanged(it)) },
             label = stringResource(Res.string.field_password),
+            modifier = Modifier.testTag("signIn.password"),
             visible = state.passwordVisible,
             onToggleVisible = { onIntent(SignInIntent.TogglePasswordVisibility) },
             errorText = state.passwordError.text(),
@@ -64,7 +68,12 @@ fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onIntent(SignInIntent.Submit) }),
         )
-        PrimaryButton(stringResource(Res.string.sign_in_title), { onIntent(SignInIntent.Submit) }, loading = state.submitting)
+        PrimaryButton(
+            stringResource(Res.string.sign_in_title),
+            { onIntent(SignInIntent.Submit) },
+            modifier = Modifier.testTag("signIn.submit"),
+            loading = state.submitting,
+        )
         AppTextButton(stringResource(Res.string.sign_in_forgot_password), { onIntent(SignInIntent.ForgotPasswordClicked) })
         AppTextButton(stringResource(Res.string.sign_in_create_account), { onIntent(SignInIntent.CreateAccountClicked) })
     }

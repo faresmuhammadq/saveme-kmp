@@ -1,0 +1,21 @@
+# US4-S5: Given a pending deletion, When the person cancels it, Then the notice disappears, the account is active, and a confirmation says nothing was lost.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/request-deletion.yaml
+- tapOn: "Cancel deletion"
+- extendedWaitUntil:
+    visible: "Deletion cancelled. Nothing was lost."
+    timeout: 20000
+- assertNotVisible: "Your account will be deleted on .+\\."
+- assertNotVisible: "Cancel deletion"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.account.deletion_scheduled_for == null && output.account.state == 'active'}

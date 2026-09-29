@@ -1,0 +1,25 @@
+# US3-S8: Given the app is in English, When the person sets the language to Arabic and saves, Then the app switches to Arabic right-to-left at once and stays in Arabic after a restart.
+# e2e-seed: verified-user
+# Checked through Arabic copy; the RTL mirroring itself is covered by the *_ar screenshot tests.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn: "العربية"
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "الملف الشخصي"
+    timeout: 20000
+- assertNotVisible: "Profile"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "الرئيسية"
+    timeout: 15000
+- assertNotVisible: "Home"

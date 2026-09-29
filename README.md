@@ -57,6 +57,22 @@ Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
   `./gradlew :shared:verifyRoborazziAndroidHostTest`
 - iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
 
+### E2E tests
+
+Each feature's acceptance scenarios run as [Maestro](https://maestro.mobile.dev) flows under
+`.maestro/<feature>/`, against the dev build and the local backend.
+
+- Needs: Maestro (`curl -fsSL https://get.maestro.mobile.dev | bash`), one emulator or phone in
+  `adb devices` with its language set to English, and the saveme-backend dev container on port 43871.
+- Generate or update the flows and run them: `/speckit-e2e [feature]`. This also runs as an
+  optional hook after `/speckit-implement`. The results go to `specs/<feature>/e2e-report.md`.
+- Run the existing flows only: `.specify/scripts/bash/run-e2e.sh <feature> [--skip-install] [--flow <name>]`.
+  It creates a fresh `e2e+…@example.com` account for each flow in the dev database.
+- Quit Maestro Studio first, including its tray icon. It holds the on-device driver, so CLI runs
+  fail with `DeviceServerDiedException`.
+- Xiaomi (HyperOS) phones block Maestro from clearing app data and from USB installs unless
+  "USB debugging (Security settings)" and "Install via USB" are on. An emulator is simpler.
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…

@@ -1,0 +1,10 @@
+# Starts the app signed out, on the entry screen. run-e2e.sh resets the app's data before each
+# flow (clearState is refused on some devices, such as Xiaomi HyperOS), so this only launches.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 15000

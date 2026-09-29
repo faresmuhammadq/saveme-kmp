@@ -1,0 +1,19 @@
+# US3-S9: Given the profile language is Arabic and the phone is in English, When the person signs in, Then the app switches to Arabic after sign-in.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, LOCALE: "ar" }
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Sign in"
+- runFlow: ../common/sign-in-attempt.yaml
+- extendedWaitUntil:
+    visible: "الرئيسية"
+    timeout: 20000
+- assertNotVisible: "Home"

@@ -1,0 +1,28 @@
+# US1-S5: Given the person cancels a confirmation, When the dialog closes, Then nothing is ended.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Devices signed in"
+- extendedWaitUntil:
+    visible: "e2e-device-b"
+    timeout: 20000
+# Cancel ending one device.
+- tapOn: "Sign out"
+- tapOn: "Cancel"
+- assertVisible: "e2e-device-b"
+# Cancel ending all other devices.
+- tapOn: "Sign out all other devices"
+- tapOn: "Cancel"
+- assertVisible: "e2e-device-b"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectSession, SLOT: B, EXPECT: "200" }

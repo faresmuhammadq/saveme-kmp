@@ -1,0 +1,36 @@
+# US3-S2: Given edited values, When they save, Then a confirmation appears and reopening shows the saved values.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn:
+    id: "profile.displayName"
+- inputText: "E2E Edited"
+- hideKeyboard
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "Profile saved."
+    timeout: 20000
+- tapOn: "Back"
+# Let Account settle; mid-transition "Profile" also matches the old screen's title.
+- extendedWaitUntil:
+    visible: "Devices signed in"
+    timeout: 10000
+- tapOn: "Profile"
+- extendedWaitUntil:
+    visible: "E2E Edited"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.profile.display_name == 'E2E Edited'}

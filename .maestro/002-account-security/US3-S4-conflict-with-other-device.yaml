@@ -1,0 +1,39 @@
+# US3-S4: Given the profile was saved on another device after this device last synced, When this device's edit reaches the server, Then the app shows "Your profile changed on another device" with both versions and the choices "Keep mine" and "Use the other device's"; nothing is applied until the person chooses.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- extendedWaitUntil:
+    visible: "Display name"
+    timeout: 20000
+# The other device saves after this one synced.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, DISPLAY_NAME: "Other Device Name" }
+- tapOn:
+    id: "profile.displayName"
+- inputText: "Phone Name"
+- hideKeyboard
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "Your profile changed on another device."
+    timeout: 20000
+- assertVisible: "This phone: Phone Name"
+- assertVisible: "Other device: Other Device Name"
+- assertVisible: "Keep mine"
+- assertVisible: "Use the other device’s"
+# Nothing applied yet.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.profile.display_name == 'Other Device Name'}

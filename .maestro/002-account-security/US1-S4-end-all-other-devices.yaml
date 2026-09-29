@@ -1,0 +1,37 @@
+# US1-S4: Given three other devices are signed in, When the person chooses "Sign out all other devices" and confirms, Then only "This device" remains in the list.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: D }
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Devices signed in"
+- extendedWaitUntil:
+    visible: "e2e-device-d"
+    timeout: 20000
+- tapOn: "Sign out all other devices"
+- tapOn:
+    text: "Sign out all other devices"
+    below: "Every device except this one will need to sign in again."
+- extendedWaitUntil:
+    visible: "All other devices signed out."
+    timeout: 20000
+- assertVisible: "This device"
+- assertNotVisible: "e2e-device-b"
+- assertNotVisible: "e2e-device-c"
+- assertNotVisible: "e2e-device-d"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectSession, SLOT: C, EXPECT: "401" }

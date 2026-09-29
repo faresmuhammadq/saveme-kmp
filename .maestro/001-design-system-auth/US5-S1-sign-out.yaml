@@ -1,0 +1,29 @@
+# US5-S1: Given a signed-in person, When they confirm sign-out, Then the server session ends, local credentials and cached account data are removed, and the sign-in screen shows.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- tapOn: "Sign out"
+- tapOn:
+    text: "Sign out"
+    below: "Your other devices stay signed in."
+# The spec says "the sign-in screen"; the app returns to the auth start (Entry) screen.
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 20000
+- assertVisible: "Sign in"
+# Server session ended: only slot B remains active.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectSessionCount, SLOT: B, COUNT: "1" }
+# Local credentials removed.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 15000

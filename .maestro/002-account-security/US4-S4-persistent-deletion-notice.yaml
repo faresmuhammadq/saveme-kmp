@@ -1,0 +1,25 @@
+# US4-S4: Given the account is pending deletion, When the person uses the app, Then a persistent notice on the signed-in home shows the deletion date and a "Cancel deletion" action.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/request-deletion.yaml
+- assertVisible: "Your account will be deleted on .+\\."
+# Still there after moving around and after a relaunch.
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible: "Cancel deletion"
+    timeout: 10000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .+\\."
+    timeout: 15000
+- assertVisible: "Cancel deletion"

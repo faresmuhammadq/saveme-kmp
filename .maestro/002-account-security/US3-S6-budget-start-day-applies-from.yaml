@@ -1,0 +1,23 @@
+# US3-S6: Given a new budget start day, When saved, Then the app shows the date the new start day applies from.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn:
+    id: "profile.budgetDay"
+- scrollUntilVisible:
+    element: "15"
+    direction: DOWN
+- tapOn: "15"
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "Profile saved."
+    timeout: 20000
+- assertVisible: "Applies from .+"

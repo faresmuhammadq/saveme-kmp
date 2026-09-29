@@ -6,3 +6,10 @@ hooks:
       prompt: Report error-code and API-convention changes in saveme-backend since the last spec's recorded commit
       optional: false
       enabled: true
+  after_implement:
+    - extension: e2e
+      command: speckit.e2e
+      description: Generate and run Maestro E2E flows for the feature's acceptance scenarios
+      prompt: Generate or update Maestro flows for the current feature's acceptance scenarios, run them on the emulator against local saveme-backend, and write e2e-report.md
+      optional: true
+      enabled: true

@@ -1,0 +1,31 @@
+# US2-S5: Given the stored session was ended elsewhere (signed out remotely, password changed, expired), When the app's next request is refused as unauthenticated, Then local credentials are removed and the person returns to sign-in with a short explanation.
+# e2e-seed: verified-user
+# The session is ended from a second API session of the same account ("sign out all other devices").
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: endOtherSessions, SLOT: B }
+# Next request: loading the profile.
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- extendedWaitUntil:
+    visible: "Your session ended. Sign in again."
+    timeout: 20000
+- assertVisible:
+    id: "signIn.email"
+# Local credentials removed: a relaunch lands signed out.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 15000
+- assertNotVisible: "Signed in as .+"

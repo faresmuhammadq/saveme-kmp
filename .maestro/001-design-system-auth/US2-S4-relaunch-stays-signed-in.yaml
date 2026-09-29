@@ -1,0 +1,15 @@
+# US2-S4: Given a signed-in person, When they relaunch the app, Then they skip the auth screens without re-entering credentials.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 15000
+- assertNotVisible: "Create account"
+- assertNotVisible:
+    id: "signIn.email"

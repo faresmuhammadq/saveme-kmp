@@ -1,0 +1,10 @@
+# US2-S1: Given a registered address and the right password, When the person submits, Then they are signed in and taken to the app's home destination.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- assertVisible: "Home"
+# Maestro text is a regex: escape the address's + and dots.
+- assertVisible: ${'Signed in as ' + E2E_EMAIL.replace(/\+/g, '\\+').replace(/\./g, '\\.')}

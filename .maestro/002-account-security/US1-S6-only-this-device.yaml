@@ -1,0 +1,16 @@
+# US1-S6: Given only this device is signed in, When the list opens, Then "Sign out all other devices" is not offered and the list explains no other devices are signed in.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Devices signed in"
+- extendedWaitUntil:
+    visible: "This device"
+    timeout: 20000
+- assertVisible: "No other devices are signed in."
+- assertNotVisible: "Sign out all other devices"

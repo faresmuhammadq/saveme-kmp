@@ -1,0 +1,17 @@
+# US3-S3: Given no field changed, When they look at the screen, Then save is disabled.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- extendedWaitUntil:
+    visible: "Display name"
+    timeout: 20000
+- assertVisible:
+    id: "profile.save"
+    enabled: false

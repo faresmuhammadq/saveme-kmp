@@ -1,0 +1,6 @@
+# Maestro workspace config. Flows live in .maestro/<feature>/, shared subflows in .maestro/common/.
+# Run through .specify/scripts/bash/run-e2e.sh (it seeds accounts and installs the dev build).
+flows:
+  - "*/*"
+excludeTags:
+  - subflow

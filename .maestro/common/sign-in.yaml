@@ -1,0 +1,13 @@
+# Signs in from a clean launch with ${E2E_EMAIL} / ${E2E_PASSWORD} and waits for Home.
+# Needs a flow header `# e2e-seed: verified-user` (or unverified-user).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runFlow: launch-clean.yaml
+- tapOn: "Sign in"
+- runFlow: sign-in-attempt.yaml
+# "Signed in as" only exists on the app's Home; plain "Home" also matches the launcher.
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 20000

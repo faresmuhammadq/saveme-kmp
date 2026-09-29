@@ -1,0 +1,43 @@
+# US3-S7: Given the display name is cleared, When saved, Then the profile has no display name and greetings fall back to no name.
+# e2e-seed: verified-user
+# Not asserted: greetings (no screen greets by name yet).
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, DISPLAY_NAME: "E2E Name" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+# Select all first: a tap puts the cursor mid-text and eraseText only deletes before it.
+- longPressOn:
+    id: "profile.displayName"
+- tapOn: "Select all"
+- eraseText: 20
+- hideKeyboard
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "Profile saved."
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.profile.display_name == null}
+- tapOn: "Back"
+# Let Account settle; mid-transition "Profile" also matches the old screen's title.
+- extendedWaitUntil:
+    visible: "Devices signed in"
+    timeout: 10000
+- tapOn: "Profile"
+- extendedWaitUntil:
+    visible: "Display name"
+    timeout: 20000
+- assertNotVisible: "E2E Name"

@@ -1,0 +1,22 @@
+# From Home: schedules account deletion through the UI with ${E2E_PASSWORD} and returns to Home,
+# which then shows the pending-deletion notice.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runFlow:
+    file: open-account.yaml
+    env:
+      ROW: "Delete account"
+- tapOn: "Continue"
+- tapOn: "Password"
+- inputText: ${E2E_PASSWORD}
+- hideKeyboard
+- tapOn: "Delete my account"
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .*\\. You can cancel until then\\."
+    timeout: 20000
+- tapOn: "Done"
+- extendedWaitUntil:
+    visible: "Cancel deletion"
+    timeout: 20000

@@ -1,0 +1,17 @@
+# On a freshly opened sign-in screen (empty fields): types ${E2E_EMAIL} / ${E2E_PASSWORD} and
+# submits. Does not wait for the result. Override the values with runFlow env.
+# Don't use it to retype into filled fields: a tap puts the cursor mid-text, so eraseText leaves
+# the rest behind. Reopen the screen, or use sign-in-retry.yaml.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "signIn.email"
+- inputText: ${E2E_EMAIL}
+- tapOn:
+    id: "signIn.password"
+- inputText: ${E2E_PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "signIn.submit"

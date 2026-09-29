@@ -1,0 +1,29 @@
+# US3-S1: Given the person is signed in, When they open "Profile", Then email, verification status and all profile fields show the stored values.
+# e2e-seed: verified-user
+# Stored values are saved from an API session first, so they differ from the defaults.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, DISPLAY_NAME: "E2E Stored Name", TIMEZONE: "Asia/Tokyo", CURRENCY: "KWD", BUDGET_DAY: "12" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- extendedWaitUntil:
+    visible: "E2E Stored Name"
+    timeout: 20000
+- assertVisible: ${E2E_EMAIL.replace(/\+/g, '\\+').replace(/\./g, '\\.')}
+- assertVisible: "Email verified"
+- assertVisible: "Asia/Tokyo"
+- assertVisible: "KWD"
+- assertVisible: "12"
+- assertVisible:
+    text: "English"
+    selected: true

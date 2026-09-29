@@ -1,0 +1,25 @@
+# US1-S5: Given a money amount with currency EGP or KWD, When it is shown, Then it has 2 or 3 fraction digits respectively, uses the true minus sign for negatives, and uses tabular digits.
+# e2e-seed: none
+# Not asserted: tabular digits (a font feature, covered by screenshot tests).
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Dev tools"
+- tapOn: "Components"
+- scrollUntilVisible:
+    element: "Money"
+    direction: DOWN
+# Formats as in MoneyFormatterTest: sign before the currency code, U+2212 for negatives.
+# EGP balance -32_000 minor units -> "−EGP 320.00" (two fraction digits).
+- scrollUntilVisible:
+    element: "−EGP 320\\.00"
+    direction: DOWN
+# EGP expense 45_000 -> "−EGP 450.00".
+- assertVisible: "−EGP 450\\.00"
+# KWD balance 1_234_567 minor units -> "KWD 1,234.567" (three fraction digits).
+- assertVisible: "KWD 1,234\\.567"
+# Never a hyphen-minus.
+- assertNotVisible: "-EGP 320\\.00"
+- assertNotVisible: "-EGP 450\\.00"

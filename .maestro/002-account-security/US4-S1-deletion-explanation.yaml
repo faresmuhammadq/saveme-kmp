@@ -1,0 +1,15 @@
+# US4-S1: Given the person chooses "Delete account", When the explanation screen opens, Then it states the 30-day grace period, that data is kept and restorable until the date, that signing in again or cancelling stops the deletion, and asks for the password.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Delete account"
+- assertVisible: "Your account will be deleted after 30 days\\. Until then, everything is kept and can be restored: signing in again, or choosing Cancel deletion, stops it\\."
+- tapOn: "Continue"
+- assertVisible: "Password"
+- assertVisible: "Delete my account"

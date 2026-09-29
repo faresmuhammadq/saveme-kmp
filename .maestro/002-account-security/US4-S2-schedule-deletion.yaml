@@ -1,0 +1,32 @@
+# US4-S2: Given the correct password, When they confirm, Then the app shows the scheduled deletion date and the account shows as pending deletion.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+# The API session signs in first: signing in later would cancel the deletion (US4-S7).
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Delete account"
+- tapOn: "Continue"
+- tapOn: "Password"
+- inputText: ${E2E_PASSWORD}
+- hideKeyboard
+- tapOn: "Delete my account"
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .+\\. You can cancel until then\\."
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.account.deletion_scheduled_for != null}
+- tapOn: "Done"
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .+\\."
+    timeout: 20000
+- assertVisible: "Cancel deletion"

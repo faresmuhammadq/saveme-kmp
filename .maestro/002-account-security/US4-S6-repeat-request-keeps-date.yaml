@@ -1,0 +1,52 @@
+# US4-S6: Given deletion was already requested, When the person requests again, Then the same date is shown; it never moves.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+# The API session signs in first: signing in later would cancel the deletion (US4-S7).
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/sign-in.yaml
+# First request.
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Delete account"
+- tapOn: "Continue"
+- tapOn: "Password"
+- inputText: ${E2E_PASSWORD}
+- hideKeyboard
+- tapOn: "Delete my account"
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .+\\. You can cancel until then\\."
+    timeout: 20000
+- copyTextFrom: "Your account will be deleted on .+\\. You can cancel until then\\."
+- evalScript: ${output.firstShown = maestro.copiedText}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- evalScript: ${output.firstScheduled = output.account.deletion_scheduled_for}
+- assertTrue: ${output.firstScheduled != null}
+- tapOn: "Done"
+# Request again.
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Delete account"
+- tapOn: "Continue"
+- tapOn: "Password"
+- inputText: ${E2E_PASSWORD}
+- hideKeyboard
+- tapOn: "Delete my account"
+- extendedWaitUntil:
+    visible: "Your account will be deleted on .+\\. You can cancel until then\\."
+    timeout: 20000
+- copyTextFrom: "Your account will be deleted on .+\\. You can cancel until then\\."
+# Same date on screen and on the server.
+- assertTrue: ${output.firstShown != null && maestro.copiedText == output.firstShown}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.account.deletion_scheduled_for == output.firstScheduled}

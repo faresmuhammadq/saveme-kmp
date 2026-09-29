@@ -1,0 +1,28 @@
+# US1-S2: Given the list shows device B, When the person chooses "Sign out" on device B and confirms, Then device B disappears from the active list and a confirmation is shown.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Devices signed in"
+- extendedWaitUntil:
+    visible: "e2e-device-b"
+    timeout: 20000
+- tapOn: "Sign out"
+- tapOn:
+    text: "Sign out"
+    below: "That device will need to sign in again. Your other devices stay signed in."
+- extendedWaitUntil:
+    visible: "Device signed out."
+    timeout: 20000
+- assertNotVisible: "e2e-device-b"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectSession, SLOT: B, EXPECT: "401" }

@@ -1,0 +1,12 @@
+# After a failed sign-in: submits again with a wrong password. The app clears the password field
+# on failure; whatever is left, appending keeps the password wrong.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "signIn.password"
+- inputText: "wrong"
+- hideKeyboard
+- tapOn:
+    id: "signIn.submit"

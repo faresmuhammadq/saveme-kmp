@@ -1,0 +1,29 @@
+# US2-S3: Given five consecutive failed attempts, When the person tries again, Then the app says the account is temporarily locked and shows how many minutes to wait, distinct from the wrong-password message, and offers "Forgot password".
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Sign in"
+# The first failures show the wrong-password message.
+- runFlow:
+    file: ../common/sign-in-attempt.yaml
+    env:
+      E2E_PASSWORD: ${E2E_PASSWORD + 'wrong'}
+- extendedWaitUntil:
+    visible: "Email or password is incorrect."
+    timeout: 20000
+# Keep failing until the lock shows; the backend locks after 5 failures. At most 7 tries.
+- repeat:
+    times: 6
+    while:
+      notVisible: "Too many attempts\\. Try again in \\d+ minutes?, or reset your password\\."
+    commands:
+      - runFlow: ../common/sign-in-retry.yaml
+      - extendedWaitUntil:
+          visible: ".*(Email or password is incorrect\\.|Too many attempts).*"
+          timeout: 20000
+- assertVisible: "Too many attempts\\. Try again in \\d+ minutes?, or reset your password\\."
+- assertNotVisible: "Email or password is incorrect."
+- assertVisible: "Forgot password?"
