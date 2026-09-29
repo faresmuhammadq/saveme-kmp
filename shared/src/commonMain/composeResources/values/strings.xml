@@ -49,6 +49,8 @@
     <string name="catalog_section_feedback">Sync &amp; feedback</string>
     <string name="catalog_section_sheet">Bottom sheet</string>
     <string name="catalog_section_empty">Empty &amp; loading</string>
+    <string name="catalog_section_rows">Rows &amp; select</string>
+    <string name="catalog_section_dialogs">Dialogs &amp; pickers</string>
     <string name="catalog_save_expense">Save expense</string>
     <string name="catalog_restore_purchases">Restore purchases</string>
     <string name="catalog_enter_code">Enter code</string>
@@ -154,4 +156,105 @@
     <string name="home_title">Home</string>
     <string name="home_signed_in_as">Signed in as %1$s</string>
     <string name="home_deletion_cancelled">Welcome back. Your account deletion was cancelled; nothing was lost.</string>
+
+    <!-- Common (spec 002) -->
+    <string-array name="month_short">
+        <item>Jan</item>
+        <item>Feb</item>
+        <item>Mar</item>
+        <item>Apr</item>
+        <item>May</item>
+        <item>Jun</item>
+        <item>Jul</item>
+        <item>Aug</item>
+        <item>Sep</item>
+        <item>Oct</item>
+        <item>Nov</item>
+        <item>Dec</item>
+    </string-array>
+    <string name="action_done">Done</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_search">Search</string>
+    <string name="cd_account">Account</string>
+    <string name="field_error_immutable">This can’t be changed anymore.</string>
+    <string name="error_profile_conflict">Your profile changed on another device.</string>
+
+    <!-- Sign out (spec 002) -->
+    <string name="sign_out_action">Sign out</string>
+    <string name="sign_out_confirm_title">Sign out of this phone?</string>
+    <string name="sign_out_confirm_body">Your other devices stay signed in.</string>
+
+    <!-- Account (spec 002) -->
+    <string name="account_title">Account</string>
+    <string name="account_email_verified">Email verified</string>
+    <string name="account_email_unverified">Email not verified</string>
+    <string name="account_profile">Profile</string>
+    <string name="account_devices">Devices signed in</string>
+    <string name="account_change_password">Change password</string>
+    <string name="account_delete">Delete account</string>
+
+    <!-- Devices signed in (spec 002) -->
+    <string name="sessions_title">Devices signed in</string>
+    <string name="sessions_this_device">This device</string>
+    <string name="sessions_signed_in_at">Signed in %1$s</string>
+    <string name="sessions_last_used">Last used %1$s</string>
+    <string name="sessions_not_used_yet">Not used yet</string>
+    <string name="sessions_end">Sign out</string>
+    <string name="sessions_end_others">Sign out all other devices</string>
+    <string name="sessions_confirm_end_title">Sign out %1$s?</string>
+    <string name="sessions_confirm_end_body">That device will need to sign in again. Your other devices stay signed in.</string>
+    <string name="sessions_confirm_end_others_title">Sign out all other devices?</string>
+    <string name="sessions_confirm_end_others_body">Every device except this one will need to sign in again.</string>
+    <string name="sessions_none_other">No other devices are signed in.</string>
+    <string name="sessions_updated_at">Updated %1$s</string>
+    <string name="sessions_ended_done">Device signed out.</string>
+    <string name="sessions_ended_others_done">All other devices signed out.</string>
+
+    <!-- Change password (spec 002) -->
+    <string name="change_password_title">Change password</string>
+    <string name="change_password_current">Current password</string>
+    <string name="change_password_new">New password</string>
+    <string name="change_password_rules">8 to 128 characters, not your email address.</string>
+    <string name="change_password_submit">Change password</string>
+    <string name="change_password_done">Password changed. Your other devices were signed out.</string>
+    <string name="error_current_password_incorrect">Current password is incorrect.</string>
+
+    <!-- Profile (spec 002) -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_display_name">Display name</string>
+    <string name="profile_language">Language</string>
+    <string name="profile_language_ar">العربية</string>
+    <string name="profile_language_en">English</string>
+    <string name="profile_timezone">Time zone</string>
+    <string name="profile_currency">Default currency</string>
+    <string name="profile_currency_locked">Can’t change after your first transaction.</string>
+    <string name="profile_budget_day">Budget period starts on day</string>
+    <string name="profile_budget_day_from">Applies from %1$s</string>
+    <string name="profile_save">Save</string>
+    <string name="profile_saved">Profile saved.</string>
+    <string name="profile_waiting_to_sync">Saved on this phone. Waiting to sync.</string>
+    <string name="profile_conflict_title">Your profile changed on another device.</string>
+    <string name="profile_conflict_body">Choose which version to keep.</string>
+    <string name="profile_conflict_mine">This phone: %1$s</string>
+    <string name="profile_conflict_theirs">Other device: %1$s</string>
+    <string name="profile_keep_mine">Keep mine</string>
+    <string name="profile_use_theirs">Use the other device’s</string>
+    <string name="profile_empty_value">—</string>
+    <string name="profile_loading">Loading your profile…</string>
+
+    <!-- Delete account (spec 002) -->
+    <string name="delete_title">Delete account</string>
+    <string name="delete_explain_body">Your account will be deleted after 30 days. Until then, everything is kept and can be restored: signing in again, or choosing Cancel deletion, stops it.</string>
+    <string name="delete_continue">Continue</string>
+    <string name="delete_password">Password</string>
+    <string name="delete_confirm">Delete my account</string>
+    <string name="delete_scheduled_body">Your account will be deleted on %1$s. You can cancel until then.</string>
+    <string name="error_password_incorrect">Password is incorrect.</string>
+
+    <!-- Home (spec 002) -->
+    <string name="home_deletion_pending">Your account will be deleted on %1$s.</string>
+    <string name="home_cancel_deletion">Cancel deletion</string>
+    <string name="home_deletion_cancelled_done">Deletion cancelled. Nothing was lost.</string>
 </resources>

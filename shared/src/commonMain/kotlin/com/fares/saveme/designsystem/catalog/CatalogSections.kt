@@ -24,6 +24,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.component.AlertTone
+import com.fares.saveme.designsystem.component.AppAlertDialogCard
+import com.fares.saveme.designsystem.component.AppListItem
+import com.fares.saveme.designsystem.component.AppSelectField
+import com.fares.saveme.designsystem.component.ListTrailing
+import com.fares.saveme.designsystem.component.SelectionList
 import com.fares.saveme.designsystem.component.AmountDisplay
 import com.fares.saveme.designsystem.component.AppBottomSheet
 import com.fares.saveme.designsystem.component.AppFab
@@ -79,6 +84,8 @@ fun CatalogSections() {
         FeedbackSection()
         SheetSection()
         EmptySection()
+        RowsSection()
+        DialogsSection()
     }
 }
 
@@ -238,4 +245,50 @@ fun EmptySection() = CatalogSection(Res.string.catalog_section_empty) {
         Skeleton(Modifier.size(AppTheme.sizes.iconTile), AppTheme.shapes.tile)
         Skeleton(Modifier.width(160.dp).height(AppTheme.sizes.iconTile))
     }
+}
+
+@Composable
+fun RowsSection() = CatalogSection(Res.string.catalog_section_rows) {
+    AppListItem(stringResource(Res.string.account_profile), leadingIcon = AppIcons.Person, trailing = ListTrailing.Chevron, onClick = {})
+    AppListItem(
+        "Pixel 8",
+        supporting = stringResource(Res.string.sessions_not_used_yet),
+        leadingIcon = AppIcons.Devices,
+        trailing = ListTrailing.Text(stringResource(Res.string.sessions_this_device)),
+    )
+    AppListItem(
+        stringResource(Res.string.account_delete),
+        leadingIcon = AppIcons.Delete,
+        headlineColor = AppTheme.colors.error,
+        trailing = ListTrailing.Chevron,
+        onClick = {},
+    )
+    AppSelectField(stringResource(Res.string.profile_timezone), "Africa/Cairo", onClick = {})
+    AppSelectField(
+        stringResource(Res.string.profile_currency),
+        "EGP",
+        onClick = {},
+        enabled = false,
+        supportingText = stringResource(Res.string.profile_currency_locked),
+    )
+}
+
+@Composable
+fun DialogsSection() = CatalogSection(Res.string.catalog_section_dialogs) {
+    AppAlertDialogCard(
+        title = stringResource(Res.string.sessions_confirm_end_others_title),
+        text = stringResource(Res.string.sessions_confirm_end_others_body),
+        confirmLabel = stringResource(Res.string.sessions_end_others),
+        onConfirm = {},
+        dismissLabel = stringResource(Res.string.action_cancel),
+        onDismiss = {},
+        destructive = true,
+    )
+    SelectionList(
+        options = listOf("EGP", "SAR", "USD"),
+        label = { it },
+        selected = "EGP",
+        onSelect = {},
+        searchable = false,
+    )
 }

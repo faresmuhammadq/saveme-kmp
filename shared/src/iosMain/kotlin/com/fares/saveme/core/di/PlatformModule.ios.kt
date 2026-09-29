@@ -1,5 +1,8 @@
 package com.fares.saveme.core.di
 
+import com.fares.saveme.core.database.AppDatabase
+import com.fares.saveme.core.database.buildAppDatabase
+import com.fares.saveme.core.database.databaseBuilder
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.core.platform.IosClientInfo
 import com.fares.saveme.core.storage.InMemoryKeyValueStore
@@ -12,4 +15,5 @@ fun iosPlatformModule() = module {
     single<ClientInfo> { IosClientInfo() }
     single<SecureStore> { StubSecureStore() }
     single<KeyValueStore> { InMemoryKeyValueStore() }
+    single<AppDatabase> { buildAppDatabase(databaseBuilder()) }
 }

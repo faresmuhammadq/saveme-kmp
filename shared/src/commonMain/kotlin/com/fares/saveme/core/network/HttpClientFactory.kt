@@ -37,6 +37,9 @@ fun createHttpClient(
     config: AppConfig,
     clientInfo: ClientInfo,
     credentialProvider: suspend () -> String?,
+    languageProvider: () -> String = { clientInfo.languageTag() },
+    /** Null disables the whole-request timeout (tests: its timer would run on virtual time). */
+    requestTimeoutMillis: Long? = 30_000,
 ): HttpClient = HttpClient(engine) {
     expectSuccess = false
     install(ContentNegotiation) {
@@ -45,7 +48,7 @@ fun createHttpClient(
     }
     install(HttpTimeout) {
         connectTimeoutMillis = 15_000
-        requestTimeoutMillis = 30_000
+        this.requestTimeoutMillis = requestTimeoutMillis
     }
     defaultRequest {
         url(config.baseUrl.trimEnd('/') + "/api/v1/")
@@ -56,7 +59,7 @@ fun createHttpClient(
                 request.headers[HttpHeaders.Accept] = ContentType.Application.Json.toString()
                 request.headers["X-Client-Platform"] = clientInfo.platform
                 request.headers["X-Client-Version"] = clientInfo.appVersion
-                request.headers[HttpHeaders.AcceptLanguage] = clientInfo.languageTag()
+                request.headers[HttpHeaders.AcceptLanguage] = languageProvider()
                 request.headers["X-Correlation-Id"] = Uuid.generateV7().toString()
                 if (request.attributes.getOrNull(PublicEndpointKey) != true) {
                     credentialProvider()?.let { request.headers[HttpHeaders.Authorization] = "Bearer $it" }
@@ -79,6 +82,14 @@ class ApiClient(
     suspend inline fun <reified T> call(noinline block: HttpRequestBuilder.() -> Unit): ApiResult<T> =
         execute(block) { response ->
             if (T::class == Unit::class) Unit as T else response.body<Envelope<T>>().data
+        }
+
+    /** A collection page: `data` plus the cursor from `meta` (CollectionMeta). */
+    suspend inline fun <reified T> callPage(noinline block: HttpRequestBuilder.() -> Unit): ApiResult<Page<T>> =
+        execute(block) { response ->
+            val envelope = response.body<Envelope<List<T>>>()
+            val meta = AppJson.decodeFromJsonElement(CollectionMeta.serializer(), envelope.meta)
+            Page(envelope.data, meta.nextCursor, meta.hasMore)
         }
 
     @PublishedApi
@@ -114,7 +125,10 @@ class ApiClient(
     private fun publishEvents(response: HttpResponse, problem: ProblemDetails, code: ApiErrorCode) {
         val credentialed = response.call.request.headers[HttpHeaders.Authorization] != null
         when {
-            response.status == HttpStatusCode.Unauthorized && credentialed -> events.publish(ApiEvent.SessionEnded)
+            // Branch on the code: a wrong current password is 401 INVALID_CREDENTIALS on a live session (R-04).
+            credentialed && (code == ApiErrorCode.UNAUTHENTICATED ||
+                (response.status == HttpStatusCode.Unauthorized && code == ApiErrorCode.UNKNOWN)) ->
+                events.publish(ApiEvent.SessionEnded)
             response.status == HttpStatusCode.UpgradeRequired -> events.publish(ApiEvent.UpdateRequired(problem.minimumVersion))
             code == ApiErrorCode.EMAIL_NOT_VERIFIED -> events.publish(ApiEvent.EmailNotVerified)
         }

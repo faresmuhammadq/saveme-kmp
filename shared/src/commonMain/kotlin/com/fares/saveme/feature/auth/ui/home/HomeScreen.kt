@@ -1,22 +1,58 @@
 package com.fares.saveme.feature.auth.ui.home
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AlertTone
+import com.fares.saveme.designsystem.component.AppIconButton
 import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.AppTopAppBar
+import com.fares.saveme.designsystem.component.DestructiveButton
 import com.fares.saveme.designsystem.component.InlineAlert
+import com.fares.saveme.designsystem.format.formatDate
+import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
+import com.fares.saveme.feature.auth.ui.signout.SignOutConfirmSheet
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.cd_account
+import saveme.shared.generated.resources.home_cancel_deletion
 import saveme.shared.generated.resources.home_deletion_cancelled
+import saveme.shared.generated.resources.home_deletion_pending
 import saveme.shared.generated.resources.home_signed_in_as
 import saveme.shared.generated.resources.home_title
+import saveme.shared.generated.resources.sign_out_action
+import kotlin.time.Instant
 
 @Composable
-fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
-    AppScreen(topBar = { AppTopAppBar(stringResource(Res.string.home_title)) }) {
+fun HomeScreen(
+    state: HomeState,
+    onIntent: (HomeIntent) -> Unit,
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+) {
+    AppScreen(
+        snackbarHostState = snackbar,
+        topBar = {
+            AppTopAppBar(
+                stringResource(Res.string.home_title),
+                actions = {
+                    AppIconButton(AppIcons.Person, stringResource(Res.string.cd_account), { onIntent(HomeIntent.AccountClicked) })
+                },
+            )
+        },
+    ) {
+        state.deletionPendingOn?.let { date ->
+            // Always visible while pending, with its way out (spec 002 FR-019).
+            InlineAlert(
+                tone = AlertTone.Warning,
+                text = stringResource(Res.string.home_deletion_pending, formatDate(date, TimeZone.currentSystemDefault().id)),
+                actionLabel = stringResource(Res.string.home_cancel_deletion),
+                onAction = { onIntent(HomeIntent.CancelDeletion) }.takeUnless { state.cancellingDeletion },
+            )
+        }
         if (state.deletionCancelledNotice) {
             InlineAlert(
                 tone = AlertTone.Info,
@@ -24,11 +60,24 @@ fun HomeScreen(state: HomeState, onIntent: (HomeIntent) -> Unit) {
             )
         }
         Text(stringResource(Res.string.home_signed_in_as, state.email), style = AppTheme.type.body, color = AppTheme.colors.ink)
+        DestructiveButton(stringResource(Res.string.sign_out_action), { onIntent(HomeIntent.SignOutClicked) })
+    }
+    if (state.confirmSignOutVisible) {
+        SignOutConfirmSheet(
+            signingOut = state.signingOut,
+            onConfirm = { onIntent(HomeIntent.SignOutConfirmed) },
+            onDismiss = { onIntent(HomeIntent.SignOutDismissed) },
+        )
     }
 }
 
 @Preview
 @Composable
 private fun HomeScreenPreview() {
-    AppTheme { HomeScreen(HomeState(email = "sara@example.com", deletionCancelledNotice = true)) {} }
+    AppTheme {
+        HomeScreen(
+            HomeState(email = "sara@example.com", deletionPendingOn = Instant.parse("2026-10-28T10:00:00Z")),
+            {},
+        )
+    }
 }

@@ -18,6 +18,7 @@ fun ApiErrorCode.message(): StringResource = when (this) {
     ApiErrorCode.VERIFICATION_TOKEN_INVALID -> Res.string.error_verification_link_invalid
     ApiErrorCode.RESET_TOKEN_INVALID -> Res.string.error_reset_link_invalid
     ApiErrorCode.VALIDATION_FAILED -> Res.string.error_validation
+    ApiErrorCode.VERSION_CONFLICT -> Res.string.error_profile_conflict
     ApiErrorCode.RATE_LIMITED -> Res.string.error_rate_limited_soon
     ApiErrorCode.UNAUTHENTICATED -> Res.string.error_session_ended
     ApiErrorCode.CLIENT_VERSION_UNSUPPORTED -> Res.string.error_update_required
@@ -47,7 +48,13 @@ sealed interface FieldProblem {
 fun FieldProblem?.text(): String? = when (this) {
     null -> null
     is FieldProblem.Client -> stringResource(error.message())
-    is FieldProblem.Server -> stringResource(if (code == "REQUIRED") Res.string.field_error_required else Res.string.field_error_server)
+    is FieldProblem.Server -> stringResource(
+        when (code) {
+            "REQUIRED" -> Res.string.field_error_required
+            "IMMUTABLE_FIELD" -> Res.string.field_error_immutable
+            else -> Res.string.field_error_server
+        },
+    )
 }
 
 /** Whole minutes to wait, rounded up; null when the server gave no wait time. */

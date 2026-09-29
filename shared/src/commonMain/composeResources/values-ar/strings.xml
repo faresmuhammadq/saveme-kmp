@@ -53,6 +53,8 @@
     <string name="catalog_section_feedback">المزامنة والتنبيهات</string>
     <string name="catalog_section_sheet">اللوحة السفلية</string>
     <string name="catalog_section_empty">الحالة الفارغة والتحميل</string>
+    <string name="catalog_section_rows">الصفوف والاختيار</string>
+    <string name="catalog_section_dialogs">الحوارات والمنتقيات</string>
     <string name="catalog_save_expense">حفظ المصروف</string>
     <string name="catalog_restore_purchases">استعادة المشتريات</string>
     <string name="catalog_enter_code">إدخال رمز</string>
@@ -166,4 +168,105 @@
     <string name="home_title">الرئيسية</string>
     <string name="home_signed_in_as">مسجّل الدخول باسم %1$s</string>
     <string name="home_deletion_cancelled">مرحبًا بعودتك. أُلغي حذف حسابك ولم يُفقد أي شيء.</string>
+
+    <!-- Common (spec 002) -->
+    <string-array name="month_short">
+        <item>يناير</item>
+        <item>فبراير</item>
+        <item>مارس</item>
+        <item>أبريل</item>
+        <item>مايو</item>
+        <item>يونيو</item>
+        <item>يوليو</item>
+        <item>أغسطس</item>
+        <item>سبتمبر</item>
+        <item>أكتوبر</item>
+        <item>نوفمبر</item>
+        <item>ديسمبر</item>
+    </string-array>
+    <string name="action_done">تم</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_retry">حاول مرة أخرى</string>
+    <string name="action_search">بحث</string>
+    <string name="cd_account">الحساب</string>
+    <string name="field_error_immutable">لم يعد بالإمكان تغيير هذا.</string>
+    <string name="error_profile_conflict">تغيّر ملفك الشخصي على جهاز آخر.</string>
+
+    <!-- Sign out (spec 002) -->
+    <string name="sign_out_action">تسجيل الخروج</string>
+    <string name="sign_out_confirm_title">تسجيل الخروج من هذا الهاتف؟</string>
+    <string name="sign_out_confirm_body">ستبقى أجهزتك الأخرى مسجّلة الدخول.</string>
+
+    <!-- Account (spec 002) -->
+    <string name="account_title">الحساب</string>
+    <string name="account_email_verified">البريد الإلكتروني موثّق</string>
+    <string name="account_email_unverified">البريد الإلكتروني غير موثّق</string>
+    <string name="account_profile">الملف الشخصي</string>
+    <string name="account_devices">الأجهزة المسجّلة الدخول</string>
+    <string name="account_change_password">تغيير كلمة المرور</string>
+    <string name="account_delete">حذف الحساب</string>
+
+    <!-- Devices signed in (spec 002) -->
+    <string name="sessions_title">الأجهزة المسجّلة الدخول</string>
+    <string name="sessions_this_device">هذا الجهاز</string>
+    <string name="sessions_signed_in_at">سجّل الدخول %1$s</string>
+    <string name="sessions_last_used">آخر استخدام %1$s</string>
+    <string name="sessions_not_used_yet">لم يُستخدم بعد</string>
+    <string name="sessions_end">تسجيل الخروج</string>
+    <string name="sessions_end_others">تسجيل الخروج من كل الأجهزة الأخرى</string>
+    <string name="sessions_confirm_end_title">تسجيل الخروج من %1$s؟</string>
+    <string name="sessions_confirm_end_body">سيحتاج ذلك الجهاز إلى تسجيل الدخول من جديد. ستبقى أجهزتك الأخرى مسجّلة الدخول.</string>
+    <string name="sessions_confirm_end_others_title">تسجيل الخروج من كل الأجهزة الأخرى؟</string>
+    <string name="sessions_confirm_end_others_body">ستحتاج كل الأجهزة عدا هذا الجهاز إلى تسجيل الدخول من جديد.</string>
+    <string name="sessions_none_other">لا توجد أجهزة أخرى مسجّلة الدخول.</string>
+    <string name="sessions_updated_at">آخر تحديث %1$s</string>
+    <string name="sessions_ended_done">تم تسجيل خروج الجهاز.</string>
+    <string name="sessions_ended_others_done">تم تسجيل الخروج من كل الأجهزة الأخرى.</string>
+
+    <!-- Change password (spec 002) -->
+    <string name="change_password_title">تغيير كلمة المرور</string>
+    <string name="change_password_current">كلمة المرور الحالية</string>
+    <string name="change_password_new">كلمة المرور الجديدة</string>
+    <string name="change_password_rules">من 8 إلى 128 حرفًا، وليست بريدك الإلكتروني.</string>
+    <string name="change_password_submit">تغيير كلمة المرور</string>
+    <string name="change_password_done">تم تغيير كلمة المرور. تم تسجيل الخروج من أجهزتك الأخرى.</string>
+    <string name="error_current_password_incorrect">كلمة المرور الحالية غير صحيحة.</string>
+
+    <!-- Profile (spec 002) -->
+    <string name="profile_title">الملف الشخصي</string>
+    <string name="profile_email">البريد الإلكتروني</string>
+    <string name="profile_display_name">الاسم المعروض</string>
+    <string name="profile_language">اللغة</string>
+    <string name="profile_language_ar">العربية</string>
+    <string name="profile_language_en">English</string>
+    <string name="profile_timezone">المنطقة الزمنية</string>
+    <string name="profile_currency">العملة الافتراضية</string>
+    <string name="profile_currency_locked">لا يمكن تغييرها بعد أول معاملة.</string>
+    <string name="profile_budget_day">تبدأ فترة الميزانية في اليوم</string>
+    <string name="profile_budget_day_from">يسري من %1$s</string>
+    <string name="profile_save">حفظ</string>
+    <string name="profile_saved">تم حفظ الملف الشخصي.</string>
+    <string name="profile_waiting_to_sync">محفوظ على هذا الهاتف. في انتظار المزامنة.</string>
+    <string name="profile_conflict_title">تغيّر ملفك الشخصي على جهاز آخر.</string>
+    <string name="profile_conflict_body">اختر النسخة التي تريد الاحتفاظ بها.</string>
+    <string name="profile_conflict_mine">هذا الهاتف: %1$s</string>
+    <string name="profile_conflict_theirs">الجهاز الآخر: %1$s</string>
+    <string name="profile_keep_mine">الاحتفاظ بنسختي</string>
+    <string name="profile_use_theirs">استخدام نسخة الجهاز الآخر</string>
+    <string name="profile_empty_value">—</string>
+    <string name="profile_loading">جارٍ تحميل ملفك الشخصي…</string>
+
+    <!-- Delete account (spec 002) -->
+    <string name="delete_title">حذف الحساب</string>
+    <string name="delete_explain_body">سيُحذف حسابك بعد 30 يومًا. حتى ذلك الحين يُحتفظ بكل شيء ويمكن استعادته: تسجيل الدخول من جديد أو اختيار إلغاء الحذف يوقفه.</string>
+    <string name="delete_continue">متابعة</string>
+    <string name="delete_password">كلمة المرور</string>
+    <string name="delete_confirm">حذف حسابي</string>
+    <string name="delete_scheduled_body">سيُحذف حسابك في %1$s. يمكنك الإلغاء حتى ذلك الحين.</string>
+    <string name="error_password_incorrect">كلمة المرور غير صحيحة.</string>
+
+    <!-- Home (spec 002) -->
+    <string name="home_deletion_pending">سيُحذف حسابك في %1$s.</string>
+    <string name="home_cancel_deletion">إلغاء الحذف</string>
+    <string name="home_deletion_cancelled_done">أُلغي الحذف. لم يُفقد أي شيء.</string>
 </resources>

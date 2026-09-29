@@ -26,6 +26,7 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
     EMAIL_NOT_VERIFIED(RetryClass.Never),
     VERIFICATION_TOKEN_INVALID(RetryClass.AfterChange),
     RESET_TOKEN_INVALID(RetryClass.AfterChange),
+    VERSION_CONFLICT(RetryClass.AfterChange),
     UNKNOWN(RetryClass.Never);
 
     companion object {

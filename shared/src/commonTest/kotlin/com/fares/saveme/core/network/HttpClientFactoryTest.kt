@@ -50,6 +50,7 @@ class HttpClientFactoryTest {
 
     private fun client(
         credential: String? = null,
+        language: (() -> String)? = null,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): ApiClient {
         val engine = MockEngine { request ->
@@ -61,6 +62,9 @@ class HttpClientFactoryTest {
             config = AppConfig("http://192.168.1.20:8080", "192.168.1.20", Environment.Dev, isDebugTools = true),
             clientInfo = FakeClientInfo(),
             credentialProvider = { credential },
+            // The timeout's timer would run on runTest's virtual time and fire before the mock answers.
+            requestTimeoutMillis = null,
+            languageProvider = language ?: { "ar" },
         )
         return ApiClient(http, events)
     }
@@ -87,6 +91,16 @@ class HttpClientFactoryTest {
         assertTrue(uuidV7.matches(first.headers["X-Correlation-Id"]!!))
         assertNotEquals(first.headers["X-Correlation-Id"], second.headers["X-Correlation-Id"])
         assertNull(first.headers[HttpHeaders.Authorization])
+    }
+
+    @Test
+    fun acceptLanguageFollowsTheAppLanguageNotTheDevice() = runTest {
+        var language = "en"
+        val api = client(language = { language }) { json(HttpStatusCode.OK, "{\"data\":{\"ok\":true},\"meta\":{}}") }
+        api.call<Ping> { url("ping") }
+        language = "ar"
+        api.call<Ping> { url("ping") }
+        assertEquals(listOf("en", "ar"), requests.map { it.headers[HttpHeaders.AcceptLanguage] })
     }
 
     @Test

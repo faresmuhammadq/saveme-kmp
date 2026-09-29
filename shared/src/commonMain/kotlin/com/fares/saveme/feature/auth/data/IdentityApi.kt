@@ -21,4 +21,10 @@ class IdentityApi(private val client: ApiClient) {
         contentType(ContentType.Application.Json)
         setBody(request)
     }
+
+    /** Ends this device's session. Credentialed, no body, 204. */
+    suspend fun signOut(): ApiResult<Unit> = client.call {
+        method = HttpMethod.Post
+        url("auth/logout")
+    }
 }

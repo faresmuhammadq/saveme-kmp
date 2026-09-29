@@ -1,23 +1,45 @@
 package com.fares.saveme.feature.auth.ui.home
 
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.model.AccountState
+import kotlin.time.Instant
 
-/** Placeholder signed-in home until the Home feature exists (spec Assumptions). */
+/** Placeholder signed-in home until the Home feature exists (spec 001 Assumptions). */
 data class HomeState(
     val email: String = "",
     val emailVerified: Boolean = true,
     val deletionCancelledNotice: Boolean = false,
+    val deletionPendingOn: Instant? = null,
+    val cancellingDeletion: Boolean = false,
+    val confirmSignOutVisible: Boolean = false,
+    val signingOut: Boolean = false,
 )
+
+/** What cancelling a pending deletion came to, as far as Home needs to know. */
+enum class CancelDeletionResult { Done, Offline, Failed }
 
 sealed interface HomeIntent {
     data object DismissDeletionNotice : HomeIntent
+    data object AccountClicked : HomeIntent
+    data object CancelDeletion : HomeIntent
+    data object SignOutClicked : HomeIntent
+    data object SignOutConfirmed : HomeIntent
+    data object SignOutDismissed : HomeIntent
 }
 
-sealed interface HomeEffect
+sealed interface HomeEffect {
+    data object NavigateAccount : HomeEffect
+    data class ShowMessage(val message: HomeMessage) : HomeEffect
+}
+
+enum class HomeMessage { DeletionCancelled, Offline, Failed }
 
 sealed interface HomeChange {
     data class Account(val signedIn: AuthState.SignedIn) : HomeChange
     data object DeletionNoticeDismissed : HomeChange
+    data class CancellingDeletion(val busy: Boolean) : HomeChange
+    data class SignOutConfirmVisible(val visible: Boolean) : HomeChange
+    data object SigningOut : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -25,6 +47,11 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
         email = change.signedIn.account.email,
         emailVerified = change.signedIn.account.emailVerified,
         deletionCancelledNotice = state.deletionCancelledNotice || change.signedIn.deletionCancelled,
+        deletionPendingOn = change.signedIn.account.deletionScheduledFor
+            .takeIf { change.signedIn.account.state == AccountState.PendingDeletion },
     )
     HomeChange.DeletionNoticeDismissed -> state.copy(deletionCancelledNotice = false)
+    is HomeChange.CancellingDeletion -> state.copy(cancellingDeletion = change.busy)
+    is HomeChange.SignOutConfirmVisible -> state.copy(confirmSignOutVisible = change.visible)
+    HomeChange.SigningOut -> state.copy(signingOut = true)
 }

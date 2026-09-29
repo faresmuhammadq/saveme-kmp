@@ -15,6 +15,8 @@ import com.fares.saveme.designsystem.catalog.BarsSection
 import com.fares.saveme.designsystem.catalog.BudgetsSection
 import com.fares.saveme.designsystem.catalog.ButtonsSection
 import com.fares.saveme.designsystem.catalog.CardsSection
+import com.fares.saveme.designsystem.catalog.DialogsSection
+import com.fares.saveme.designsystem.catalog.RowsSection
 import com.fares.saveme.designsystem.catalog.EmptySection
 import com.fares.saveme.designsystem.catalog.FeedbackSection
 import com.fares.saveme.designsystem.catalog.FieldsSection
@@ -89,6 +91,8 @@ class ComponentScreenshotTest(
             arrayOf("feedback", @Composable { FeedbackSection() }),
             arrayOf("sheet", @Composable { SheetSection() }),
             arrayOf("empty", @Composable { EmptySection() }),
+            arrayOf("rows", @Composable { RowsSection() }),
+            arrayOf("dialogs", @Composable { DialogsSection() }),
         )
     }
 }

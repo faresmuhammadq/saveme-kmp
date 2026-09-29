@@ -249,12 +249,12 @@ description: "Task list for 001-design-system-auth"
 
 ### Tests for User Story 5 (write first, must fail)
 
-- [ ] T105 [P] [US5] Tests in `shared/src/commonTest/kotlin/com/fares/saveme/feature/auth/domain/SignOutUseCaseTest.kt`: `signOut` POST `auth/logout` with bearer, no body, 204 (MockEngine); on 204, 401, Offline and 500 alike `SecureStore` and snapshot are cleared and state becomes `SignedOut(UserSignedOut)` (FR-024); plus Home sign-out cases in `HomeViewModelTest.kt` (`SignOutClicked` → confirm sheet visible; `SignOutConfirmed` → use case called once; `SignOutDismissed` → sheet hidden)
+- [X] T105 [P] [US5] Tests in `shared/src/commonTest/kotlin/com/fares/saveme/feature/auth/domain/SignOutUseCaseTest.kt`: `signOut` POST `auth/logout` with bearer, no body, 204 (MockEngine); on 204, 401, Offline and 500 alike `SecureStore` and snapshot are cleared and state becomes `SignedOut(UserSignedOut)` (FR-024); plus Home sign-out cases in `HomeViewModelTest.kt` (`SignOutClicked` → confirm sheet visible; `SignOutConfirmed` → use case called once; `SignOutDismissed` → sheet hidden)
 
 ### Implementation for User Story 5
 
-- [ ] T106 [US5] Add `signOut()` to `IdentityApi.kt` and `AuthRepository.kt` (returns `ApiResult<Unit>`); `SignOutUseCase` in `shared/src/commonMain/kotlin/com/fares/saveme/feature/auth/domain/usecase/SignOutUseCase.kt`: best-effort server call with 5 s timeout, then always `SessionManager.signOutLocally(UserSignedOut)` (makes T105 pass)
-- [ ] T107 [US5] Sign-out on Home (`HomeContract.kt`, `HomeViewModel.kt`, `HomeScreen.kt`): State gains `confirmSignOutVisible`, `signingOut`; Intents SignOutClicked, SignOutConfirmed, SignOutDismissed; Screen: `DestructiveButton` "Sign out" and `AppBottomSheet` confirm ("Sign out of this phone? Your other devices stay signed in.") with `DestructiveButton` confirm and `AppTextButton` cancel; strings in both files
+- [X] T106 [US5] Add `signOut()` to `IdentityApi.kt` and `AuthRepository.kt` (returns `ApiResult<Unit>`); `SignOutUseCase` in `shared/src/commonMain/kotlin/com/fares/saveme/feature/auth/domain/usecase/SignOutUseCase.kt`: best-effort server call with 5 s timeout, then always `SessionManager.signOutLocally(UserSignedOut)` (makes T105 pass)
+- [X] T107 [US5] Sign-out on Home (`HomeContract.kt`, `HomeViewModel.kt`, `HomeScreen.kt`): State gains `confirmSignOutVisible`, `signingOut`; Intents SignOutClicked, SignOutConfirmed, SignOutDismissed; Screen: `DestructiveButton` "Sign out" and `AppBottomSheet` confirm ("Sign out of this phone? Your other devices stay signed in.") with `DestructiveButton` confirm and `AppTextButton` cancel; strings in both files
 
 **Checkpoint**: quickstart 11 passes; T105 green.
 

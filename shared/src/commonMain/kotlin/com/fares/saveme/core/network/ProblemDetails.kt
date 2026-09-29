@@ -2,6 +2,7 @@ package com.fares.saveme.core.network
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /** RFC 9457 problem body. `detail` is for logs only and is never shown (P-06.5). */
 @Serializable
@@ -16,6 +17,8 @@ data class ProblemDetails(
     val errors: List<ProblemError>? = null,
     @SerialName("retry_after_seconds") val retryAfterSeconds: Long? = null,
     @SerialName("minimum_version") val minimumVersion: String? = null,
+    /** VERSION_CONFLICT only: the record's present state, in the schema a read returns. */
+    val current: JsonElement? = null,
 )
 
 @Serializable

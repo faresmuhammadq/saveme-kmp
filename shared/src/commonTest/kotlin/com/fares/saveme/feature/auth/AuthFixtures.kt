@@ -67,6 +67,8 @@ class AuthTestEnv(
             config = AppConfig("http://192.168.1.20:8080", "192.168.1.20", Environment.Dev, isDebugTools = true),
             clientInfo = clientInfo,
             credentialProvider = { secureStore.read()?.credential },
+            // The timeout's timer would run on runTest's virtual time and fire before the mock answers.
+            requestTimeoutMillis = null,
         ),
         events,
     )

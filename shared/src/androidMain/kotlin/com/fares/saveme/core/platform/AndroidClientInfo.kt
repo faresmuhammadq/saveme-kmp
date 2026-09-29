@@ -1,7 +1,7 @@
 package com.fares.saveme.core.platform
 
 import android.os.Build
-import java.util.Locale
+import android.content.res.Resources
 import java.util.TimeZone
 
 class AndroidClientInfo(override val appVersion: String) : ClientInfo {
@@ -11,5 +11,6 @@ class AndroidClientInfo(override val appVersion: String) : ClientInfo {
 
     override fun timezoneId(): String = TimeZone.getDefault().id
 
-    override fun languageTag(): String = supportedLanguage(Locale.getDefault().language)
+    // The system locale, not Locale.getDefault(): the app-language override rewrites the default (R-06).
+    override fun languageTag(): String = supportedLanguage(Resources.getSystem().configuration.locales[0].language)
 }

@@ -17,6 +17,8 @@ class AuthRepository(
     suspend fun signIn(email: String, password: String, device: DeviceDescriptionDto): ApiResult<SignInResultDto> =
         api.signIn(SignInRequest(email, password, device))
 
+    suspend fun signOut(): ApiResult<Unit> = api.signOut()
+
     suspend fun saveSession(session: StoredSession, snapshot: AccountSnapshotDto) {
         secureStore.write(session)
         snapshots.write(snapshot)
@@ -25,6 +27,8 @@ class AuthRepository(
     suspend fun readSession(): StoredSession? = secureStore.read()
 
     suspend fun readSnapshot(): AccountSnapshotDto? = snapshots.read()
+
+    suspend fun saveSnapshot(snapshot: AccountSnapshotDto) = snapshots.write(snapshot)
 
     suspend fun markEmailVerified() = snapshots.setEmailVerified()
 

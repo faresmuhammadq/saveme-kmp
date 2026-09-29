@@ -23,11 +23,23 @@ import com.fares.saveme.devtools.DevToolsEffect
 import com.fares.saveme.devtools.DevToolsRoute
 import com.fares.saveme.devtools.catalog.ComponentCatalogEffect
 import com.fares.saveme.devtools.catalog.ComponentCatalogRoute
+import com.fares.saveme.feature.account.ui.account.AccountDestination
+import com.fares.saveme.feature.account.ui.account.AccountEffect
+import com.fares.saveme.feature.account.ui.account.AccountRoute
+import com.fares.saveme.feature.account.ui.changepassword.ChangePasswordEffect
+import com.fares.saveme.feature.account.ui.changepassword.ChangePasswordRoute
+import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountEffect
+import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountRoute
+import com.fares.saveme.feature.account.ui.profile.ProfileEffect
+import com.fares.saveme.feature.account.ui.profile.ProfileRoute
+import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
+import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.auth.domain.SignOutReason
 import com.fares.saveme.feature.auth.ui.entry.EntryEffect
 import com.fares.saveme.feature.auth.ui.entry.EntryRoute
+import com.fares.saveme.feature.auth.ui.home.HomeEffect
 import com.fares.saveme.feature.auth.ui.home.HomeRoute
 import com.fares.saveme.feature.auth.ui.signin.SignInArgs
 import com.fares.saveme.feature.auth.ui.signin.SignInEffect
@@ -51,7 +63,11 @@ fun AppNavHost(
 
     LaunchedEffect(sessionManager) { sessionManager.restore() }
 
-    LaunchedEffect(authState) {
+    // Keyed on the transition, not the state: a refreshed account (same person, still signed in)
+    // must not throw the person back to Home.
+    val signedIn = authState is AuthState.SignedIn
+    val signedOutReason = (authState as? AuthState.SignedOut)?.reason
+    LaunchedEffect(signedIn, signedOutReason) {
         when (val state = authState) {
             is AuthState.SignedOut -> when (state.reason) {
                 SignOutReason.SessionEnded, SignOutReason.PasswordReset ->
@@ -107,7 +123,61 @@ fun AppNavHost(
                     }
                 })
             }
-            entry<HomeKey> { HomeRoute(onEffect = {}) }
+            entry<HomeKey> {
+                HomeRoute(onEffect = { effect ->
+                    when (effect) {
+                        HomeEffect.NavigateAccount -> appStack.add(AccountKey)
+                        is HomeEffect.ShowMessage -> Unit // shown by the route
+                    }
+                })
+            }
+            entry<AccountKey> {
+                AccountRoute(onEffect = { effect ->
+                    when (effect) {
+                        is AccountEffect.Navigate -> appStack.add(
+                            when (effect.destination) {
+                                AccountDestination.Profile -> ProfileKey
+                                AccountDestination.Devices -> DeviceSessionsKey
+                                AccountDestination.ChangePassword -> ChangePasswordKey
+                                AccountDestination.DeleteAccount -> DeleteAccountKey
+                            },
+                        )
+                        AccountEffect.NavigateBack -> appStack.pop()
+                    }
+                })
+            }
+            entry<ProfileKey> {
+                ProfileRoute(onEffect = { effect ->
+                    when (effect) {
+                        ProfileEffect.NavigateBack -> appStack.pop()
+                        ProfileEffect.Saved -> Unit // shown by the route
+                    }
+                })
+            }
+            entry<DeleteAccountKey> {
+                DeleteAccountRoute(onEffect = { effect ->
+                    when (effect) {
+                        DeleteAccountEffect.NavigateBack -> appStack.pop()
+                        // Home carries the pending-deletion notice from here on (FR-019).
+                        DeleteAccountEffect.Finished -> appStack.resetTo(HomeKey)
+                    }
+                })
+            }
+            entry<ChangePasswordKey> {
+                ChangePasswordRoute(onEffect = { effect ->
+                    when (effect) {
+                        ChangePasswordEffect.NavigateBack -> appStack.pop()
+                    }
+                })
+            }
+            entry<DeviceSessionsKey> {
+                DeviceSessionsRoute(onEffect = { effect ->
+                    when (effect) {
+                        DeviceSessionsEffect.NavigateBack -> appStack.pop()
+                        is DeviceSessionsEffect.Ended -> Unit // shown by the route
+                    }
+                })
+            }
             entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
             entry<DevToolsKey> {
                 DevToolsRoute(onEffect = { effect ->

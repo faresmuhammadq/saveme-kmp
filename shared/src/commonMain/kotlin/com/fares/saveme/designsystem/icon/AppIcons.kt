@@ -31,6 +31,12 @@ object AppIcons {
     val Card by lazy { icon("Card", "M2 6h20v12H2zM2 10h20M6 15h4") }
     val Loan by lazy { icon("Loan", "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6") }
     val Investment by lazy { icon("Investment", "M3 17l6-6 4 4 8-8M15 7h6v6") }
+    val Person by lazy { icon("Person", "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0") }
+    val Devices by lazy { icon("Devices", "M4 5h12v9H4zM2 18h13M18 9h4v11h-4zM20 17h.01") }
+    val Lock by lazy { icon("Lock", "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4M12 15v2") }
+    val Delete by lazy { icon("Delete", "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3") }
+    val Logout by lazy { icon("Logout", "M9 4H5v16h4M16 8l4 4-4 4M20 12H9", autoMirror = true) }
+    val Language by lazy { icon("Language", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20") }
 
     private fun icon(name: String, path: String, autoMirror: Boolean = false): ImageVector =
         ImageVector.Builder(

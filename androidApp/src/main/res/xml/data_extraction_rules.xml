@@ -4,9 +4,15 @@
     <cloud-backup>
         <exclude domain="file" path="datastore/secure_session.preferences_pb" />
         <exclude domain="file" path="datastore/app_prefs.preferences_pb" />
+        <exclude domain="database" path="saveme.db" />
+        <exclude domain="database" path="saveme.db-wal" />
+        <exclude domain="database" path="saveme.db-shm" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="datastore/secure_session.preferences_pb" />
         <exclude domain="file" path="datastore/app_prefs.preferences_pb" />
+        <exclude domain="database" path="saveme.db" />
+        <exclude domain="database" path="saveme.db-wal" />
+        <exclude domain="database" path="saveme.db-shm" />
     </device-transfer>
 </data-extraction-rules>

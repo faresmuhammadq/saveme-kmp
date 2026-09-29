@@ -21,3 +21,18 @@ data object DevToolsKey : NavKey
 
 @Serializable
 data object CatalogKey : NavKey
+
+@Serializable
+data object AccountKey : NavKey
+
+@Serializable
+data object ProfileKey : NavKey
+
+@Serializable
+data object DeviceSessionsKey : NavKey
+
+@Serializable
+data object ChangePasswordKey : NavKey
+
+@Serializable
+data object DeleteAccountKey : NavKey
