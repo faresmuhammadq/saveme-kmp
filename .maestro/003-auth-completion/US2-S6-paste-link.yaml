@@ -1,0 +1,30 @@
+# US2-S6: Given a development build, When the person pastes a verification link into the development "Paste link" screen, Then it routes to the same verification screen as tapping the link.
+# e2e-seed: unverified-user+verify-link
+# Signed out, so this also covers US2-S1's "whether or not anyone is signed in".
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Dev tools"
+- tapOn: "Paste link"
+- tapOn:
+    id: "pasteLink.text"
+- inputText: ${E2E_LINK}
+- hideKeyboard
+- tapOn:
+    id: "pasteLink.open"
+- extendedWaitUntil:
+    visible: "Your email is confirmed\\."
+    timeout: 20000
+- tapOn:
+    id: "verifyEmail.continue"
+- assertVisible:
+    id: "signIn.email"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: me, SLOT: B }
+- assertTrue: ${output.account.email_verified == true}

@@ -15,6 +15,7 @@ fun ApiErrorCode.message(): StringResource = when (this) {
     ApiErrorCode.INVALID_CREDENTIALS -> Res.string.error_invalid_credentials
     ApiErrorCode.ACCOUNT_LOCKED -> Res.string.error_rate_limited_soon
     ApiErrorCode.EMAIL_NOT_VERIFIED -> Res.string.error_email_not_verified
+    ApiErrorCode.EMAIL_ALREADY_REGISTERED -> Res.string.error_email_already_registered
     ApiErrorCode.VERIFICATION_TOKEN_INVALID -> Res.string.error_verification_link_invalid
     ApiErrorCode.RESET_TOKEN_INVALID -> Res.string.error_reset_link_invalid
     ApiErrorCode.VALIDATION_FAILED -> Res.string.error_validation

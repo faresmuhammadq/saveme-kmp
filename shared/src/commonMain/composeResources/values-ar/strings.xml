@@ -269,4 +269,33 @@
     <string name="home_deletion_pending">سيُحذف حسابك في %1$s.</string>
     <string name="home_cancel_deletion">إلغاء الحذف</string>
     <string name="home_deletion_cancelled_done">أُلغي الحذف. لم يُفقد أي شيء.</string>
+
+    <!-- Auth completion (spec 003) -->
+    <string name="error_email_already_registered">هذا البريد الإلكتروني لديه حساب بالفعل.</string>
+    <string name="register_have_account">لديك حساب بالفعل؟ سجّل الدخول</string>
+    <string name="register_display_name_optional">الاسم المعروض (اختياري)</string>
+    <string name="register_already_registered">هذا البريد الإلكتروني لديه حساب بالفعل. سجّل الدخول، أو أعد تعيين كلمة المرور إن نسيتها.</string>
+    <string name="action_reset_password">إعادة تعيين كلمة المرور</string>
+    <string name="check_inbox_title">تفقّد صندوق الوارد</string>
+    <string name="check_inbox_verification">أرسلنا رابطًا إلى %1$s. افتحه على هذا الهاتف لتأكيد عنوانك.</string>
+    <string name="check_inbox_reset">إذا كان هذا العنوان مسجّلًا، فالرابط في طريقه إليك.</string>
+    <string name="action_go_to_sign_in">الذهاب إلى تسجيل الدخول</string>
+    <string name="verify_title">تأكيد البريد الإلكتروني</string>
+    <string name="verify_verifying">جارٍ تأكيد بريدك الإلكتروني…</string>
+    <string name="verify_done">تم تأكيد بريدك الإلكتروني.</string>
+    <string name="action_continue">متابعة</string>
+    <string name="action_resend_email">إعادة إرسال البريد</string>
+    <string name="home_verify_prompt">أكّد بريدك الإلكتروني لإضافة المعاملات. تفقّد صندوق الوارد.</string>
+    <string name="verification_sent">أُرسل بريد التأكيد. تفقّد صندوق الوارد.</string>
+    <string name="forgot_title">نسيت كلمة المرور</string>
+    <string name="forgot_body">أدخل بريدك الإلكتروني وسنرسل رابطًا لتعيين كلمة مرور جديدة.</string>
+    <string name="action_send_link">إرسال الرابط</string>
+    <string name="reset_title">كلمة مرور جديدة</string>
+    <string name="reset_hint">من 8 إلى 128 حرفًا.</string>
+    <string name="action_set_password">تعيين كلمة المرور الجديدة</string>
+    <string name="action_request_new_link">طلب رابط جديد</string>
+    <string name="paste_link_field">الرابط</string>
+    <string name="paste_link_body">الصق رابط تأكيد أو إعادة تعيين من بريد لفتحه هنا.</string>
+    <string name="action_open">فتح</string>
+    <string name="paste_link_error">ليس رابط تأكيد أو إعادة تعيين</string>
 </resources>

@@ -60,6 +60,7 @@ android {
             dimension = "env"
             buildConfigField("String", "API_BASE_URL", "\"http://$devApiHost\"")
             buildConfigField("String", "LINK_HOST", "\"$devLinkHost\"")
+            buildConfigField("String", "LINK_PORT", "\"$devLinkPort\"")
             buildConfigField("String", "ENVIRONMENT", "\"Dev\"")
             buildConfigField("boolean", "DEBUG_TOOLS", "true")
             manifestPlaceholders["linkHost"] = devLinkHost
@@ -70,6 +71,7 @@ android {
             // TODO(base-url): staging host not defined yet.
             buildConfigField("String", "API_BASE_URL", "\"https://staging.api.example\"")
             buildConfigField("String", "LINK_HOST", "\"staging.api.example\"")
+            buildConfigField("String", "LINK_PORT", "\"\"")
             buildConfigField("String", "ENVIRONMENT", "\"Staging\"")
             buildConfigField("boolean", "DEBUG_TOOLS", "false")
             manifestPlaceholders["linkHost"] = "staging.api.example"
@@ -80,6 +82,7 @@ android {
             // TODO(base-url): production host not defined yet.
             buildConfigField("String", "API_BASE_URL", "\"https://api.example\"")
             buildConfigField("String", "LINK_HOST", "\"api.example\"")
+            buildConfigField("String", "LINK_PORT", "\"\"")
             buildConfigField("String", "ENVIRONMENT", "\"Prod\"")
             buildConfigField("boolean", "DEBUG_TOOLS", "false")
             manifestPlaceholders["linkHost"] = "api.example"

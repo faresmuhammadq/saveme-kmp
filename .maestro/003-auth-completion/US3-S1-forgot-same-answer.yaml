@@ -1,0 +1,36 @@
+# US3-S1: Given the forgot-password screen (from sign-in, or from the "account locked" message), When the person submits any well-formed address, Then the app shows "if that address is registered, a link is on its way", whether or not it is registered.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Sign in"
+- tapOn: "Forgot password?"
+- tapOn:
+    id: "forgotPassword.email"
+- inputText: ${E2E_EMAIL}
+- hideKeyboard
+- tapOn:
+    id: "forgotPassword.submit"
+- extendedWaitUntil:
+    visible: "If that address is registered, a link is on its way\\."
+    timeout: 20000
+# An unregistered address gets the same answer. Relaunch for empty fields: going back through
+# check-inbox would prefill sign-in and then the forgot screen with the first address.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 15000
+- tapOn: "Sign in"
+- tapOn: "Forgot password?"
+- tapOn:
+    id: "forgotPassword.email"
+- inputText: ${'nobody-' + E2E_EMAIL}
+- hideKeyboard
+- tapOn:
+    id: "forgotPassword.submit"
+- extendedWaitUntil:
+    visible: "If that address is registered, a link is on its way\\."
+    timeout: 20000

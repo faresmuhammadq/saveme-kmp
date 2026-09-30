@@ -1,0 +1,26 @@
+# US3-S3: Given the link is expired (older than 60 minutes), used, or superseded, When the person submits a new password, Then the app says the link no longer works and offers to request a new one.
+# e2e-seed: verified-user+reset-link
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/launch-clean.yaml
+- openLink:
+    link: ${E2E_OLD_LINK}
+    autoVerify: true
+- tapOn:
+    id: "resetPassword.password"
+- inputText: "Brand-new-pass-1"
+- hideKeyboard
+- tapOn:
+    id: "resetPassword.submit"
+- extendedWaitUntil:
+    visible: "This reset link no longer works\\."
+    timeout: 20000
+- tapOn:
+    id: "resetPassword.requestNewLink"
+- assertVisible:
+    id: "forgotPassword.email"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectLogin, EXPECT: "200" }

@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
@@ -23,6 +25,8 @@ import com.fares.saveme.devtools.DevToolsEffect
 import com.fares.saveme.devtools.DevToolsRoute
 import com.fares.saveme.devtools.catalog.ComponentCatalogEffect
 import com.fares.saveme.devtools.catalog.ComponentCatalogRoute
+import com.fares.saveme.devtools.pastelink.PasteLinkEffect
+import com.fares.saveme.devtools.pastelink.PasteLinkRoute
 import com.fares.saveme.feature.account.ui.account.AccountDestination
 import com.fares.saveme.feature.account.ui.account.AccountEffect
 import com.fares.saveme.feature.account.ui.account.AccountRoute
@@ -34,6 +38,17 @@ import com.fares.saveme.feature.account.ui.profile.ProfileEffect
 import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
+import com.fares.saveme.feature.auth.domain.AuthLink
+import com.fares.saveme.feature.auth.domain.AuthLinkParser
+import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxEffect
+import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxKind
+import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxRoute
+import com.fares.saveme.feature.auth.ui.password.forgot.ForgotPasswordEffect
+import com.fares.saveme.feature.auth.ui.password.forgot.ForgotPasswordRoute
+import com.fares.saveme.feature.auth.ui.password.reset.ResetPasswordEffect
+import com.fares.saveme.feature.auth.ui.password.reset.ResetPasswordRoute
+import com.fares.saveme.feature.auth.ui.register.RegisterEffect
+import com.fares.saveme.feature.auth.ui.register.RegisterRoute
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.auth.domain.SignOutReason
@@ -45,6 +60,9 @@ import com.fares.saveme.feature.auth.ui.signin.SignInArgs
 import com.fares.saveme.feature.auth.ui.signin.SignInEffect
 import com.fares.saveme.feature.auth.ui.signin.SignInRoute
 import com.fares.saveme.feature.auth.ui.update.UpdateRequiredRoute
+import com.fares.saveme.feature.auth.ui.verify.EmailNotVerifiedSheet
+import com.fares.saveme.feature.auth.ui.verify.VerifyEmailEffect
+import com.fares.saveme.feature.auth.ui.verify.VerifyEmailRoute
 import kotlinx.coroutines.flow.filterIsInstance
 import org.koin.compose.koinInject
 
@@ -56,6 +74,8 @@ import org.koin.compose.koinInject
 fun AppNavHost(
     sessionManager: SessionManager = koinInject(),
     apiEvents: ApiEvents = koinInject(),
+    deepLinks: DeepLinkBus = koinInject(),
+    linkParser: AuthLinkParser = koinInject(),
 ) {
     val authState by sessionManager.state.collectAsStateWithLifecycle()
     val authStack = remember { mutableStateListOf<NavKey>(EntryKey) }
@@ -82,12 +102,46 @@ fun AppNavHost(
 
     val activeStack = if (authState is AuthState.SignedIn) appStack else authStack
 
+    // Mail links (research R-04). Keyed like the transition effect above and declared after it, so
+    // a stack reset on sign-in happens first and never drops the link screen. Waits until the
+    // stored session is read, so a cold-start link lands on the right stack.
+    LaunchedEffect(signedIn, authState == AuthState.Unknown) {
+        if (sessionManager.state.value == AuthState.Unknown) return@LaunchedEffect
+        deepLinks.links.collect { raw ->
+            deepLinks.consume()
+            val key = when (val link = linkParser.parse(raw)) {
+                is AuthLink.VerifyEmail -> VerifyEmailKey(link.token)
+                is AuthLink.ResetPassword -> ResetPasswordKey(link.token)
+                null -> return@collect
+            }
+            if (sessionManager.state.value is AuthState.SignedIn) {
+                appStack.add(key)
+            } else {
+                // Replace a half-filled form on top, but keep the entry screen underneath.
+                if (authStack.size > 1) authStack.removeAt(authStack.lastIndex)
+                authStack.add(key)
+            }
+        }
+    }
+
     // Any call can answer 426; the blocking screen goes on whichever stack is showing (FR-018).
     LaunchedEffect(apiEvents) {
         apiEvents.events.filterIsInstance<ApiEvent.UpdateRequired>().collect { event ->
             val stack = if (sessionManager.state.value is AuthState.SignedIn) appStack else authStack
             if (stack.lastOrNull() !is UpdateRequiredKey) stack.add(UpdateRequiredKey(event.minimumVersion))
         }
+    }
+
+    // Any action the server refuses because the address isn't verified gets the verify prompt,
+    // never a bare denial (spec 003 FR-014).
+    var emailNotVerifiedVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(apiEvents) {
+        apiEvents.events.filterIsInstance<ApiEvent.EmailNotVerified>().collect {
+            if (sessionManager.state.value is AuthState.SignedIn) emailNotVerifiedVisible = true
+        }
+    }
+    if (emailNotVerifiedVisible && signedIn) {
+        EmailNotVerifiedSheet(onDismiss = { emailNotVerifiedVisible = false })
     }
 
     if (authState == AuthState.Unknown) {
@@ -109,7 +163,7 @@ fun AppNavHost(
                 EntryRoute(onEffect = { effect ->
                     when (effect) {
                         EntryEffect.NavigateSignIn -> authStack.add(SignInKey())
-                        EntryEffect.NavigateRegister -> Unit // US3
+                        EntryEffect.NavigateRegister -> authStack.add(RegisterKey())
                         EntryEffect.NavigateDevTools -> authStack.add(DevToolsKey)
                     }
                 })
@@ -117,9 +171,31 @@ fun AppNavHost(
             entry<SignInKey> { key ->
                 SignInRoute(args = SignInArgs(key.prefillEmail, key.reason), onEffect = { effect ->
                     when (effect) {
-                        is SignInEffect.NavigateForgotPassword -> Unit // US4
-                        SignInEffect.NavigateRegister -> Unit // US3
+                        is SignInEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email.ifBlank { null }))
+                        SignInEffect.NavigateRegister -> authStack.add(RegisterKey())
                         SignInEffect.NavigateBack -> authStack.pop()
+                    }
+                })
+            }
+            entry<RegisterKey> { key ->
+                RegisterRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
+                    when (effect) {
+                        is RegisterEffect.NavigateCheckInbox -> authStack.add(CheckInboxKey(effect.email, CheckInboxKind.Verification))
+                        is RegisterEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
+                        is RegisterEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email))
+                        RegisterEffect.NavigateBack -> authStack.pop()
+                    }
+                })
+            }
+            entry<CheckInboxKey> { key ->
+                CheckInboxRoute(email = key.email, kind = key.kind, onEffect = { effect ->
+                    when (effect) {
+                        is CheckInboxEffect.NavigateSignIn ->
+                            if (sessionManager.state.value is AuthState.SignedIn) {
+                                appStack.resetTo(HomeKey)
+                            } else {
+                                authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
+                            }
                     }
                 })
             }
@@ -183,8 +259,48 @@ fun AppNavHost(
                 DevToolsRoute(onEffect = { effect ->
                     when (effect) {
                         DevToolsEffect.NavigateCatalog -> activeStack.add(CatalogKey)
-                        DevToolsEffect.NavigatePasteLink -> Unit // US3
+                        DevToolsEffect.NavigatePasteLink -> activeStack.add(PasteLinkKey)
                         DevToolsEffect.NavigateBack -> activeStack.pop()
+                    }
+                })
+            }
+            entry<PasteLinkKey> {
+                PasteLinkRoute(onEffect = { effect ->
+                    when (effect) {
+                        PasteLinkEffect.NavigateBack -> activeStack.pop()
+                        is PasteLinkEffect.SubmitLink -> Unit // handed to DeepLinkBus by the route
+                    }
+                })
+            }
+            entry<VerifyEmailKey> { key ->
+                VerifyEmailRoute(token = key.token, onEffect = { effect ->
+                    when (effect) {
+                        VerifyEmailEffect.NavigateHome -> appStack.resetTo(HomeKey)
+                        VerifyEmailEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey())
+                    }
+                })
+            }
+            entry<ForgotPasswordKey> { key ->
+                ForgotPasswordRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
+                    when (effect) {
+                        is ForgotPasswordEffect.NavigateCheckInbox -> activeStack.add(CheckInboxKey(effect.email, CheckInboxKind.Reset))
+                        ForgotPasswordEffect.NavigateBack -> activeStack.pop()
+                    }
+                })
+            }
+            entry<ResetPasswordKey> { key ->
+                ResetPasswordRoute(token = key.token, onEffect = { effect ->
+                    when (effect) {
+                        // Signed-in phones stay signed in until the server's session end reaches
+                        // them as a 401 (FR-019); signed-out ones go straight to sign-in.
+                        ResetPasswordEffect.NavigateSignIn ->
+                            if (sessionManager.state.value is AuthState.SignedIn) {
+                                appStack.resetTo(HomeKey)
+                            } else {
+                                authStack.resetTo(EntryKey, SignInKey(reason = SignOutReason.PasswordReset))
+                            }
+                        ResetPasswordEffect.NavigateForgotPassword -> activeStack.add(ForgotPasswordKey())
+                        ResetPasswordEffect.NavigateBack -> activeStack.pop()
                     }
                 })
             }

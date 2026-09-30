@@ -8,4 +8,6 @@ data class AppConfig(
     val linkHost: String,
     val environment: Environment,
     val isDebugTools: Boolean,
+    /** Port of mailed links; set only in dev, where the backend is reached on a non-default port. */
+    val linkPort: Int? = null,
 )

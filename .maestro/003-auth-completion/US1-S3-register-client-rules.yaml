@@ -1,0 +1,34 @@
+# US1-S3: Given a password shorter than 8 characters, longer than 128, or equal to the email, or a malformed email, or a display name over 100 characters, When the person tries to submit, Then the matching field shows its specific error and nothing is sent.
+# e2e-seed: none
+# "Nothing is sent" is proved by the unit tests (RegisterViewModelTest); here the errors must show.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Create account"
+- tapOn:
+    id: "register.email"
+- inputText: "not-an-email"
+- tapOn:
+    id: "register.password"
+- inputText: "short"
+- hideKeyboard
+- tapOn:
+    id: "register.submit"
+- assertVisible: "Enter a valid email address\\."
+- assertVisible: "Use at least 8 characters\\."
+- assertNotVisible: "Check your inbox"
+# Password equal to the email, on a freshly opened form.
+- tapOn: "Back"
+- tapOn: "Create account"
+- tapOn:
+    id: "register.email"
+- inputText: "same@example.com"
+- tapOn:
+    id: "register.password"
+- inputText: "same@example.com"
+- hideKeyboard
+- tapOn:
+    id: "register.submit"
+- assertVisible: "Your password can’t be your email address\\."

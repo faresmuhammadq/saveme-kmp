@@ -1,0 +1,34 @@
+# US3-S4: Given a successful reset of the account this phone is signed in to, When the phone next talks to the server, Then it is signed out with the "session ended" explanation and the person must sign in again (the server ended every session of that account).
+# e2e-seed: verified-user+reset-link
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- openLink:
+    link: ${E2E_LINK}
+    autoVerify: true
+- tapOn:
+    id: "resetPassword.password"
+- inputText: ${E2E_PASSWORD + '-new'}
+- hideKeyboard
+- tapOn:
+    id: "resetPassword.submit"
+- extendedWaitUntil:
+    visible: "Password changed\\. Sign in with your new password\\."
+    timeout: 20000
+- tapOn:
+    id: "resetPassword.continue"
+# Still signed in locally (FR-019) until the next request.
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 10000
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- extendedWaitUntil:
+    visible: "Your session ended\\. Sign in again\\."
+    timeout: 20000
+- assertVisible:
+    id: "signIn.email"

@@ -3,6 +3,8 @@ package com.fares.saveme.feature.auth.ui.home
 import androidx.lifecycle.viewModelScope
 import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.model.ResendOutcome
+import com.fares.saveme.feature.auth.ui.verify.launchResend
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
@@ -13,6 +15,7 @@ class HomeViewModel(
     authState: StateFlow<AuthState>,
     private val signOut: suspend () -> Unit = {},
     private val cancelDeletion: suspend () -> CancelDeletionResult = { CancelDeletionResult.Failed },
+    private val resendVerification: suspend () -> ResendOutcome = { ResendOutcome.Offline },
 ) : MviViewModel<HomeState, HomeIntent, HomeEffect>(HomeState()) {
 
     init {
@@ -28,6 +31,11 @@ class HomeViewModel(
             HomeIntent.CancelDeletion -> cancel()
             HomeIntent.SignOutClicked -> setState { reduce(it, HomeChange.SignOutConfirmVisible(true)) }
             HomeIntent.SignOutDismissed -> setState { reduce(it, HomeChange.SignOutConfirmVisible(false)) }
+            HomeIntent.ResendClicked -> viewModelScope.launchResend(
+                current = { currentState.resend },
+                apply = { change -> setState { reduce(it, HomeChange.Resend(change)) } },
+                resend = resendVerification,
+            )
             HomeIntent.SignOutConfirmed -> if (!currentState.signingOut) {
                 setState { reduce(it, HomeChange.SigningOut) }
                 viewModelScope.launch { signOut() }

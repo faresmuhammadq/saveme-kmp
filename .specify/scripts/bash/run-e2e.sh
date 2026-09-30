@@ -4,11 +4,17 @@
 #
 # Each flow declares the account it needs in a header comment:
 #   # e2e-seed: none | verified-user | unverified-user
+#   #           | unverified-user+verify-link | verified-user+reset-link
 # The runner creates a fresh account per flow (unique address, so the shared dev database needs no
 # reset) and passes it to Maestro as E2E_EMAIL / E2E_PASSWORD, plus E2E_API (the backend base URL
 # as seen from this machine, for .maestro/common/api.js). Accounts are created through the
 # backend's RegisterAccount use case with artisan, not over HTTP: auth/register is throttled to
 # 10 an hour.
+# The +…-link seeds also issue two mailed links through the backend's LinkRepository (the same
+# secret a mail would carry, no mail reading): E2E_OLD_LINK, already superseded, and E2E_LINK,
+# live. Both use the app's dev link host (http://localhost:<port>) so Maestro's openLink goes
+# through the real deep-link intake. The secrets belong to throwaway dev accounts; Maestro writes
+# them into build/e2e debug output, which is git-ignored.
 #
 # Usage: run-e2e.sh <feature-dir-name> [--skip-install] [--flow <name>]
 # Env:   E2E_BACKEND_CONTAINER (default: saveme-backend-main)
@@ -120,6 +126,21 @@ seed_account() {
     " 2>&1 | grep -q seeded
 }
 
+# Issues a live <kind> link (VerifyAddress | ResetPassword) for <email> and prints its secret.
+# Registration queues a welcome mail that issues its own verification link (database queue, run
+# by the container's worker). If that job ran after this, it would supersede our link, so wait up
+# to 10 s for the welcome link to exist first.
+issue_link() {
+    local email="$1" kind="$2"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \$id = \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))->value('id');
+        if ('$kind' === 'VerifyAddress') {
+            for (\$i = 0; \$i < 40 && !\App\Modules\Identity\Infrastructure\Models\IdentityLink::where('user_id', \$id)->where('kind', 'verify_address')->exists(); \$i++) { usleep(250000); }
+        }
+        echo 'secret=' . app(\App\Modules\Identity\Domain\Ports\LinkRepository::class)->issue(\$id, \App\Modules\Identity\Domain\Account\LinkKind::$kind);
+    " 2>&1 | grep -oE 'secret=[^[:space:]]+' | head -1 | cut -d= -f2-
+}
+
 # --- Run --------------------------------------------------------------------------------------
 # A single-flow rerun keeps the other flows' results.
 if [[ -n "$only_flow" ]]; then
@@ -132,17 +153,26 @@ run_id=$(date +%Y%m%d%H%M%S)
 failed=0
 for flow in "${flows[@]}"; do
     name=$(basename "$flow" .yaml)
-    seed=$(grep -m1 -oE '^# e2e-seed: *[a-z-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
+    seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
     case "${seed:-none}" in
         none) ;;
-        verified-user|unverified-user)
+        verified-user|unverified-user|unverified-user+verify-link|verified-user+reset-link)
             email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")@example.com"
-            verified=$([[ "$seed" == verified-user ]] && echo true || echo false)
+            verified=$([[ "$seed" == verified-user* ]] && echo true || echo false)
             if ! seed_account "$email" "$verified"; then
                 echo "FAIL $name (seeding $seed failed)"; failed=1; continue
             fi
             env_args+=(-e "E2E_EMAIL=$email" -e "E2E_PASSWORD=$PASSWORD")
+            if [[ "$seed" == *-link ]]; then
+                if [[ "$seed" == *verify-link ]]; then kind=VerifyAddress path=verify-email; else kind=ResetPassword path=reset-password; fi
+                old=$(issue_link "$email" "$kind")
+                live=$(issue_link "$email" "$kind")
+                if [[ -z "$old" || -z "$live" ]]; then
+                    echo "FAIL $name (issuing $kind links failed)"; failed=1; continue
+                fi
+                env_args+=(-e "E2E_OLD_LINK=http://localhost:$PORT/$path?token=$old" -e "E2E_LINK=http://localhost:$PORT/$path?token=$live")
+            fi
             ;;
         *) echo "FAIL $name (unknown e2e-seed '$seed')"; failed=1; continue ;;
     esac

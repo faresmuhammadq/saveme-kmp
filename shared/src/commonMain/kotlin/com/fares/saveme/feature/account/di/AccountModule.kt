@@ -22,9 +22,12 @@ import com.fares.saveme.feature.account.ui.profile.ProfileViewModel
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.SessionManager
+import com.fares.saveme.feature.auth.domain.usecase.ResendVerificationUseCase
 import com.fares.saveme.feature.auth.domain.usecase.SignOutUseCase
+import com.fares.saveme.feature.auth.domain.usecase.VerifyEmailUseCase
 import com.fares.saveme.feature.auth.ui.home.CancelDeletionResult
 import com.fares.saveme.feature.auth.ui.home.HomeViewModel
+import com.fares.saveme.feature.auth.ui.verify.VerifyEmailViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,6 +55,7 @@ val accountModule = module {
     viewModel {
         val signOut = get<SignOutUseCase>()
         val cancel = get<CancelDeletionUseCase>()
+        val resend = get<ResendVerificationUseCase>()
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -62,6 +66,22 @@ val accountModule = module {
                     is ActionOutcome.Error -> CancelDeletionResult.Failed
                 }
             },
+            resendVerification = { resend() },
+        )
+    }
+    // Registered here, not in authModule: it re-reads the account through this feature's
+    // AccountRefresher after a verification (spec 003 FR-011), and auth never imports account.
+    viewModel { params ->
+        val verify = get<VerifyEmailUseCase>()
+        val resend = get<ResendVerificationUseCase>()
+        val refresher = get<AccountRefresher>()
+        val sessions = get<SessionManager>()
+        VerifyEmailViewModel(
+            token = params.get<String>(),
+            isSignedIn = { sessions.state.value is AuthState.SignedIn },
+            verify = { verify(it) },
+            resend = { resend() },
+            refreshAccount = { refresher.refresh() },
         )
     }
     viewModel {

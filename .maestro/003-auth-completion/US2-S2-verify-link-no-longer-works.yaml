@@ -1,0 +1,19 @@
+# US2-S2: Given an expired (older than 24 hours), used or superseded link, When the app opens from it, Then it explains the link no longer works and offers "Resend email" when signed in, or "Sign in" when not.
+# e2e-seed: unverified-user+verify-link
+# Superseded link, signed out. Expired links answer the same code (VERIFICATION_TOKEN_INVALID);
+# the signed-in variant is covered by VerifyEmailViewModelTest.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/launch-clean.yaml
+- openLink:
+    link: ${E2E_OLD_LINK}
+    autoVerify: true
+- extendedWaitUntil:
+    visible: "This verification link no longer works\\."
+    timeout: 20000
+- tapOn:
+    id: "verifyEmail.signIn"
+- assertVisible:
+    id: "signIn.email"

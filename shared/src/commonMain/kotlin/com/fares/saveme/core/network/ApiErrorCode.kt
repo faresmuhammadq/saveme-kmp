@@ -24,6 +24,7 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
     INVALID_CREDENTIALS(RetryClass.Never),
     ACCOUNT_LOCKED(RetryClass.Automatic),
     EMAIL_NOT_VERIFIED(RetryClass.Never),
+    EMAIL_ALREADY_REGISTERED(RetryClass.Never),
     VERIFICATION_TOKEN_INVALID(RetryClass.AfterChange),
     RESET_TOKEN_INVALID(RetryClass.AfterChange),
     VERSION_CONFLICT(RetryClass.AfterChange),

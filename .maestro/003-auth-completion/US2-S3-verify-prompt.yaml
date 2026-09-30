@@ -1,0 +1,18 @@
+# US2-S3: Given a signed-in, unverified person, When they are on the signed-in home or account screen, Then a persistent prompt says to verify, with "Resend email".
+# e2e-seed: unverified-user
+# Home only; the account screen's prompt is open finding C1 of the spec analysis.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- assertVisible:
+    id: "home.verifyPrompt"
+- assertVisible: "Resend email"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 15000
+- assertVisible:
+    id: "home.verifyPrompt"

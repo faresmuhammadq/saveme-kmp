@@ -14,6 +14,7 @@ class MainApplication : Application() {
             config = AppConfig(
                 baseUrl = BuildConfig.API_BASE_URL,
                 linkHost = BuildConfig.LINK_HOST,
+                linkPort = BuildConfig.LINK_PORT.toIntOrNull(),
                 environment = Environment.valueOf(BuildConfig.ENVIRONMENT),
                 isDebugTools = BuildConfig.DEBUG_TOOLS,
             ),

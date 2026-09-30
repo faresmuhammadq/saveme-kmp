@@ -73,3 +73,32 @@ data class AccountSnapshotDto(
     val account: AccountDto,
     val entitlements: EntitlementSummaryDto,
 )
+
+// Auth completion (spec 003). Request DTOs carry only declared members (P-02.2); a null
+// display name is omitted because AppJson has explicitNulls = false.
+
+@Serializable
+data class RegisterRequest(
+    val email: String,
+    val password: String,
+    @SerialName("display_name") val displayName: String? = null,
+    val timezone: String,
+) {
+    override fun toString() = "RegisterRequest(email=$email, password=<redacted>, displayName=$displayName, timezone=$timezone)"
+}
+
+@Serializable
+data class TokenRequest(val token: String) {
+    override fun toString() = "TokenRequest(token=<redacted>)"
+}
+
+@Serializable
+data class VerifyEmailDataDto(@SerialName("email_verified") val emailVerified: Boolean)
+
+@Serializable
+data class EmailRequest(val email: String)
+
+@Serializable
+data class ResetPasswordRequest(val token: String, val password: String) {
+    override fun toString() = "ResetPasswordRequest(token=<redacted>, password=<redacted>)"
+}

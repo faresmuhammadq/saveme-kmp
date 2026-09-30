@@ -1,0 +1,23 @@
+# US2-S1: Given a valid verification link, When the app opens from it, Then it confirms the address and shows success; this works whether or not anyone is signed in, and if the verified person is signed in, the verified state updates without signing in again.
+# e2e-seed: unverified-user+verify-link
+# Signed-in path here; the signed-out path is US2-S6 (same screen, reached by pasting).
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- assertVisible:
+    id: "home.verifyPrompt"
+- openLink:
+    link: ${E2E_LINK}
+    autoVerify: true
+- extendedWaitUntil:
+    visible: "Your email is confirmed\\."
+    timeout: 20000
+- tapOn:
+    id: "verifyEmail.continue"
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 10000
+- assertNotVisible:
+    id: "home.verifyPrompt"

@@ -1,0 +1,34 @@
+# US3-S2: Given a valid reset link, When the app opens from it, Then it shows a new-password screen; after a valid new password is submitted, it confirms and takes the person to sign-in, with the email prefilled when the app knows it.
+# e2e-seed: verified-user+reset-link
+# The email isn't known on this path (analysis finding U1), so sign-in opens empty.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/launch-clean.yaml
+- openLink:
+    link: ${E2E_LINK}
+    autoVerify: true
+- tapOn:
+    id: "resetPassword.password"
+- inputText: ${E2E_PASSWORD + '-new'}
+- hideKeyboard
+- tapOn:
+    id: "resetPassword.submit"
+- extendedWaitUntil:
+    visible: "Password changed\\. Sign in with your new password\\."
+    timeout: 20000
+- tapOn:
+    id: "resetPassword.continue"
+- assertVisible:
+    id: "signIn.email"
+- runFlow:
+    file: ../common/sign-in-attempt.yaml
+    env:
+      E2E_PASSWORD: ${E2E_PASSWORD + '-new'}
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectLogin, EXPECT: "401" }

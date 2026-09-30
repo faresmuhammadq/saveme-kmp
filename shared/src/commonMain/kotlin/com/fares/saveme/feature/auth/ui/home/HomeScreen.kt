@@ -4,6 +4,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AlertTone
 import com.fares.saveme.designsystem.component.AppIconButton
@@ -15,9 +17,12 @@ import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.auth.ui.signout.SignOutConfirmSheet
+import com.fares.saveme.feature.auth.ui.verify.text
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.action_resend_email
+import saveme.shared.generated.resources.home_verify_prompt
 import saveme.shared.generated.resources.cd_account
 import saveme.shared.generated.resources.home_cancel_deletion
 import saveme.shared.generated.resources.home_deletion_cancelled
@@ -52,6 +57,17 @@ fun HomeScreen(
                 actionLabel = stringResource(Res.string.home_cancel_deletion),
                 onAction = { onIntent(HomeIntent.CancelDeletion) }.takeUnless { state.cancellingDeletion },
             )
+        }
+        if (!state.emailVerified) {
+            // Persistent until the address is verified (FR-012); resend is throttled (FR-013).
+            InlineAlert(
+                tone = AlertTone.Warning,
+                text = stringResource(Res.string.home_verify_prompt),
+                modifier = Modifier.testTag("home.verifyPrompt"),
+                actionLabel = stringResource(Res.string.action_resend_email),
+                onAction = { onIntent(HomeIntent.ResendClicked) }.takeIf { state.resend.canResend },
+            )
+            state.resend.message?.let { Text(it.text(), style = AppTheme.type.caption, color = AppTheme.colors.ink2) }
         }
         if (state.deletionCancelledNotice) {
             InlineAlert(

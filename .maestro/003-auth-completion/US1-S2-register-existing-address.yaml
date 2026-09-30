@@ -1,0 +1,28 @@
+# US1-S2: Given an address that already has an account, When the person submits, Then the app says the address is already registered and offers "Sign in" (email prefilled) and "Reset password"; nothing else happens.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Create account"
+- tapOn:
+    id: "register.email"
+- inputText: ${E2E_EMAIL}
+- tapOn:
+    id: "register.password"
+- inputText: "Another-pass-2026"
+- hideKeyboard
+- tapOn:
+    id: "register.submit"
+- extendedWaitUntil:
+    visible: "This email already has an account\\. Sign in, or reset the password if you forgot it\\."
+    timeout: 20000
+- assertNotVisible: "Check your inbox"
+- assertVisible:
+    id: "register.resetPassword"
+- tapOn:
+    id: "register.alreadySignIn"
+- assertVisible:
+    id: "signIn.email"
+    text: ${E2E_EMAIL.replace(/\+/g, '\\+').replace(/\./g, '\\.')}

@@ -1,0 +1,28 @@
+# US1-S1: Given the registration form, When the person submits a valid email and a password of 8–128 characters that is not their email, Then the app shows a "check your inbox" confirmation naming the address and offering to go to sign-in with the email prefilled.
+# e2e-seed: none
+# Registers over HTTP (10 per hour per origin on the backend); this and US1-S2 are the only flows that do.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- evalScript: ${output.email = 'e2e+ui-' + Date.now() + '@example.com'}
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Create account"
+- tapOn:
+    id: "register.email"
+- inputText: ${output.email}
+- tapOn:
+    id: "register.password"
+- inputText: "Fresh-pass-2026"
+- hideKeyboard
+- tapOn:
+    id: "register.submit"
+- extendedWaitUntil:
+    visible: "Check your inbox"
+    timeout: 20000
+- assertVisible: ${'We sent a link to ' + output.email.replace(/\+/g, '\\+').replace(/\./g, '\\.') + '\\. Open it on this phone to confirm your address\\.'}
+- tapOn:
+    id: "checkInbox.goToSignIn"
+- assertVisible:
+    id: "signIn.email"
+    text: ${output.email.replace(/\+/g, '\\+').replace(/\./g, '\\.')}

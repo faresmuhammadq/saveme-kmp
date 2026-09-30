@@ -1,0 +1,40 @@
+# US3-S5: Given a fourth reset request for the same address within an hour, When submitted, Then the app shows "try again later" with the wait time.
+# e2e-seed: verified-user
+# The address is typed once; afterwards check-inbox → sign-in → forgot carries it prefilled.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/launch-clean.yaml
+- tapOn: "Sign in"
+- tapOn: "Forgot password?"
+- tapOn:
+    id: "forgotPassword.email"
+- inputText: ${E2E_EMAIL}
+- hideKeyboard
+- tapOn:
+    id: "forgotPassword.submit"
+- extendedWaitUntil:
+    visible: "If that address is registered, a link is on its way\\."
+    timeout: 20000
+# Requests 2 and 3, with the email prefilled.
+- repeat:
+    times: 2
+    commands:
+      - tapOn:
+          id: "checkInbox.goToSignIn"
+      - tapOn: "Forgot password?"
+      - tapOn:
+          id: "forgotPassword.submit"
+      - extendedWaitUntil:
+          visible: "If that address is registered, a link is on its way\\."
+          timeout: 20000
+# Request 4.
+- tapOn:
+    id: "checkInbox.goToSignIn"
+- tapOn: "Forgot password?"
+- tapOn:
+    id: "forgotPassword.submit"
+- extendedWaitUntil:
+    visible: "Too many requests\\. Try again in \\d+ minutes?\\."
+    timeout: 20000

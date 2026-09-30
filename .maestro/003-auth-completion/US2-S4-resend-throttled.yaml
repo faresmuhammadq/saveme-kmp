@@ -1,0 +1,24 @@
+# US2-S4: Given that prompt, When they tap "Resend email", Then a new mail is requested, a confirmation shows, and the button is disabled briefly; a fourth request within an hour shows "try again later" with the wait time.
+# e2e-seed: unverified-user
+# Waits out the 30-second cooldown three times (FR-013), so the timeouts exceed the usual 20 s.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- tapOn: "Resend email"
+- extendedWaitUntil:
+    visible: "Verification email sent\\. Check your inbox\\."
+    timeout: 20000
+- assertNotVisible: "Resend email"
+- repeat:
+    times: 3
+    commands:
+      - extendedWaitUntil:
+          visible: "Resend email"
+          timeout: 40000
+      - tapOn: "Resend email"
+      - extendedWaitUntil:
+          visible: ".*(Verification email sent|Too many requests).*"
+          timeout: 20000
+- assertVisible: "Too many requests\\. Try again in \\d+ minutes?\\."
