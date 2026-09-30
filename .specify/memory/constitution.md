@@ -1,16 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR: principle added, P-10 materially expanded)
-- Principles added: P-16 MVI presentation
-- Principles modified: P-10 Shared-first architecture — added rules 6–7 (data never imports
-  domain; core never imports a feature), closing the cycle flagged by /speckit-analyze D1/D2
-- Sections modified: Architecture & Packages — `core.presentation` (MVI base), `feature.ui`
-  layout; Quality Gates — gate 7 (MVI tests)
-- Sections removed: none
-- Templates: plan-template.md Constitution Check table is principle-driven ✅; spec-template.md,
-  tasks-template.md need no change ✅
-- Follow-up: specs/001-design-system-auth plan.md (Constitution Check row P-16, R-10) and
-  tasks.md (ViewModel tasks → MVI contract; D1/D2 rewording) must be updated
+- Version change: 1.2.0 → 1.3.0 (MINOR: a non-negotiable rule's scope changed)
+- Principles modified: P-09 Security & privacy — rule 2 allows the development flavor's Paste
+  link tool to show a mailed link the developer pasted (owner decision 2026-09-29, spec 003
+  analysis D1). Never in staging or production; never logged or stored.
+- Earlier in 1.2.0 (2026-09-29): P-09 rule 4 allows registration to disclose an existing address,
+  mirroring the backend security baseline ("Uniform answers").
+- Sections added/removed: none
+- Templates: no change needed ✅
+- Follow-up: specs/003-auth-completion FR-008 and T028 cite the exemption
 - Deferred TODOs: none
 -->
 
@@ -18,7 +16,7 @@ Sync Impact Report
 
 <!-- The product codename appears in this file only as display text; see P-11. -->
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.3.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-29
 
 ## Purpose & Precedence
 
@@ -166,10 +164,14 @@ impairments; these rules are cheap when built in and expensive to retrofit.
 1. The session credential MUST be stored only in Keystore- (Android) or Keychain- (iOS) backed
    encrypted storage and MUST be excluded from backup and device transfer.
 2. Credentials, mailed secrets, amounts, notes and full financial payloads MUST NOT be logged,
-   sent to crash reporting or analytics, or shown in UI.
+   sent to crash reporting or analytics, or shown in UI. Exception: in the development build
+   flavor only, a developer tool MAY show a mailed link the developer pasted into it; it still
+   MUST NOT log or store it.
 3. Cleartext HTTP MUST be permitted only in the development build flavor.
 4. The client MUST NOT undermine uniform answers: it MUST NOT reveal or hint whether an email
-   address has an account.
+   address has an account. The one exception is registration, which the backend answers with
+   `EMAIL_ALREADY_REGISTERED` (backend security baseline, "Uniform answers"); the client MAY say
+   so there and offer sign-in or password reset. Sign-in and password reset MUST stay uniform.
 5. Any 401 on a credentialed request MUST clear the local session.
 
 *Rationale*: the device holds a live credential to someone's finances; a leak through logs,
@@ -381,4 +383,4 @@ Client IDs are independent of backend IDs; the *Mirrors backend* line records th
 **Consistency**: run `/speckit-analyze` before implementing each feature. Contradictions between
 this constitution, the backend contract and a feature's spec are defects to resolve before code.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.3.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-29
