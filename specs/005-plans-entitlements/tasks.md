@@ -157,7 +157,7 @@ description: "Task list for 005-plans-entitlements"
 - [X] T043 [P] Arabic copy review of the spec 005 string block against the glossary (P-01, P-06), a scan that no string mentions InstaPay, checkout or "token" (SC-004), and a scan that no `Logger` call under `cm/feature/billing/` or in `SessionManager.refreshEntitlements` carries subscription fields or prices (FR-021)
 - [X] T044 Run quickstart.md §1 (`./gradlew :shared:testAndroidHostTest :shared:verifyRoborazziAndroidHostTest`), §3 manual checks, and `./gradlew :shared:compileKotlinIosSimulatorArm64` (iOS must compile)
 - [X] T045 Rerun `.specify/scripts/bash/check-backend-contract.sh` and record any drift since `055afa1` in spec §5 (integration checkpoint, briefs protocol rule 4)
-- [ ] T046 Write `specs/005-plans-entitlements/summary.md`
+- [X] T046 Write `specs/005-plans-entitlements/summary.md`
 
 ---
 
