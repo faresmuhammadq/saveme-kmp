@@ -19,8 +19,8 @@ backend, spec directories take the next free number, so `C4` will not become `sp
 | — Profile & preferences | B2 → spec 008 | Built | **Done** in spec 002 (US3) | — |
 | [C3](C03-plans-entitlements.md) Plans & entitlements | B3 → spec 009 | Built, uncommitted | `EntitlementSummaryDto` only | C1 |
 | [C4](C04-wallets.md) Wallets & membership | B4 → spec 010 | Built | **Built** in spec 006 (list, detail, editor, offline create/edit/archive/delete through the sync engine, members read, transfer of ownership) | C3, C14 engine |
-| [C5](C05-categories.md) Categories | B5 → spec 011 | Built | **Built** in spec 007 (categories screen with defaults in both languages, editor, offline create/edit/archive/delete through the sync engine, in-use refusal, choice list and display resolver for C6; device E2E deferred) | C4 |
-| [C6](C06-transactions.md) Transactions ledger | B6 | Brief | Design-system rows and money formatting exist | C4, C5 |
+| [C5](C05-categories.md) Categories | B5 → spec 011 | Built | **Built** in spec 007 (categories screen with defaults in both languages, editor, offline create/edit/archive/delete through the sync engine, in-use refusal, choice list and display resolver for C6, now used on the transaction screens; device E2E deferred) | C4 |
+| [C6](C06-transactions.md) Transactions ledger | B6 → spec 012 | Built | **Built** in spec 008 (wallet transactions screen with day groups, search and filters, transaction editor with offline create/edit/delete, transfers, clash and restore choices, balance projection with carry, currency lock and category-use hooks; device E2E deferred) | C4, C5, C14 engine |
 | [C14](C14-sync-engine.md) Sync engine | B14 | Brief | Profile/sessions pull only (`AccountSyncCoordinator`) | — (engine), B14 (batch) |
 | [C7](C07-recurring.md) Recurring transactions | B7 | Brief | — | C6 |
 | [C8](C08-budgets.md) Budgets | B8 | Brief | `BudgetProgress` component exists | C5, C6 |

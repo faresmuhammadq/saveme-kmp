@@ -109,3 +109,27 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
         )
     }
 }
+
+/**
+ * v4 → v5 (spec 008, research R-02): the transactions table with its three indexes. Nothing else
+ * is touched, so every existing row, including waiting changes in `pending_change`, survives.
+ */
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `transactions` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL,
+            `wallet_id` TEXT NOT NULL, `counter_wallet_id` TEXT, `kind` TEXT NOT NULL, `date` TEXT NOT NULL,
+            `amount_minor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT, `description` TEXT,
+            `memo` TEXT, `counterparty` TEXT, `cleared` INTEGER NOT NULL, `created_by` TEXT NOT NULL,
+            `recurring_rule_id` TEXT, `occurrence_id` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL,
+            `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `deleted_at` TEXT, `refreshed_at` TEXT NOT NULL,
+            `carry_source_minor` INTEGER NOT NULL, `carry_counter_minor` INTEGER NOT NULL, `carry_confirmed_at` TEXT,
+            PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_wallet_id_date_created_at` ON `transactions` (`wallet_id`, `date`, `created_at`)")
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_transactions_counter_wallet_id_date_created_at` ON `transactions` (`counter_wallet_id`, `date`, `created_at`)",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_account_id` ON `transactions` (`account_id`)")
+    }
+}

@@ -36,6 +36,11 @@ data class WalletDetailState(
 
     val candidates: List<Member> get() = members.filter { !it.isYou }
 
+    /** Offered to an owner or editor of an active wallet (spec 008 FR-008). */
+    val canAddTransaction: Boolean
+        get() = wallet != null && !wallet.archived &&
+            (wallet.server.myRole == WalletRole.Owner || wallet.server.myRole == WalletRole.Editor)
+
     /** Offered to the owner when another member exists and no change waits (FR-023, research R-15). */
     val canTransfer: Boolean
         get() = canEdit && candidates.isNotEmpty() && wallet?.pending == null && wallet?.pendingDelete != true &&
@@ -43,6 +48,8 @@ data class WalletDetailState(
 }
 
 sealed interface WalletDetailIntent {
+    data object TransactionsClicked : WalletDetailIntent
+    data object AddTransactionClicked : WalletDetailIntent
     data object EditClicked : WalletDetailIntent
     data object ArchiveClicked : WalletDetailIntent
     data object DeleteClicked : WalletDetailIntent
@@ -61,6 +68,8 @@ sealed interface WalletDetailIntent {
 }
 
 sealed interface WalletDetailEffect {
+    data class OpenTransactions(val walletId: String) : WalletDetailEffect
+    data class OpenAddTransaction(val walletId: String) : WalletDetailEffect
     data class OpenEditor(val id: String) : WalletDetailEffect
     data object NavigateBack : WalletDetailEffect
     data class ShowMessage(val message: DetailMessage) : WalletDetailEffect

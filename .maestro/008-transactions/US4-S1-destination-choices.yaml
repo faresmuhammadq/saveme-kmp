@@ -1,0 +1,40 @@
+# US4-S1: Given a second wallet in the same currency, When the person records a transfer, Then only that wallet is offered; with a single wallet the transfer says none can receive it.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Bank", OPENING: "50000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Dollars", OPENING: "1000", CURRENCY: "USD" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.kind.transfer"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.kind.transfer"
+- tapOn:
+    id: "txEditor.destination"
+- extendedWaitUntil:
+    visible: "Bank"
+    timeout: 15000
+- assertVisible: "Bank"
+- assertNotVisible: "Dollars"

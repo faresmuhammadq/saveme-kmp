@@ -1,0 +1,40 @@
+# US5-S2/S3: Given transactions of several kinds, When the person filters by This month and Expense, Then chips show and "Clear all" resets them.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "Expense now" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "2000", NOTE: "Old expense", DATE: "2020-01-05" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.filters"
+- extendedWaitUntil:
+    visible: "Show results"
+    timeout: 15000
+- tapOn: "This month"
+- tapOn: "Expense"
+- tapOn: "Show results"
+- assertVisible:
+    id: "transactions.chip.0"
+- assertVisible: "Expense now"
+- assertNotVisible: "Old expense"
+- tapOn:
+    id: "transactions.clearAll"
+- assertVisible: "Old expense"

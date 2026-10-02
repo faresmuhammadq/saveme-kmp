@@ -1,0 +1,35 @@
+# US4-S3: Given a recorded transfer, When the person edits it, Then its wallets are read-only.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Bank", OPENING: "50000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listWallets, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: B, WALLET: "Alpha", KIND: "transfer", AMOUNT: "5000", NOTE: "To bank", COUNTER_WALLET_ID: "${output.wallets.filter(function (w) { return w.name == 'Bank' })[0].id}" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn: "To bank"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.destination"
+    timeout: 15000
+- assertVisible: "The wallets of a transfer can't change. Delete it and add a new one."
+- assertVisible: "This can't change after the transaction is saved."

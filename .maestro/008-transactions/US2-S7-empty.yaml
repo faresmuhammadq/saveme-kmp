@@ -1,0 +1,24 @@
+# US2-S7: Given a wallet without transactions, When the person opens it, Then the empty note and the add action show.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible:
+    id: "transactions.empty"
+- assertVisible: "No transactions yet. Add your first one."
+- assertVisible:
+    id: "transactions.add"

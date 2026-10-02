@@ -56,6 +56,10 @@ class SyncEngine(
     fun observe(recordType: String, recordId: String): Flow<PendingChange?> =
         dao.observe(recordType, recordId).map { it?.toDomain() }
 
+    /** Every waiting, sent-but-unanswered, clashed or refused change of one record type. */
+    fun observeAll(recordType: String): Flow<List<PendingChange>> =
+        dao.observeByType(recordType).map { rows -> rows.map { it.toDomain() } }
+
     suspend fun get(recordType: String, recordId: String): PendingChange? = dao.get(recordType, recordId)?.toDomain()
 
     /**

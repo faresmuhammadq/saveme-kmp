@@ -1,0 +1,23 @@
+# US4-S2: Given two wallets, When the person transfers 500 from Alpha to Bank offline, Then it is listed in both, both balances change, and once online the server lists one transaction in both. Part 1: online.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Bank", OPENING: "50000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+# e2e-between: network-off

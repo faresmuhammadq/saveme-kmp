@@ -1,0 +1,23 @@
+# Part 3: online; the server has one transaction listed under both wallets and the balances match.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 90000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Bank" }
+- assertTrue: ${output.transactionCount == 1}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Bank" }
+- assertTrue: ${output.wallet.balance_minor == 55000}

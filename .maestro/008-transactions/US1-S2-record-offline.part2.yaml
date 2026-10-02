@@ -1,0 +1,12 @@
+# Part 2: the phone's route to the backend is cut; the expense is saved on the phone only.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "45.50", CATEGORY: "Fares" }
+- assertVisible: "Waiting to sync"
+- assertVisible: "−EGP 45.50"
+- assertVisible: "EGP 54.50"
+# e2e-between: network-on

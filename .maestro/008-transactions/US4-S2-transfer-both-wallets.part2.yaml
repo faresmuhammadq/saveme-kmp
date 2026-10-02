@@ -1,0 +1,33 @@
+# Part 2: offline; record the transfer.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.kind.transfer"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.kind.transfer"
+- tapOn:
+    id: "txEditor.amount"
+- inputText: "50"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.destination"
+- extendedWaitUntil:
+    visible: "Bank"
+    timeout: 15000
+- tapOn: "Bank"
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- assertVisible: "To Bank"
+- assertVisible: "Waiting to sync"
+- assertVisible: "EGP 50.00"
+# e2e-between: network-on

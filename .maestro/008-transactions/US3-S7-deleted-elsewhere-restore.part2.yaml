@@ -1,0 +1,27 @@
+# Part 2: offline the phone edits; the other device deletes; the connection returns and the phone's edit meets the deletion.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- tapOn: "Taxi"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- eraseText: 10
+- inputText: "60"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible: "Waiting to sync"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: deleteTransaction, SLOT: B, WALLET: "Alpha", NOTE: "Taxi" }
+# e2e-between: network-on

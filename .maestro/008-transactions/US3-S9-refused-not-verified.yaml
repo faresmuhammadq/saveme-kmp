@@ -1,0 +1,18 @@
+# US3-S9: Given a change refused because the address is not verified, Then it shows "Not saved" with the reason and offers "Try again" and "Discard" (where seedable; otherwise manual).
+# e2e-seed: unverified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible:
+    id: "transactions.add"

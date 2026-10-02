@@ -12,9 +12,18 @@ import com.fares.saveme.feature.categories.data.CategorySyncHandler
 import com.fares.saveme.feature.categories.domain.CategoriesService
 import com.fares.saveme.feature.categories.domain.CategoryReferencesCleanup
 import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.feature.categories.domain.PendingCategoryUses
+import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
+import com.fares.saveme.feature.transactions.domain.TransactionCategoryUses
+import com.fares.saveme.feature.transactions.domain.TransactionPostings
+import com.fares.saveme.feature.transactions.domain.TransactionsService
+import com.fares.saveme.feature.transactions.domain.TransactionsSyncCoordinator
+import com.fares.saveme.feature.transactions.domain.TransactionsWalletCleanup
+import com.fares.saveme.feature.wallets.domain.PendingPostings
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -68,5 +77,25 @@ class AppGraphTest {
         assertNotNull(koin.get<CategoriesService>())
         assertTrue(koin.getAll<SyncHandler>().any { it is CategorySyncHandler && it.recordType == "category" })
         assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is CategoryReferencesCleanup })
+    }
+
+    @Test
+    fun theTransactionsHandlerHooksAndCleanupAreRegisteredOnceEach() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+
+        val koin = GlobalContext.get()
+        assertNotNull(koin.get<TransactionsService>())
+        assertTrue(koin.getAll<SyncHandler>().any { it is TransactionSyncHandler && it.recordType == "transaction" })
+        // C4's and C5's zero bindings are gone: the hooks resolve to the transactions implementations.
+        assertTrue(koin.get<PendingPostings>() is TransactionPostings)
+        assertTrue(koin.get<PendingCategoryUses>() is TransactionCategoryUses)
+        assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is TransactionsWalletCleanup })
+        assertEquals(1, koin.getAll<PendingPostings>().size)
+        assertEquals(1, koin.getAll<PendingCategoryUses>().size)
+        assertNotNull(koin.get<TransactionsSyncCoordinator>())
     }
 }

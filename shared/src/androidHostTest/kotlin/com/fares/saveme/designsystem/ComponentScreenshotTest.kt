@@ -27,6 +27,7 @@ import com.fares.saveme.designsystem.catalog.MoneySection
 import com.fares.saveme.designsystem.catalog.PlansSection
 import com.fares.saveme.designsystem.catalog.SelectionSection
 import com.fares.saveme.designsystem.catalog.SheetSection
+import com.fares.saveme.designsystem.catalog.TransactionsSection
 import com.fares.saveme.designsystem.catalog.WalletsSection
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -99,6 +100,7 @@ class ComponentScreenshotTest(
             arrayOf("empty", @Composable { EmptySection() }),
             arrayOf("rows", @Composable { RowsSection() }),
             arrayOf("dialogs", @Composable { DialogsSection() }),
+            arrayOf("transactions", @Composable { TransactionsSection() }),
         )
     }
 }

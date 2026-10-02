@@ -1,0 +1,21 @@
+# Part 2: offline; the balance includes the waiting expense on the transactions, the wallet detail and the wallet list.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "30", CATEGORY: "Fares" }
+- assertVisible: "EGP 70.00"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.balance"
+    timeout: 15000
+- assertVisible: "EGP 70.00"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.list"
+    timeout: 15000
+- assertVisible: "EGP 70.00"

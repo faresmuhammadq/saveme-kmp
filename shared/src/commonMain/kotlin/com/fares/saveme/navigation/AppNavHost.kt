@@ -43,6 +43,10 @@ import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorRoute
 import com.fares.saveme.feature.categories.ui.list.CategoriesEffect
 import com.fares.saveme.feature.categories.ui.list.CategoriesRoute
+import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorEffect
+import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorRoute
+import com.fares.saveme.feature.transactions.ui.list.TransactionsEffect
+import com.fares.saveme.feature.transactions.ui.list.TransactionsRoute
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailEffect
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailRoute
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorEffect
@@ -217,6 +221,7 @@ fun AppNavHost(
                         HomeEffect.NavigateAccount -> appStack.add(AccountKey)
                         HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
                         HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
+                        HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
                 })
@@ -295,6 +300,8 @@ fun AppNavHost(
                     onEffect = { effect ->
                         when (effect) {
                             is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
+                            is WalletDetailEffect.OpenTransactions -> appStack.add(TransactionsKey(effect.walletId))
+                            is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
                             WalletDetailEffect.NavigateBack -> appStack.pop()
                             is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
                         }
@@ -334,6 +341,33 @@ fun AppNavHost(
                         when (effect) {
                             CategoryEditorEffect.Saved, CategoryEditorEffect.NavigateBack -> appStack.pop()
                             is CategoryEditorEffect.ShowMessage, CategoryEditorEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<TransactionsKey> { key ->
+                TransactionsRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is TransactionsEffect.OpenEditor -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                            TransactionsEffect.Back -> appStack.pop()
+                            TransactionsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<TransactionEditorKey> { key ->
+                TransactionEditorRoute(
+                    transactionId = key.transactionId,
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            TransactionEditorEffect.Close -> appStack.pop()
+                            TransactionEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
+                            is TransactionEditorEffect.ShowMessage, TransactionEditorEffect.RequireVerification -> Unit // shown by the route
                         }
                     },
                     onRequireVerification = { emailNotVerifiedVisible = true },

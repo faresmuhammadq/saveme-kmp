@@ -11,11 +11,9 @@ import com.fares.saveme.feature.wallets.data.WalletApi
 import com.fares.saveme.feature.wallets.data.WalletRepository
 import com.fares.saveme.feature.wallets.data.WalletSyncHandler
 import com.fares.saveme.feature.wallets.domain.DefaultWalletsService
-import com.fares.saveme.feature.wallets.domain.PendingPostings
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import com.fares.saveme.feature.wallets.domain.WalletsSyncCoordinator
-import com.fares.saveme.feature.wallets.domain.ZeroPendingPostings
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailViewModel
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorViewModel
 import com.fares.saveme.feature.wallets.ui.list.WalletsViewModel
@@ -30,7 +28,6 @@ import org.koin.dsl.module
 
 val walletsModule = module {
     single { WalletApi(get()) }
-    single<PendingPostings> { ZeroPendingPostings }
     single {
         val db = get<AppDatabase>()
         val sessions = get<SessionManager>()

@@ -1,0 +1,34 @@
+# US1-S10: Given a wallet with a transaction on the phone, When the person edits the wallet, Then its currency is read-only.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "45.50", CATEGORY: "Fares" }
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.edit"
+    timeout: 15000
+- tapOn:
+    id: "walletDetail.edit"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- assertVisible: ".*can.t change once transactions exist.*"

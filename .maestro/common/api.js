@@ -53,6 +53,8 @@ function call(method, path, body, token) {
         case 'DELETE': r = http.delete(apiBase + path, options); break
         // Maestro's http.delete sends no body; wallets are deleted with {"version": n} in the body.
         case 'DELETE_WITH_BODY': options.method = 'DELETE'; r = http.request(apiBase + path, options); break
+        // Transactions are restored with PATCH {"deleted_at": null, "version": n} (backend spec 012).
+        case 'PATCH': options.method = 'PATCH'; r = http.request(apiBase + path, options); break
     }
     return { status: r.status, body: r.body ? json(r.body) : null }
 }
@@ -134,6 +136,77 @@ function putCategory(c, changes) {
         version: c.version,
     }
     return expect(call('PUT', 'categories/' + c.id, body, token()), 200, 'saveCategory').body.data
+}
+
+// Transactions (spec 008). The wallet is WALLET_ID, or WALLET (a name), or output.walletId from a createWallet in this run;
+// a transaction is found by ID. A category is found by name among the caller's own, then among the default set.
+function transactionWalletId() {
+    var id = arg('WALLET_ID')
+    if (id) return id
+    if (arg('WALLET')) return findWallet().id
+    if (output.walletId) return output.walletId
+    throw new Error('transactions: no WALLET_ID, no WALLET and no wallet created by this script run')
+}
+
+function listAllTransactions(walletId) {
+    return expect(call('GET', 'wallets/' + walletId + '/transactions?limit=200', undefined, token()), 200, 'listTransactions').body.data
+}
+
+function findTransaction(walletId) {
+    var id = arg('ID')
+    if (id) {
+        var matches = listAllTransactions(walletId).filter(function (t) { return t.id === id })
+        if (matches.length !== 1) throw new Error('findTransaction: no transaction ' + id + ' in wallet ' + walletId)
+        return matches[0]
+    }
+    // Without an ID: the one transaction whose note is NOTE.
+    var byNote = listAllTransactions(walletId).filter(function (t) { return t.description === arg('NOTE') })
+    if (byNote.length !== 1) throw new Error('findTransaction: expected one transaction with note "' + arg('NOTE') + '", found ' + byNote.length)
+    return byNote[0]
+}
+
+function resolveCategoryId() {
+    var id = arg('CATEGORY_ID')
+    if (id) return id
+    var name = arg('CATEGORY')
+    if (!name) return null
+    var own = listAllCategories().filter(function (c) { return c.name === name })
+    if (own.length === 1) return own[0].id
+    var defaults = expect(call('GET', 'platform-categories', undefined, token()), 200, 'listPlatformCategories').body.data
+    var found = defaults.filter(function (c) { return c.names.en === name })
+    if (found.length < 1) throw new Error('resolveCategoryId: no category named "' + name + '"')
+    return found[0].id
+}
+
+// Today's calendar date on this machine (YYYY-MM-DD), the default date of a seeded transaction, so
+// "Today" and "This month" hold on any day the flows run (the device and the host share a time zone).
+function todayIso() {
+    var d = new Date()
+    var mm = (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1)
+    var dd = (d.getDate() < 10 ? '0' : '') + d.getDate()
+    return d.getFullYear() + '-' + mm + '-' + dd
+}
+
+// DATE, or today when it is unset or empty.
+function dateArg() {
+    var value = arg('DATE')
+    return value ? value : todayIso()
+}
+
+function transactionBody(t, changes) {
+    return {
+        kind: t.kind,
+        date: changes.date !== undefined ? changes.date : t.date,
+        amount_minor: changes.amount !== undefined ? changes.amount : t.amount_minor,
+        currency: t.currency,
+        category_id: t.category_id,
+        counter_wallet_id: t.counter_wallet_id,
+        description: changes.note !== undefined ? changes.note : t.description,
+        memo: changes.memo !== undefined ? changes.memo : t.memo,
+        counterparty: changes.person !== undefined ? changes.person : t.counterparty,
+        cleared: t.cleared,
+        version: t.version,
+    }
 }
 
 var email = arg('EMAIL', arg('E2E_EMAIL'))
@@ -314,7 +387,7 @@ switch (arg('ACTION')) {
         var wallet = expect(call('GET', 'wallets/' + walletId, undefined, token()), 200, 'getWallet').body.data
         expect(call('PUT', 'wallets/' + walletId + '/transactions/' + uuid7(), {
             kind: 'expense',
-            date: arg('DATE', '2026-10-02'),
+            date: dateArg(),
             amount_minor: parseInt(arg('AMOUNT', '1000')),
             currency: wallet.currency,
             category_id: usedCategory.id,
@@ -325,6 +398,63 @@ switch (arg('ACTION')) {
             cleared: true,
             version: 0,
         }, token()), 201, 'createExpense')
+        break
+
+    // Copies a wallet's transactions into output.transactions and their number into output.transactionCount.
+    // The wallet is WALLET_ID or WALLET; a transfer is listed in both of its wallets.
+    case 'listTransactions':
+        output.transactions = listAllTransactions(transactionWalletId())
+        output.transactionCount = output.transactions.length
+        break
+
+    // Creates a transaction from this slot: KIND (expense), AMOUNT in minor units (1000), DATE (today), CATEGORY (name) or
+    // CATEGORY_ID for income and expense, COUNTER_WALLET_ID for a transfer, NOTE, MEMO, PERSON. Copies it into output.transaction
+    // and its id into output.transactionId.
+    case 'createTransaction':
+        var txWalletId = transactionWalletId()
+        var txWallet = expect(call('GET', 'wallets/' + txWalletId, undefined, token()), 200, 'getWallet').body.data
+        var txKind = arg('KIND', 'expense')
+        var txId = uuid7()
+        var createdTx = expect(call('PUT', 'wallets/' + txWalletId + '/transactions/' + txId, {
+            kind: txKind,
+            date: dateArg(),
+            amount_minor: parseInt(arg('AMOUNT', '1000')),
+            currency: txWallet.currency,
+            category_id: txKind === 'transfer' ? null : resolveCategoryId(),
+            counter_wallet_id: txKind === 'transfer' ? arg('COUNTER_WALLET_ID') : null,
+            description: arg('NOTE', null),
+            memo: arg('MEMO', null),
+            counterparty: arg('PERSON', null),
+            cleared: false,
+            version: 0,
+        }, token()), 201, 'createTransaction').body.data
+        output.transaction = createdTx
+        output.transactionId = createdTx.id
+        break
+
+    // Saves a transaction from this slot (the whole record, as the app does): ID or NOTE finds it; NEW_AMOUNT, NEW_NOTE, NEW_DATE change it.
+    case 'saveTransaction':
+        var savedWalletId = transactionWalletId()
+        var currentTx = findTransaction(savedWalletId)
+        var txChanges = {}
+        if (arg('NEW_AMOUNT') !== undefined) txChanges.amount = parseInt(arg('NEW_AMOUNT'))
+        if (arg('NEW_NOTE') !== undefined) txChanges.note = arg('NEW_NOTE')
+        if (arg('NEW_DATE') !== undefined) txChanges.date = arg('NEW_DATE')
+        output.transaction = expect(call('PUT', 'wallets/' + savedWalletId + '/transactions/' + currentTx.id, transactionBody(currentTx, txChanges), token()), 200, 'saveTransaction').body.data
+        break
+
+    // Deletes a transaction from this slot (JSON body on DELETE, backend spec 012). ID or NOTE finds it.
+    case 'deleteTransaction':
+        var deletedWalletId = transactionWalletId()
+        var toDeleteTx = findTransaction(deletedWalletId)
+        output.transaction = expect(call('DELETE_WITH_BODY', 'wallets/' + deletedWalletId + '/transactions/' + toDeleteTx.id, { version: toDeleteTx.version }, token()), 200, 'deleteTransaction').body.data
+        break
+
+    // Restores a deleted transaction from this slot (PATCH {"deleted_at": null, "version": n}); ID is required (a tombstone is not listed).
+    case 'restoreTransaction':
+        var restoredWalletId = transactionWalletId()
+        var tombstone = expect(call('GET', 'wallets/' + restoredWalletId + '/transactions/' + arg('ID'), undefined, token()), 200, 'getTransaction').body.data
+        output.transaction = expect(call('PATCH', 'wallets/' + restoredWalletId + '/transactions/' + arg('ID'), { deleted_at: null, version: tombstone.version }, token()), 200, 'restoreTransaction').body.data
         break
 
     default:

@@ -14,6 +14,8 @@ object AppIcons {
     val ChevronForward by lazy { icon("ChevronForward", "M9 5l7 7-7 7", autoMirror = true) }
     val Visibility by lazy { icon("Visibility", "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z") }
     val VisibilityOff by lazy { icon("VisibilityOff", "M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3 3.9M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2") }
+    val Calendar by lazy { icon("Calendar", "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 10h16M8 3v4M16 3v4") }
+    val Close by lazy { icon("Close", "M6 6l12 12M18 6L6 18") }
     val Plus by lazy { icon("Plus", "M12 5v14M5 12h14") }
     val Check by lazy { icon("Check", "M5 12l5 5 9-10") }
     val Minus by lazy { icon("Minus", "M6 12h12") }
