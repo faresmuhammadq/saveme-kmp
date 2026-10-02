@@ -160,7 +160,7 @@ class TransactionsServiceCreateTest {
         val env = TransactionTestEnv(backgroundScope)
         env.seedWallet(walletJson(id = "w1"))
         val service = DefaultTransactionsService(
-            env.repository, env.engine, env.wallets, env.categories, env.authState, env.auth.keyValues, env.reconciler, backgroundScope, env.clock,
+            env.repository, env.engine, env.wallets, env.authState, env.auth.keyValues, env.reconciler, env.runner, env.clock,
         )
         val id = assertIs<CreateResult.Created>(service.create(draft())).id
         val uuid = Uuid.parse(id)

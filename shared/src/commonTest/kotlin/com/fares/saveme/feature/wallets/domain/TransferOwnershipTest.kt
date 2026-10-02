@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.wallets.domain
 
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.feature.auth.jsonResponse
 import com.fares.saveme.feature.auth.problemBody
 import com.fares.saveme.feature.wallets.WalletTestEnv
@@ -31,45 +32,39 @@ class TransferOwnershipTest {
     }
 
     @Test
-    fun successStoresTheWalletAsEditorAndRefreshesMembers() = runTest {
-        val env = WalletTestEnv(backgroundScope) { request ->
-            if (request.method == HttpMethod.Post) jsonResponse(200, walletBody(walletJson(role = "editor", version = 4))) else jsonResponse(200, members)
-        }
+    fun successStoresTheWalletAsEditorAndReadsItsFeedForTheMembers() = runTest {
+        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, walletBody(walletJson(role = "editor", version = 4))) }
         env.signedIn()
         env.seed(walletJson(version = 3))
         assertEquals(TransferResult.Done, env.service.transferOwnership("w1", "u2"))
         assertEquals("editor", env.walletDao.rows.value.getValue("w1").myRole)
-        assertEquals(listOf("m1", "m2"), env.repository.observeMembers("w1").first().map { it.id })
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.Wallet("w1") to true), env.runner.refreshes)
+        assertEquals(1, env.requests.size, "only the transfer itself is a request of this feature")
     }
 
     @Test
-    fun aTargetWhoLeftIsNoLongerAMemberAndTheViewRefreshes() = runTest {
-        val env = WalletTestEnv(backgroundScope) { request ->
-            when {
-                request.method == HttpMethod.Post ->
-                    jsonResponse(422, problemBody(422, "VALIDATION_FAILED", ""","errors":[{"pointer":"/user_id","code":"INVALID_ENUM_VALUE"}]"""))
-                request.url.encodedPath.endsWith("/members") -> jsonResponse(200, members)
-                else -> jsonResponse(200, walletBody(walletJson(version = 5)))
-            }
+    fun aTargetWhoLeftIsNoLongerAMemberAndTheWalletIsReadAgain() = runTest {
+        val env = WalletTestEnv(backgroundScope) {
+            jsonResponse(422, problemBody(422, "VALIDATION_FAILED", ""","errors":[{"pointer":"/user_id","code":"INVALID_ENUM_VALUE"}]"""))
         }
         env.signedIn()
         env.seed(walletJson(version = 3))
         assertEquals(TransferResult.NoLongerMember, env.service.transferOwnership("w1", "u9"))
-        assertEquals(5L, env.walletDao.rows.value.getValue("w1").version)
-        assertTrue(env.requests.any { it.url.encodedPath.endsWith("/members") })
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.Wallet("w1") to true), env.runner.refreshes)
     }
 
     @Test
-    fun aVersionConflictIsChangedAndRefreshes() = runTest {
-        val env = WalletTestEnv(backgroundScope) { request ->
-            if (request.method == HttpMethod.Post) jsonResponse(409, problemBody(409, "VERSION_CONFLICT", ""","current":${walletJson(version = 9)}"""))
-            else if (request.url.encodedPath.endsWith("/members")) jsonResponse(200, members)
-            else jsonResponse(200, walletBody(walletJson(version = 9)))
+    fun aVersionConflictIsChangedAndTheWalletIsReadAgain() = runTest {
+        val env = WalletTestEnv(backgroundScope) {
+            jsonResponse(409, problemBody(409, "VERSION_CONFLICT", ""","current":${walletJson(version = 9)}"""))
         }
         env.signedIn()
         env.seed(walletJson(version = 3))
+        // The wallet's feed brings its newer record.
+        env.runner.onRefresh = { _, _ -> env.seed(walletJson(version = 9)) }
         assertEquals(TransferResult.Changed, env.service.transferOwnership("w1", "u2"))
         assertEquals(9L, env.walletDao.rows.value.getValue("w1").version)
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.Wallet("w1") to true), env.runner.refreshes)
     }
 
     @Test

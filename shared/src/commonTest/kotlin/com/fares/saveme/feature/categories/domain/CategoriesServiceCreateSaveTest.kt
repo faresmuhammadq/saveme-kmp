@@ -66,7 +66,7 @@ class CategoriesServiceCreateSaveTest {
         val env = env(backgroundScope)
         env.signedIn()
         val service = DefaultCategoriesService(
-            env.repository, env.references, env.engine, env.authState, NoPendingCategoryUses, env.language, backgroundScope,
+            env.repository, env.references, env.engine, env.authState, NoPendingCategoryUses, env.language, backgroundScope, env.runner,
         )
         val id = assertIs<CreateResult.Created>(service.create(draft)).id
         assertEquals(36, id.length)

@@ -1,0 +1,28 @@
+# deferred: E2E on owner's device
+# US1 checkpoint (brief C14): Given twenty changes made offline across wallets and transactions, When the connection returns, Then they all reach the server in order and the marks clear. Part 1: online, a wallet with two transactions to edit, opened on its transactions.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "100000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "Edit one" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "2000", NOTE: "Edit two" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible: "Edit one"
+- assertVisible: "Edit two"

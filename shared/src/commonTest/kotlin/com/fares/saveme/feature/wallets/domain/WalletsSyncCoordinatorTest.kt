@@ -1,20 +1,18 @@
 package com.fares.saveme.feature.wallets.domain
 
-import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.auth.jsonResponse
 import com.fares.saveme.feature.wallets.WalletTestEnv
 import com.fares.saveme.feature.wallets.pageOf
 import com.fares.saveme.feature.wallets.signedInAccount
-import com.fares.saveme.feature.wallets.walletJson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.time.Duration.Companion.seconds
 
 class WalletsSyncCoordinatorTest {
 
@@ -55,31 +53,30 @@ class WalletsSyncCoordinatorTest {
     }
 
     @Test
-    fun theServiceSkipsAForegroundReadWithinSixtySecondsButNotAForcedOne() = runTest {
-        var reads = 0
-        val env = WalletTestEnv(backgroundScope) { reads++; jsonResponse(200, pageOf(listOf(walletJson()))) }
+    fun theServiceAsksTheRunnerForEverythingWithTheCallersForce() = runTest {
+        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, pageOf(emptyList())) }
         env.signedIn()
         assertEquals(RefreshOutcome.Done, env.service.refresh(force = true))
-        assertEquals(1, reads)
-        env.clock.now = env.clock.now + 30.seconds
-        env.service.refresh(force = false)
-        assertEquals(1, reads)
-        env.service.refresh(force = true)
-        assertEquals(2, reads)
-        env.clock.now = env.clock.now + 61.seconds
-        env.service.refresh(force = false)
-        assertEquals(3, reads)
-        assertNotNull(env.walletDao.rows.value["w1"])
+        assertEquals(1, env.scheduler.enqueued.size, "a forced read also sends what waits")
+        assertEquals(RefreshOutcome.Done, env.service.refresh(force = false))
+        assertEquals(1, env.scheduler.enqueued.size, "an unforced one does not")
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.Everything to true, ReadTarget.Everything to false), env.runner.refreshes)
+        assertEquals(0, env.requests.size, "the wallets come from the change feeds, never from a list read")
     }
 
     @Test
-    fun aFailedReadDoesNotStartTheFloor() = runTest {
-        var reads = 0
-        val env = WalletTestEnv(backgroundScope) { reads++; throw kotlinx.io.IOException("offline") }
-        env.signedIn()
+    fun theRunnersOutcomeIsTheScreensOutcome() = runTest {
+        val env = WalletTestEnv(backgroundScope) { throw kotlinx.io.IOException("unused") }
+        env.runner.outcome = ReadOutcome.Offline
         assertEquals(RefreshOutcome.Offline, env.service.refresh())
-        assertEquals(RefreshOutcome.Offline, env.service.refresh())
-        assertEquals(2, reads)
-        assertEquals(ApiResult.Offline, env.repository.refreshAll())
+        env.runner.outcome = ReadOutcome.Failed
+        assertEquals(RefreshOutcome.Failed, env.service.refresh())
+    }
+
+    @Test
+    fun aWalletsMembersAreReadWithoutAFloorThroughItsFeed() = runTest {
+        val env = WalletTestEnv(backgroundScope) { throw kotlinx.io.IOException("unused") }
+        assertEquals(RefreshOutcome.Done, env.service.refreshMembers("w1"))
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.Wallet("w1") to true), env.runner.refreshes)
     }
 }

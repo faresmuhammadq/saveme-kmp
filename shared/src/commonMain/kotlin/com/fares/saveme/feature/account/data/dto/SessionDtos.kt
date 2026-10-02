@@ -18,4 +18,5 @@ data class DeviceSessionDto(
     @SerialName("last_used_at") val lastUsedAt: String? = null,
     @SerialName("ended_at") val endedAt: String? = null,
     val current: Boolean = false,
+    @SerialName("deleted_at") val deletedAt: String? = null,
 )

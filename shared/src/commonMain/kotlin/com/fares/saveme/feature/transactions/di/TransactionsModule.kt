@@ -4,6 +4,7 @@ import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.core.storage.KeyValueStore
+import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.account.domain.ProfileSyncer
@@ -13,6 +14,7 @@ import com.fares.saveme.feature.categories.domain.CategoriesService
 import com.fares.saveme.feature.categories.domain.PendingCategoryUses
 import com.fares.saveme.feature.categories.domain.model.CategoryKind
 import com.fares.saveme.feature.transactions.data.TransactionApi
+import com.fares.saveme.feature.transactions.data.TransactionFeedApplier
 import com.fares.saveme.feature.transactions.data.TransactionRepository
 import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
 import com.fares.saveme.feature.transactions.domain.BalanceReconciler
@@ -26,6 +28,7 @@ import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorArgs
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorViewModel
 import com.fares.saveme.feature.transactions.ui.list.TransactionsViewModel
 import com.fares.saveme.feature.wallets.domain.PendingPostings
+import com.fares.saveme.feature.wallets.domain.WalletCopyParticipant
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +43,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 import kotlin.time.Clock
 
@@ -66,13 +70,13 @@ val transactionsModule = module {
         val db = get<AppDatabase>()
         val sessions = get<SessionManager>()
         TransactionRepository(
-            api = get(),
             transactions = db.transactionDao(),
             scopes = db.syncScopeDao(),
             accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
             // Resolved on use: the engine is built from every SyncHandler, and the transaction handler needs
             // this repository, so resolving the engine here would loop (Koin stack overflow at start).
             hasQueuedChange = { id -> get<SyncEngine>().get(TransactionSyncHandler.RECORD_TYPE, id) != null },
+            walletChangeSeq = { id -> db.walletDao().get(id)?.changeSeq },
         )
     }
     single {
@@ -86,7 +90,9 @@ val transactionsModule = module {
     // The hooks C4 and C5 left (research R-26): their zero/no-op bindings moved here.
     single<PendingPostings> { TransactionPostings(engine = { get<SyncEngine>() }, repository = get()) }
     single<PendingCategoryUses> { TransactionCategoryUses(engine = { get<SyncEngine>() }) }
-    single { BalanceReconciler(repository = get(), wallets = get<WalletsService>(), scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    single { BalanceReconciler(repository = get(), runner = get(), scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    // The wallet feed's transactions (spec 009).
+    single { TransactionFeedApplier(get()) } bind FeedApplier::class
     single {
         TransactionsWalletCleanup(
             repository = get(),
@@ -94,17 +100,16 @@ val transactionsModule = module {
             walletOnPhone = { id -> get<WalletsService>().observeWallet(id).first() != null },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         )
-    } bind WalletDeletionParticipant::class
+    } binds arrayOf(WalletDeletionParticipant::class, WalletCopyParticipant::class)
     single<TransactionsService> {
         DefaultTransactionsService(
             repository = get(),
             engine = get(),
             wallets = get(),
-            categories = get(),
             authState = get<SessionManager>().state,
             keyValues = get(),
             reconciler = get(),
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            runner = get(),
         )
     }
     single(createdAtStart = true) {

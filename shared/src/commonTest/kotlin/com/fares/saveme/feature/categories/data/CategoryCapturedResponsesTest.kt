@@ -21,6 +21,10 @@ import io.ktor.http.HttpMethod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import com.fares.saveme.core.sync.ScopeKind
+import com.fares.saveme.core.sync.SyncScope
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -71,22 +75,18 @@ class CategoryCapturedResponsesTest {
     }
 
     @Test
-    fun theRealListDecodesInUseArchivedAndPaging() = runTest {
-        val answer = Answer(200, Captured.CATEGORIES_LIST_200)
-        val env = env(backgroundScope, answer)
+    fun theRealListDecodesInUseAndArchivedThroughTheFeedApplier() = runTest {
+        val env = env(backgroundScope, Answer(200, Captured.CATEGORIES_LIST_200))
         env.signedIn()
-        val page = assertIs<ApiResult.Success<Page<com.fares.saveme.feature.categories.data.dto.CategoryDto>>>(env.api.list(null)).value
-        assertFalse(page.hasMore)
-        val used = page.items.single { it.id == inUseId }
+        // The list rows are the records a user feed carries; the applier stores each as the server copy.
+        val records = com.fares.saveme.core.network.AppJson.parseToJsonElement(Captured.CATEGORIES_LIST_200).jsonObject.getValue("data").jsonArray
+        CategoryFeedApplier(env.repository).apply(SyncScope(ScopeKind.User, "u1"), records)
+        val used = env.categoryDao.rows.value.getValue(inUseId)
         assertTrue(used.inUse)
-        val archived = page.items.single { it.id == createdId }
+        val archived = env.categoryDao.rows.value.getValue(createdId)
         assertNotNull(archived.archivedAt)
         assertNull(archived.icon)
-
-        answer.body = Captured.CATEGORIES_FIRST_PAGE_200
-        val first = assertIs<ApiResult.Success<Page<com.fares.saveme.feature.categories.data.dto.CategoryDto>>>(env.api.list(null)).value
-        assertTrue(first.hasMore)
-        assertNotNull(first.nextCursor)
+        assertEquals(records.size, env.categoryDao.rows.value.size)
     }
 
     @Test
@@ -250,17 +250,13 @@ class CategoryCapturedResponsesTest {
     }
 
     @Test
-    fun aWalletsReferencesAreStoredAndANotFoundRemovesThem() = runTest {
-        val answer = Answer(200, Captured.CATEGORY_REFERENCES_200)
-        val env = env(backgroundScope, answer)
+    fun aWalletsReferencesAreStoredFromItsFeedRows() = runTest {
+        val env = env(backgroundScope, Answer(200, Captured.CATEGORY_REFERENCES_200))
         env.signedIn()
-        assertIs<ApiResult.Success<Unit>>(env.references.refresh(walletId))
+        val records = com.fares.saveme.core.network.AppJson.parseToJsonElement(Captured.CATEGORY_REFERENCES_200).jsonObject.getValue("data").jsonArray
+        CategoryReferenceFeedApplier(env.references).apply(SyncScope(ScopeKind.Wallet, walletId), records)
         val stored = env.referenceDao.rows.value.single()
         assertEquals(inUseId, stored.categoryId)
         assertEquals("Used", stored.name)
-        answer.status = 404
-        answer.body = Captured.CATEGORY_REFERENCES_NOT_FOUND_404
-        assertIs<ApiResult.Failure>(env.references.refresh(walletId))
-        assertTrue(env.referenceDao.rows.value.isEmpty())
     }
 }

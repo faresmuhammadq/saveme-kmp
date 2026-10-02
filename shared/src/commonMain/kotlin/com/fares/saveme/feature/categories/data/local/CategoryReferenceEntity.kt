@@ -8,6 +8,7 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /** A partner's category as published into one wallet: read-only, replaced per wallet as a set. */
@@ -42,6 +43,19 @@ interface CategoryReferenceDao {
 
     @Insert
     suspend fun insertAll(items: List<CategoryReferenceEntity>)
+
+    @Query("SELECT * FROM category_reference WHERE id = :id")
+    suspend fun getById(id: String): CategoryReferenceEntity?
+
+    @Upsert
+    suspend fun upsert(entity: CategoryReferenceEntity)
+
+    @Query("DELETE FROM category_reference WHERE id = :id")
+    suspend fun delete(id: String)
+
+    /** The unique (wallet, category) pair: another row for it must go before a new reference is written. */
+    @Query("DELETE FROM category_reference WHERE wallet_id = :walletId AND category_id = :categoryId AND id != :keepId")
+    suspend fun deleteOthers(walletId: String, categoryId: String, keepId: String)
 
     @Query("DELETE FROM category_reference WHERE wallet_id = :walletId")
     suspend fun deleteFor(walletId: String)

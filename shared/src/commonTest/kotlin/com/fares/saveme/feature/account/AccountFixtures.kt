@@ -7,6 +7,7 @@ import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.core.locale.AppLanguageStore
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
 import com.fares.saveme.core.sync.FakePendingChangeDao
+import com.fares.saveme.core.sync.FakeSyncRunner
 import com.fares.saveme.core.sync.FakeSyncScheduler
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.feature.account.data.ProfileRepository
@@ -36,6 +37,8 @@ class FakeDeviceSessionDao : DeviceSessionDao {
     override suspend fun deleteAll() { rows.value = emptyList() }
     override suspend fun insertAll(items: List<DeviceSessionEntity>) { rows.value = rows.value + items }
     override suspend fun delete(id: String) { rows.value = rows.value.filterNot { it.id == id } }
+    override suspend fun getAll(): List<DeviceSessionEntity> = rows.value
+    override suspend fun upsert(entity: DeviceSessionEntity) { rows.value = rows.value.filterNot { it.id == entity.id } + entity }
 }
 
 class FakeSyncScopeDao : SyncScopeDao {
@@ -48,6 +51,19 @@ class FakeSyncScopeDao : SyncScopeDao {
         rows.value = rows.value + (scope to current.copy(lastPushedAt = at))
     }
     override fun observeLastPushed(): Flow<String?> = rows.map { r -> r.values.mapNotNull { it.lastPushedAt }.maxOrNull() }
+    override suspend fun feedCursor(scope: String): String? = rows.value[scope]?.feedCursor
+    override suspend fun storeFeedPage(scope: String, cursor: String) {
+        val current = rows.value[scope] ?: SyncScopeEntity(scope, "")
+        rows.value = rows.value + (scope to current.copy(feedCursor = cursor))
+    }
+    override suspend fun markFeedRead(scope: String, startedAt: String) {
+        val current = rows.value[scope] ?: SyncScopeEntity(scope, "")
+        rows.value = rows.value + (scope to current.copy(feedReadAt = startedAt))
+    }
+    override suspend fun clearFeed(scope: String) {
+        rows.value[scope]?.let { rows.value = rows.value + (scope to it.copy(feedCursor = null, feedReadAt = null)) }
+    }
+    override fun observeFeedReadAt(scope: String): Flow<String?> = rows.map { it[scope]?.feedReadAt }
 }
 
 class FakeProfileDao : ProfileDao {
@@ -111,13 +127,14 @@ class AccountTestEnv(handler: suspend MockRequestHandleScope.(HttpRequestData) -
     val scopeDao = FakeSyncScopeDao()
     val profileDao = FakeProfileDao()
     val api = AccountApi(auth.client)
-    val sessions = DeviceSessionRepository(api, sessionDao, scopeDao)
+    val sessions = DeviceSessionRepository(api, sessionDao, scopeDao, accountId = { "u1" })
     val profiles = ProfileRepository(api, profileDao, scopeDao)
     val languages = AppLanguageStore(auth.keyValues, auth.clientInfo)
     val pendingDao = FakePendingChangeDao()
     val scheduler = FakeSyncScheduler()
     val profileHandler = ProfileSyncHandler(profiles, languages)
     val engine = SyncEngine(pendingDao, scopeDao, listOf(profileHandler), scheduler, currentAccountId = { "u1" })
+    val runner = FakeSyncRunner(engine = engine)
     val requests get() = auth.requests
     val events get() = auth.events
 

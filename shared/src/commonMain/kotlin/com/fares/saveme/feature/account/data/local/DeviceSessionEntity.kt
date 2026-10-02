@@ -7,9 +7,10 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
-/** The device's copy of the person's active sessions; replaced whole on each pull. */
+/** The device's copy of the person's active sessions, kept current from the user change feed. */
 @Entity(tableName = "device_session")
 data class DeviceSessionEntity(
     @PrimaryKey val id: String,
@@ -33,6 +34,12 @@ interface DeviceSessionDao {
 
     @Insert
     suspend fun insertAll(items: List<DeviceSessionEntity>)
+
+    @Query("SELECT * FROM device_session")
+    suspend fun getAll(): List<DeviceSessionEntity>
+
+    @Upsert
+    suspend fun upsert(entity: DeviceSessionEntity)
 
     @Transaction
     suspend fun replaceAll(items: List<DeviceSessionEntity>) {

@@ -42,11 +42,12 @@ class SignOutWipeTest {
     @Test
     fun signOutEmptiesTheDatabaseAndTheLanguage() = runTest {
         var signedIn = false
+        val runner = com.fares.saveme.core.sync.FakeSyncRunner()
         val env = AuthTestEnv {
             if (!signedIn) { signedIn = true; jsonResponse(200, signInSuccessBody()) } else respond("", HttpStatusCode.NoContent)
         }
         val languages = AppLanguageStore(env.keyValues, com.fares.saveme.core.network.FakeClientInfo(language = "en"))
-        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
+        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(com.fares.saveme.core.sync.SyncSignOutCleaner { runner }, DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, sessions)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
@@ -92,6 +93,10 @@ class SignOutWipeTest {
         env.keyValues.set("transactions.lastWallet", "w1")
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
+        // Feed positions and read stamps are the account's too (spec 009 FR-028).
+        db.syncScopeDao().storeFeedPage("user:u1", "position-1")
+        db.syncScopeDao().markFeedRead("user:u1", "2026-09-28T10:00:00.000Z")
+        db.syncScopeDao().storeFeedPage("wallet:w1", "position-2")
         languages.set(AppLanguage.Ar)
 
         SignOutUseCase(env.repository, sessions, serverTimeout = null)()
@@ -107,6 +112,11 @@ class SignOutWipeTest {
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity>(), db.categoryReferenceDao().get("w1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())
         assertNull(db.syncScopeDao().observe(SyncScopeEntity.PROFILE).first())
+        assertNull(db.syncScopeDao().feedCursor("user:u1"))
+        assertNull(db.syncScopeDao().feedCursor("wallet:w1"))
+        assertNull(db.syncScopeDao().observeFeedReadAt("user:u1").first())
+        assertNull(db.syncScopeDao().observe("user:u1").first())
+        assertEquals("the sync run in progress is stopped, so it sends and applies nothing afterwards", 1, runner.cancelled)
         assertNull(env.keyValues.values["app_language"])
         assertEquals(AppLanguage.En, languages.effective())
         assertNull(env.secureStore.read())

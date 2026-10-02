@@ -1,0 +1,33 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: the answer for the edit is a clash and shows both versions; the other expense was accepted on its own; "Keep mine" sends the phone's edit again so it wins.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    visible: "Changed on another device."
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 2}
+- tapOn: "Taxi"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.keepMine"
+    timeout: 15000
+- assertVisible: "This phone: EGP 60.00"
+- assertVisible: "Other device: EGP 90.00"
+- tapOn:
+    id: "txEditor.keepMine"
+- extendedWaitUntil:
+    notVisible: "Changed on another device."
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactions.filter(function (t) { return t.amount_minor == 6000 }).length == 1}

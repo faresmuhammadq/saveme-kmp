@@ -26,8 +26,28 @@ interface SyncHandler {
      */
     suspend fun send(change: PendingChange): ApiResult<JsonElement>
 
+    /**
+     * The change as exactly its per-record write for the batch upload (spec 009 FR-017): `data` is
+     * the body [send] would send. Null = per record only (archive, archive with an edit, restore,
+     * or a handler without batch support), so the engine sends it through [send] at its place in
+     * the order (FR-018).
+     */
+    suspend fun batchItem(change: PendingChange): BatchItem? = null
+
+    /**
+     * Records that must exist on the server before this change can be accepted (a transaction's
+     * wallets and category). A create of one still waiting holds this change back (FR-022).
+     */
+    suspend fun prerequisites(change: PendingChange): List<RecordKey> = emptyList()
+
     /** Writes a server record into the feature's table, leaving queued edits alone. */
     suspend fun applyServerCopy(json: JsonElement)
+
+    /**
+     * The server's answer to this phone's own write, per record or as a batch item. Defaults to
+     * [applyServerCopy]; transactions add their balance carry here.
+     */
+    suspend fun applySentAnswer(json: JsonElement) = applyServerCopy(json)
 
     /** Side effects of dropping a local change (the profile restores the app language). */
     suspend fun onDiscarded(recordId: String) {}

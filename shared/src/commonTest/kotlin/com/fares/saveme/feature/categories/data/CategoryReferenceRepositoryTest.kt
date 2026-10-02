@@ -1,54 +1,50 @@
 package com.fares.saveme.feature.categories.data
 
-import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.feature.auth.jsonResponse
-import com.fares.saveme.feature.auth.problemBody
 import com.fares.saveme.feature.categories.CategoryTestEnv
 import com.fares.saveme.feature.categories.categoryPage
 import com.fares.saveme.feature.categories.referenceJson
+import com.fares.saveme.feature.categories.data.dto.CategoryReferenceDto
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
+/** The partner references table, kept current from a wallet's feed (spec 009; the on-demand read is retired). */
 class CategoryReferenceRepositoryTest {
 
+    private fun dto(json: String) = AppJson.decodeFromString(CategoryReferenceDto.serializer(), json)
+
     @Test
-    fun aCompleteReadReplacesTheWalletsSetAndLeavesOtherWalletsAlone() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(listOf(referenceJson("r1", categoryId = "p1"), referenceJson("r2", categoryId = "p2")))) }
-        env.signedIn()
-        env.seedReference("w1", "old")
+    fun aFeedReferenceIsStoredAndANewOneForTheSameCategoryReplacesTheOld() = runTest {
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(emptyList())) }
+        assertTrue(env.references.storeFeedCopy(dto(referenceJson("r1", categoryId = "p1"))))
+        assertTrue(env.references.storeFeedCopy(dto(referenceJson("r2", categoryId = "p1", name = "Renamed"))))
+        assertEquals(listOf("r2"), env.referenceDao.get("w1").map { it.id })
+        assertEquals("Renamed", env.referenceDao.get("w1").single().name)
+    }
+
+    @Test
+    fun anOlderVersionIsIgnoredAndADeletionRemovesTheRow() = runTest {
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(emptyList())) }
+        env.references.storeFeedCopy(dto(referenceJson("r1").replace("\"version\":1", "\"version\":4")))
+        assertFalse(env.references.storeFeedCopy(dto(referenceJson("r1", name="Stale"))))
+        assertEquals("Partner's coffee", env.referenceDao.get("w1").single().name)
+        env.references.storeFeedCopy(dto(referenceJson("r1").replace("\"deleted_at\":null", "\"deleted_at\":\"2026-10-02T00:00:00Z\"").replace("\"version\":1", "\"version\":5")))
+        assertEquals(emptyList(), env.referenceDao.get("w1"))
+    }
+
+    @Test
+    fun aSweepRemovesOnlyTheWalletsUnseenReferences() = runTest {
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(emptyList())) }
+        env.seedReference("w1", "keep")
+        env.seedReference("w1", "gone")
         env.seedReference("w2", "other")
-        assertIs<ApiResult.Success<Unit>>(env.references.refresh("w1"))
-        assertEquals(setOf("p1", "p2"), env.referenceDao.get("w1").map { it.categoryId }.toSet())
+        env.references.sweep("w1", setOf("r-w1-keep"))
+        assertEquals(listOf("keep"), env.referenceDao.get("w1").map { it.categoryId })
         assertEquals(listOf("other"), env.referenceDao.get("w2").map { it.categoryId })
-    }
-
-    @Test
-    fun aFailedReadKeepsWhatIsThereAndANotFoundRemovesIt() = runTest {
-        var status = 503
-        val env = CategoryTestEnv(backgroundScope) {
-            if (status == 503) jsonResponse(503, problemBody(503, "SERVICE_UNAVAILABLE")) else jsonResponse(404, problemBody(404, "NOT_FOUND"))
-        }
-        env.signedIn()
-        env.seedReference("w1", "p1")
-        assertIs<ApiResult.Failure>(env.references.refresh("w1"))
-        assertEquals(1, env.referenceDao.get("w1").size)
-        status = 404
-        assertIs<ApiResult.Failure>(env.references.refresh("w1"))
-        assertEquals(0, env.referenceDao.get("w1").size)
-    }
-
-    @Test
-    fun readingEveryPageIsRequiredBeforeAnythingIsReplaced() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { request ->
-            if (request.url.parameters["cursor"] == null) jsonResponse(200, categoryPage(listOf(referenceJson("r1", categoryId = "p1")), nextCursor = "c"))
-            else jsonResponse(503, problemBody(503, "SERVICE_UNAVAILABLE"))
-        }
-        env.signedIn()
-        env.seedReference("w1", "old")
-        env.references.refresh("w1")
-        assertEquals(listOf("old"), env.referenceDao.get("w1").map { it.categoryId })
     }
 
     @Test

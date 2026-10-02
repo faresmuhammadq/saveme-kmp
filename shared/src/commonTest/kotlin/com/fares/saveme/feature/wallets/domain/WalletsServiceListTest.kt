@@ -5,8 +5,6 @@ import com.fares.saveme.feature.wallets.FakePostings
 import com.fares.saveme.feature.wallets.WalletTestEnv
 import com.fares.saveme.feature.wallets.domain.model.CreateResult
 import com.fares.saveme.feature.wallets.domain.model.WalletDraft
-import com.fares.saveme.feature.wallets.memberJson
-import com.fares.saveme.feature.wallets.pageOf
 import com.fares.saveme.feature.wallets.walletBody
 import com.fares.saveme.feature.wallets.walletJson
 import kotlinx.coroutines.flow.first
@@ -20,14 +18,26 @@ import kotlin.test.assertTrue
 class WalletsServiceListTest {
     @Test
     fun activeThenArchivedWithTotalsAndRefreshTime() = runTest {
-        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, pageOf(listOf(walletJson("a"), walletJson("b", archivedAt = "2026-09-02T00:00:00Z", opening = 5)))) }
+        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, walletBody()) }
         env.signedIn()
-        env.service.refresh(force = true)
+        env.seed(walletJson("a"))
+        env.seed(walletJson("b", archivedAt = "2026-09-02T00:00:00Z", opening = 5))
+        env.scopeDao.markFeedRead("user:u1", "2026-10-02T10:00:00.000Z")
         val list = env.service.observeList().first()
         assertEquals(listOf("a"), list.active.map { it.id })
         assertEquals(listOf("b"), list.archived.map { it.id })
         assertEquals(listOf(25_000L), list.totals.map { it.totalMinor })
         assertNotNull(list.updatedAt)
+    }
+
+    @Test
+    fun anUpgradedPhoneKeepsTheLegacyTimeUntilEveryFeedReadHasCompleted() = runTest {
+        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, walletBody()) }
+        env.signedIn()
+        env.scopeDao.upsert(com.fares.saveme.core.database.SyncScopeEntity("wallets", "2026-09-30T08:00:00Z"))
+        assertEquals("2026-09-30T08:00:00Z", env.service.observeList().first().updatedAt.toString().replace(".000", ""))
+        env.scopeDao.markFeedRead("user:u1", "2026-10-02T10:00:00.000Z")
+        assertEquals("2026-10-02T10:00:00Z", env.service.observeList().first().updatedAt.toString())
     }
 
     @Test
@@ -61,10 +71,16 @@ class WalletsServiceListTest {
 
     @Test
     fun membersMarkYouAndKeepNullNames() = runTest {
-        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, pageOf(listOf(memberJson("m1", "u1", null), memberJson("m2", "u2", "Omar", "editor")))) }
+        val env = WalletTestEnv(backgroundScope) { jsonResponse(200, walletBody()) }
         env.signedIn()
         env.seed()
-        env.service.refreshMembers("w1")
+        // The members arrive with the wallet's feed.
+        env.memberDao.insertAll(
+            listOf(
+                com.fares.saveme.feature.wallets.data.local.WalletMemberEntity("m1", "w1", "u1", null, "owner", 1, "2026-09-01T00:00:00Z"),
+                com.fares.saveme.feature.wallets.data.local.WalletMemberEntity("m2", "w1", "u2", "Omar", "editor", 1, "2026-09-02T00:00:00Z"),
+            ),
+        )
         val members = env.service.observeMembers("w1").first()
         assertEquals(listOf(true, false), members.map { it.isYou })
         assertNull(members[0].displayName)

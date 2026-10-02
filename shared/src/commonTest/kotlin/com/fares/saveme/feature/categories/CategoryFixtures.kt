@@ -5,6 +5,7 @@ import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.storage.StoredSession
 import com.fares.saveme.core.sync.FakeClock
 import com.fares.saveme.core.sync.FakePendingChangeDao
+import com.fares.saveme.core.sync.FakeSyncRunner
 import com.fares.saveme.core.sync.FakeSyncScheduler
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.feature.account.FakeSyncScopeDao
@@ -14,7 +15,6 @@ import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.AccountSnapshot
 import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.categories.data.CategoryApi
-import com.fares.saveme.feature.categories.data.CategoryReferenceApi
 import com.fares.saveme.feature.categories.data.CategoryReferenceRepository
 import com.fares.saveme.feature.categories.data.CategoryRepository
 import com.fares.saveme.feature.categories.data.CategorySyncHandler
@@ -68,6 +68,12 @@ class FakeCategoryReferenceDao : CategoryReferenceDao {
     override fun observeAll(): Flow<List<CategoryReferenceEntity>> = rows
     override suspend fun get(walletId: String): List<CategoryReferenceEntity> = rows.value.filter { it.walletId == walletId }
     override suspend fun insertAll(items: List<CategoryReferenceEntity>) { rows.value = rows.value + items }
+    override suspend fun getById(id: String): CategoryReferenceEntity? = rows.value.firstOrNull { it.id == id }
+    override suspend fun upsert(entity: CategoryReferenceEntity) { rows.value = rows.value.filterNot { it.id == entity.id } + entity }
+    override suspend fun delete(id: String) { rows.value = rows.value.filterNot { it.id == id } }
+    override suspend fun deleteOthers(walletId: String, categoryId: String, keepId: String) {
+        rows.value = rows.value.filterNot { it.walletId == walletId && it.categoryId == categoryId && it.id != keepId }
+    }
     override suspend fun deleteFor(walletId: String) { rows.value = rows.value.filterNot { it.walletId == walletId } }
     override suspend fun deleteAll() { rows.value = emptyList() }
 }
@@ -139,7 +145,6 @@ class CategoryTestEnv(
 ) {
     val auth = AuthTestEnv(handler)
     val api = CategoryApi(auth.client)
-    val referenceApi = CategoryReferenceApi(auth.client)
     val categoryDao = FakeCategoryDao()
     val platformDao = FakePlatformCategoryDao()
     val referenceDao = FakeCategoryReferenceDao()
@@ -153,15 +158,16 @@ class CategoryTestEnv(
         hasQueuedChange = { id -> engine.get(CategorySyncHandler.RECORD_TYPE, id) != null },
         clock = clock,
     )
-    val references = CategoryReferenceRepository(referenceApi, referenceDao)
+    val references = CategoryReferenceRepository(referenceDao)
     val syncHandler = CategorySyncHandler(repository, api)
     val engine: SyncEngine = SyncEngine(pendingDao, scopeDao, listOf(syncHandler), scheduler, currentAccountId = { "u1" }, clock = clock)
+    val runner = FakeSyncRunner(engine = engine, scope = scope)
     val authState = MutableStateFlow<AuthState>(AuthState.SignedIn(signedInAccount))
     val language = MutableStateFlow(AppLanguage.En)
     private var nextId = 0
     val service = DefaultCategoriesService(
         repository, references, engine, authState, uses, language,
-        scope = scope, clock = clock, newId = { "c-new-${++nextId}" },
+        scope = scope, runner = runner, clock = clock, newId = { "c-new-${++nextId}" },
     )
     val requests get() = auth.requests
 

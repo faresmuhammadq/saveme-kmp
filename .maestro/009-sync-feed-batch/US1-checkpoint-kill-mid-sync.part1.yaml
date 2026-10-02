@@ -1,0 +1,20 @@
+# deferred: E2E on owner's device
+# US1 checkpoint (brief C14): Given changes waiting to sync, When the app is killed while the connection returns, Then it resumes on the next start and everything reaches the server once. Part 1: online, the wallet's transactions shown.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }

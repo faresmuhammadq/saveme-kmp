@@ -165,7 +165,7 @@ class TransactionSyncHandlerTest {
         env.seedWallet(walletJson(id = "w1"))
         env.seed(transactionJson(version = 5, amount = 4_550))
         val result = env.syncHandler.send(change(base = 5, delete = true))
-        env.syncHandler.applyServerCopy(assertIs<ApiResult.Success<JsonElement>>(result).value)
+        env.syncHandler.applySentAnswer(assertIs<ApiResult.Success<JsonElement>>(result).value)
         val row = env.transactionDao.get("t1")!!
         assertEquals("2026-10-02T10:00:00Z", row.deletedAt)
         // The expense had taken 45.50 out of the wallet; its deletion puts it back until a wallet read includes that.
@@ -187,12 +187,24 @@ class TransactionSyncHandlerTest {
     }
 
     @Test
+    fun aSendAloneNoLongerMarksTheNextCopyAsItsOwn() = runTest {
+        // spec 009 R-14: the engine says "this is my own answer" through applySentAnswer; applyServerCopy never adds a carry.
+        val env = TransactionTestEnv(backgroundScope) { jsonResponse(200, transactionBody(transactionJson(version = 6, amount = 4_550))) }
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        env.seed(transactionJson(version = 5, amount = 4_550))
+        env.syncHandler.applyServerCopy(assertIs<ApiResult.Success<JsonElement>>(env.syncHandler.send(change(base = 5))).value)
+        assertEquals(0, env.transactionDao.get("t1")!!.carrySourceMinor)
+        assertNull(env.transactionDao.get("t1")!!.carryConfirmedAt)
+    }
+
+    @Test
     fun aNewTransactionsFirstAnswerCarriesItsWholeEffect() = runTest {
         val env = TransactionTestEnv(backgroundScope) { jsonResponse(201, transactionBody(transactionJson(version = 1, amount = 6_000))) }
         env.signedIn()
         env.seedWallet(walletJson(id = "w1"))
         env.repository.insertPlaceholder(NewTransaction("t1", "u1", "w1", null, "expense", "2026-10-02", 6_000, "EGP", "c2", null, null, null, false, "u1"))
-        env.syncHandler.applyServerCopy(assertIs<ApiResult.Success<JsonElement>>(env.syncHandler.send(change(base = 0))).value)
+        env.syncHandler.applySentAnswer(assertIs<ApiResult.Success<JsonElement>>(env.syncHandler.send(change(base = 0))).value)
         assertEquals(-6_000, env.transactionDao.get("t1")!!.carrySourceMinor)
     }
 
@@ -215,7 +227,6 @@ class TransactionSyncHandlerTest {
         )
         val handler = TransactionSyncHandler(
             repository = TransactionRepository(
-                TransactionApi(com.fares.saveme.feature.auth.AuthTestEnv { error("unused") }.client),
                 com.fares.saveme.feature.transactions.FakeTransactionDao(), com.fares.saveme.feature.account.FakeSyncScopeDao(), { "u1" }, { false },
             ),
             api = TransactionApi(com.fares.saveme.feature.auth.AuthTestEnv { error("unused") }.client),

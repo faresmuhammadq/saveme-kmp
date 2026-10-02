@@ -3,10 +3,13 @@ package com.fares.saveme.feature.categories.data
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.network.ProblemDetails
+import com.fares.saveme.core.sync.BatchItem
+import com.fares.saveme.core.sync.BatchOp
 import com.fares.saveme.core.sync.PendingChange
 import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.categories.data.dto.CategoryDto
 import com.fares.saveme.feature.categories.data.dto.CategoryPayload
+import com.fares.saveme.feature.categories.data.dto.CategoryVersionRequest
 import com.fares.saveme.feature.categories.data.dto.CategoryWriteRequest
 import com.fares.saveme.feature.categories.data.local.CategoryEntity
 import kotlinx.serialization.json.JsonElement
@@ -25,6 +28,25 @@ class CategorySyncHandler(
 
     override val canRestore: Boolean = false
 
+    /** `PUT` / `DELETE` as an item with the stored kind; an archive has its own endpoint, so it goes per record (spec 009 FR-018). */
+    override suspend fun batchItem(change: PendingChange): BatchItem? {
+        if (change.isDelete) {
+            return BatchItem(RECORD_TYPE, BatchOp.Delete, change.recordId, null, AppJson.encodeToJsonElement(CategoryVersionRequest.serializer(), CategoryVersionRequest(change.baseVersion)))
+        }
+        val payload = AppJson.decodeFromString(CategoryPayload.serializer(), change.payloadJson)
+        if (payload.archive) return null
+        val stored = repository.get(change.recordId)
+        return BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, null, writeRequest(payload, stored, change.baseVersion).toJson())
+    }
+
+    private fun writeRequest(payload: CategoryPayload, stored: CategoryEntity?, version: Long) = CategoryWriteRequest(
+        kind = stored?.kind ?: payload.kind,
+        name = payload.name,
+        icon = payload.icon,
+        color = payload.color,
+        version = version,
+    )
+
     override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
         if (change.isDelete) return api.delete(change.recordId, change.baseVersion).toJson()
         val payload = AppJson.decodeFromString(CategoryPayload.serializer(), change.payloadJson)
@@ -35,14 +57,7 @@ class CategorySyncHandler(
         var version = change.baseVersion
         var last: CategoryDto? = null
         if (!skipPut) {
-            val request = CategoryWriteRequest(
-                kind = stored?.kind ?: payload.kind,
-                name = payload.name,
-                icon = payload.icon,
-                color = payload.color,
-                version = change.baseVersion,
-            )
-            when (val put = api.put(change.recordId, request)) {
+            when (val put = api.put(change.recordId, writeRequest(payload, stored, change.baseVersion))) {
                 is ApiResult.Success -> {
                     last = put.value
                     version = put.value.version

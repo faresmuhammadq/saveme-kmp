@@ -32,20 +32,6 @@ class CategoryApiContractTest {
         CategoryTestEnv(scope, handler = handler)
 
     @Test
-    fun listAsksForTwoHundredAndTheCursor() = runTest {
-        val env = env(backgroundScope) { jsonResponse(200, categoryPage(listOf(categoryJson()), nextCursor = "c2")) }
-        env.signedIn()
-        val page = assertIs<ApiResult.Success<*>>(env.api.list("c1")).value as com.fares.saveme.core.network.Page<*>
-        assertEquals(1, page.items.size)
-        assertEquals("c2", page.nextCursor)
-        val request = env.requests.single()
-        assertEquals(HttpMethod.Get, request.method)
-        assertTrue(request.url.encodedPath.endsWith("/categories"), request.url.encodedPath)
-        assertEquals("200", request.url.parameters["limit"])
-        assertEquals("c1", request.url.parameters["cursor"])
-    }
-
-    @Test
     fun putSendsExactlyTheSchemaMembersWithExplicitNulls() = runTest {
         val env = env(backgroundScope) { jsonResponse(201, categoryBody(categoryJson(version = 1))) }
         env.signedIn()
@@ -77,19 +63,12 @@ class CategoryApiContractTest {
     }
 
     @Test
-    fun theDefaultSetAndReferencesAreReadWithoutExtraQuery() = runTest {
-        val env = env(backgroundScope) { request ->
-            if (request.url.encodedPath.endsWith("/platform-categories")) jsonResponse(200, categoryPage(listOf(platformJson()), limit = 26))
-            else jsonResponse(200, categoryPage(listOf(referenceJson())))
-        }
+    fun theDefaultSetIsReadWithoutExtraQuery() = runTest {
+        val env = env(backgroundScope) { jsonResponse(200, categoryPage(listOf(platformJson()), limit = 26)) }
         env.signedIn()
         val defaults = assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<com.fares.saveme.feature.categories.data.dto.PlatformCategoryDto>>>(env.api.listDefaults())
         assertEquals("بقالة", defaults.value.items.single().names.ar)
         assertEquals(emptySet<String>(), env.requests[0].url.parameters.names())
-        val refs = assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<com.fares.saveme.feature.categories.data.dto.CategoryReferenceDto>>>(env.referenceApi.listReferences("w1", null))
-        assertEquals("p1", refs.value.items.single().categoryId)
-        assertTrue(env.requests[1].url.encodedPath.endsWith("/wallets/w1/category-references"))
-        assertEquals("200", env.requests[1].url.parameters["limit"])
     }
 
     @Test
@@ -176,7 +155,7 @@ class CategoryApiContractTest {
         assertEquals(30L, failure.retryAfterSeconds)
         val offline = CategoryTestEnv(backgroundScope) { throw kotlinx.io.IOException("offline") }
         offline.signedIn()
-        assertEquals(ApiResult.Offline, offline.api.list(null))
+        assertEquals(ApiResult.Offline, offline.api.put("c1", CategoryWriteRequest("expense", "x", null, null, 0)))
     }
 
     @Test
@@ -186,7 +165,7 @@ class CategoryApiContractTest {
         val events = mutableListOf<ApiEvent>()
         val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler))
         scope.launchCollect(env.auth.events.events, events)
-        assertEquals(ApiErrorCode.UNAUTHENTICATED, assertIs<ApiResult.Failure>(env.api.list(null)).code)
+        assertEquals(ApiErrorCode.UNAUTHENTICATED, assertIs<ApiResult.Failure>(env.api.put("c1", CategoryWriteRequest("expense", "x", null, null, 0))).code)
         assertTrue(events.any { it is ApiEvent.SessionEnded }, "$events")
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
     }

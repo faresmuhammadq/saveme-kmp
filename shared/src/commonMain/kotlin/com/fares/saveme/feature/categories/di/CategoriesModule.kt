@@ -3,14 +3,16 @@ package com.fares.saveme.feature.categories.di
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.locale.AppLanguageStore
 import com.fares.saveme.core.platform.ClientInfo
+import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.account.domain.ProfileSyncer
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.categories.data.CategoryApi
-import com.fares.saveme.feature.categories.data.CategoryReferenceApi
 import com.fares.saveme.feature.categories.data.CategoryReferenceRepository
+import com.fares.saveme.feature.categories.data.CategoryFeedApplier
+import com.fares.saveme.feature.categories.data.CategoryReferenceFeedApplier
 import com.fares.saveme.feature.categories.data.CategoryRepository
 import com.fares.saveme.feature.categories.data.CategorySyncHandler
 import com.fares.saveme.feature.categories.domain.CategoriesService
@@ -31,7 +33,6 @@ import org.koin.dsl.module
 
 val categoriesModule = module {
     single { CategoryApi(get()) }
-    single { CategoryReferenceApi(get()) }
     single {
         val db = get<AppDatabase>()
         val sessions = get<SessionManager>()
@@ -46,7 +47,10 @@ val categoriesModule = module {
             hasQueuedChange = { id -> get<SyncEngine>().get(CategorySyncHandler.RECORD_TYPE, id) != null },
         )
     }
-    single { CategoryReferenceRepository(get(), get<AppDatabase>().categoryReferenceDao()) }
+    single { CategoryReferenceRepository(get<AppDatabase>().categoryReferenceDao()) }
+    // Feed appliers (spec 009): own categories from the person's feed, partner references from a wallet's.
+    single { CategoryFeedApplier(get()) } bind FeedApplier::class
+    single { CategoryReferenceFeedApplier(get()) } bind FeedApplier::class
     single { CategorySyncHandler(get(), get()) } bind SyncHandler::class
     single { CategoryReferencesCleanup(get()) } bind WalletDeletionParticipant::class
     single<CategoriesService> {
@@ -59,6 +63,7 @@ val categoriesModule = module {
             pendingUses = get(),
             language = languages.language.map { it ?: languages.device() },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            runner = get(),
         )
     }
     single(createdAtStart = true) {

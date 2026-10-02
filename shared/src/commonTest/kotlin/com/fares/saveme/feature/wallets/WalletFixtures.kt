@@ -3,6 +3,7 @@ package com.fares.saveme.feature.wallets
 import com.fares.saveme.core.storage.StoredSession
 import com.fares.saveme.core.sync.FakeClock
 import com.fares.saveme.core.sync.FakePendingChangeDao
+import com.fares.saveme.core.sync.FakeSyncRunner
 import com.fares.saveme.core.sync.FakeSyncScheduler
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.feature.account.FakeSyncScopeDao
@@ -50,6 +51,7 @@ class FakeWalletDao : WalletDao {
     override fun observe(id: String): Flow<WalletEntity?> = rows.map { it[id] }
     override suspend fun get(id: String): WalletEntity? = rows.value[id]
     override suspend fun getAll(): List<WalletEntity> = rows.value.values.toList()
+    override fun observeOldestFeedRead(): Flow<String?> = MutableStateFlow(null)
     override suspend fun upsert(entity: WalletEntity) { rows.value = rows.value + (entity.id to entity) }
     override suspend fun upsertAll(entities: List<WalletEntity>) { rows.value = rows.value + entities.associateBy { it.id } }
     override suspend fun delete(id: String) { rows.value = rows.value - id }
@@ -62,6 +64,10 @@ class FakeWalletMemberDao : WalletMemberDao {
         rows.map { all -> all.filter { it.walletId == walletId }.sortedWith(compareBy({ it.createdAt }, { it.id })) }
     override suspend fun get(walletId: String): List<WalletMemberEntity> = rows.value.filter { it.walletId == walletId }
     override suspend fun insertAll(items: List<WalletMemberEntity>) { rows.value = rows.value + items }
+    override suspend fun getById(id: String): WalletMemberEntity? = rows.value.firstOrNull { it.id == id }
+    override suspend fun upsert(entity: WalletMemberEntity) { rows.value = rows.value.filterNot { it.id == entity.id } + entity }
+    override suspend fun delete(id: String) { rows.value = rows.value.filterNot { it.id == id } }
+    override suspend fun ownWalletIds(userId: String): List<String> = rows.value.filter { it.memberUserId == userId }.map { it.walletId }.distinct()
     override suspend fun deleteFor(walletId: String) { rows.value = rows.value.filterNot { it.walletId == walletId } }
     override suspend fun deleteAll() { rows.value = emptyList() }
 }
@@ -81,11 +87,12 @@ fun walletJson(
     version: Long = 1,
     deletedAt: String? = null,
     createdAt: String = "2026-09-01T00:00:00Z",
+    changeSeq: Long = 7,
 ) = """
     {"id":"$id","wallet_id":"$id","type":"$type","name":"$name","currency":"$currency","opening_balance_minor":$opening,
      "balance_minor":$balance,"icon":${icon?.let { "\"$it\"" } ?: "null"},"color":${color?.let { "\"$it\"" } ?: "null"},
      "archived_at":${archivedAt?.let { "\"$it\"" } ?: "null"},"currency_locked":$locked,"my_role":"$role","version":$version,
-     "change_seq":7,"created_at":"$createdAt","updated_at":"$createdAt","deleted_at":${deletedAt?.let { "\"$it\"" } ?: "null"},"something_new":1}
+     "change_seq":$changeSeq,"created_at":"$createdAt","updated_at":"$createdAt","deleted_at":${deletedAt?.let { "\"$it\"" } ?: "null"},"something_new":1}
 """.trimIndent()
 
 fun walletBody(json: String = walletJson()) = """{"data":$json,"meta":{}}"""
@@ -137,14 +144,15 @@ class WalletTestEnv(
         onWalletRemoved = { removed += it },
         clock = clock,
     )
-    val syncHandler: WalletSyncHandler = WalletSyncHandler(repository, api)
+    val syncHandler: WalletSyncHandler = WalletSyncHandler(repository, api, accountId = { "u1" })
     val engine: SyncEngine = SyncEngine(pendingDao, scopeDao, listOf(syncHandler), scheduler, currentAccountId = { "u1" }, clock = clock)
+    val runner = FakeSyncRunner(engine = engine, scope = scope)
     val authState = MutableStateFlow<AuthState>(AuthState.SignedIn(signedInAccount))
     val entitlements = FakeEntitlements()
     private var nextId = 0
     val service = DefaultWalletsService(
         repository, engine, authState, entitlements, postings,
-        defaultCurrency = flowOf("EGP"), scope = scope, clock = clock, newId = { "w-new-${++nextId}" },
+        defaultCurrency = flowOf("EGP"), runner = runner, newId = { "w-new-${++nextId}" },
     )
     val requests get() = auth.requests
 

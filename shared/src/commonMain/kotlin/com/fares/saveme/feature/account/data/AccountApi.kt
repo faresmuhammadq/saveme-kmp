@@ -2,15 +2,12 @@ package com.fares.saveme.feature.account.data
 
 import com.fares.saveme.core.network.ApiClient
 import com.fares.saveme.core.network.ApiResult
-import com.fares.saveme.core.network.Page
 import com.fares.saveme.feature.account.data.dto.ChangePasswordRequest
 import com.fares.saveme.feature.account.data.dto.DeletionScheduleDto
 import com.fares.saveme.feature.account.data.dto.PasswordConfirmation
-import com.fares.saveme.feature.account.data.dto.DeviceSessionDto
 import com.fares.saveme.feature.account.data.dto.MeDto
 import com.fares.saveme.feature.account.data.dto.ProfileDto
 import com.fares.saveme.feature.account.data.dto.ProfileWriteRequest
-import io.ktor.client.request.parameter
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
@@ -19,14 +16,6 @@ import io.ktor.http.contentType
 
 /** The account endpoints of identity.yaml (contracts/account-api-client.md). All credentialed. */
 class AccountApi(private val client: ApiClient) {
-
-    suspend fun listSessions(cursor: String?): ApiResult<Page<DeviceSessionDto>> = client.callPage {
-        method = HttpMethod.Get
-        url("auth/sessions")
-        parameter("filter[state]", "active")
-        parameter("limit", PAGE_SIZE)
-        if (cursor != null) parameter("cursor", cursor)
-    }
 
     suspend fun endSession(id: String): ApiResult<Unit> = client.call {
         method = HttpMethod.Delete
@@ -70,9 +59,5 @@ class AccountApi(private val client: ApiClient) {
     suspend fun cancelDeletion(): ApiResult<Unit> = client.call {
         method = HttpMethod.Delete
         url("account/deletion-request")
-    }
-
-    companion object {
-        const val PAGE_SIZE = 50
     }
 }

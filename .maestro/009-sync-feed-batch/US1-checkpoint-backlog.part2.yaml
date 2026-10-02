@@ -1,0 +1,72 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: with no connection the person edits two transactions, records nine expenses, creates a wallet and records eight expenses in it: twenty changes, all only on the phone.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn: "Edit one"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- eraseText: 10
+- inputText: "11"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- tapOn: "Edit two"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- eraseText: 10
+- inputText: "22"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- repeat:
+    times: 9
+    commands:
+      - runFlow:
+          file: ../common/add-expense.yaml
+          env: { AMOUNT: "1.00", CATEGORY: "Fares" }
+- assertVisible: "Waiting to sync"
+# Back to Home, then a new wallet that exists only on the phone, with expenses of its own.
+- tapOn: "Back"
+- tapOn: "Back"
+- tapOn: "Back"
+- runFlow: ../common/open-wallets.yaml
+- runFlow:
+    file: ../common/create-wallet.yaml
+    env: { NAME: "Beta", AMOUNT: "500" }
+- tapOn: "Beta"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.transactions"
+    timeout: 15000
+- tapOn:
+    id: "walletDetail.transactions"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- repeat:
+    times: 8
+    commands:
+      - runFlow:
+          file: ../common/add-expense.yaml
+          env: { AMOUNT: "2.00", CATEGORY: "Fares" }
+- assertVisible: "Waiting to sync"

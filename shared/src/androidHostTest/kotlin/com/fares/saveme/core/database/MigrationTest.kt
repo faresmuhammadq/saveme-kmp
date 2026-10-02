@@ -55,7 +55,7 @@ class MigrationTest {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
         .build()
 
     @Test
@@ -95,6 +95,15 @@ class MigrationTest {
     fun aProfileWithoutAnEditLeavesTheQueueEmpty() = runTest {
         val db = open(v1Database(profileRow(pending = null, base = null)))
         assertNull(db.pendingChangeDao().get("profile", "p1"))
+        db.close()
+    }
+
+    @Test
+    fun theWholeChainEndsAtV6WithNoFeedPositions() = runTest {
+        val db = open(v1Database(profileRow(pending = null, base = null)))
+        db.syncScopeDao().markPushed("user:u1", "2026-10-02T10:00:00.000Z")
+        assertNull(db.syncScopeDao().feedCursor("user:u1"))
+        assertNull(db.syncScopeDao().observeFeedReadAt("user:u1").first())
         db.close()
     }
 }

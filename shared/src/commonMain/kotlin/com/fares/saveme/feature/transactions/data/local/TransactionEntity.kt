@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -87,12 +88,48 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE carry_confirmed_at IS NOT NULL")
     suspend fun getCarried(): List<TransactionEntity>
 
-    /** ISO-8601 UTC strings of fixed width compare in time order. */
+    /**
+     * A read of [walletId]'s feed that started at [at] includes the effect of every change the server confirmed
+     * at or before it on that wallet: its part of the carry goes (ISO-8601 UTC strings of fixed width compare in
+     * time order). The other wallet of a transfer keeps its part until its own read.
+     */
     @Query(
-        """UPDATE transactions SET carry_source_minor = 0, carry_counter_minor = 0, carry_confirmed_at = NULL
-        WHERE carry_confirmed_at IS NOT NULL AND carry_confirmed_at <= :at""",
+        """UPDATE transactions SET carry_source_minor = 0
+        WHERE wallet_id = :walletId AND carry_confirmed_at IS NOT NULL AND carry_confirmed_at <= :at""",
     )
-    suspend fun clearCarryUpTo(at: String)
+    suspend fun clearSourceCarry(walletId: String, at: String)
+
+    @Query(
+        """UPDATE transactions SET carry_counter_minor = 0
+        WHERE counter_wallet_id = :walletId AND carry_confirmed_at IS NOT NULL AND carry_confirmed_at <= :at""",
+    )
+    suspend fun clearCounterCarry(walletId: String, at: String)
+
+    /** A row with no part left is settled, as far as [walletId] is concerned. */
+    @Query(
+        """UPDATE transactions SET carry_confirmed_at = NULL
+        WHERE (wallet_id = :walletId OR counter_wallet_id = :walletId) AND carry_confirmed_at IS NOT NULL
+        AND carry_confirmed_at <= :at AND carry_source_minor = 0 AND carry_counter_minor = 0""",
+    )
+    suspend fun settleClearedCarry(walletId: String, at: String)
+
+    /**
+     * A copy of the source wallet at scope position [changeSeq] already counts every change of that scope up to it:
+     * the source part of a carry for a row at or below that position is settled (spec 009 FR-013, qa-report.md §4).
+     * The destination part stays for the destination's read (a transfer's position is the source scope's).
+     */
+    @Query(
+        """UPDATE transactions SET carry_source_minor = 0
+        WHERE wallet_id = :walletId AND carry_confirmed_at IS NOT NULL AND change_seq > 0 AND change_seq <= :changeSeq""",
+    )
+    suspend fun clearSourceCarryCoveredBy(walletId: String, changeSeq: Long)
+
+    @Transaction
+    suspend fun clearCarryFor(walletId: String, at: String) {
+        clearSourceCarry(walletId, at)
+        clearCounterCarry(walletId, at)
+        settleClearedCarry(walletId, at)
+    }
 
     /** A confirmed deletion kept only for its carry goes once the carry is gone. */
     @Query("DELETE FROM transactions WHERE deleted_at IS NOT NULL AND carry_confirmed_at IS NULL")

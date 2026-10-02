@@ -1,78 +1,83 @@
 package com.fares.saveme.feature.categories.domain
 
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.auth.jsonResponse
 import com.fares.saveme.feature.auth.problemBody
 import com.fares.saveme.feature.categories.CategoryTestEnv
-import com.fares.saveme.feature.categories.categoryJson
 import com.fares.saveme.feature.categories.categoryPage
 import com.fares.saveme.feature.categories.platformJson
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Own categories come from the person's change feed through the runner (spec 009); the default set is the
+ * one list no feed carries and is still read here (FR-016). The floors and outcomes keep their meaning.
+ */
 class CategoriesServiceRefreshTest {
 
-    private fun ok(request: io.ktor.client.request.HttpRequestData) =
-        if (request.url.encodedPath.endsWith("/platform-categories")) categoryPage(listOf(platformJson()), limit = 26)
-        else categoryPage(listOf(categoryJson()))
+    private fun defaults(request: io.ktor.client.request.HttpRequestData) = categoryPage(listOf(platformJson()), limit = 26)
 
     @Test
-    fun bothReadsRunAndStoreTheirResults() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, ok(it)) }
+    fun theOwnCategoriesAreReadThroughTheRunnerAndTheDefaultsFromTheirOwnList() = runTest {
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, defaults(it)) }
         env.signedIn()
         assertEquals(RefreshOutcome.Done, env.service.refresh(force = true))
-        assertEquals(2, env.requests.size)
-        assertNotNull(env.categoryDao.rows.value["c1"])
+        assertEquals(listOf<Pair<ReadTarget, Boolean>>(ReadTarget.User to true), env.runner.refreshes)
+        assertEquals(1, env.requests.size)
+        assertEquals(true, env.requests.single().url.encodedPath.endsWith("/platform-categories"))
         assertEquals(1, env.platformDao.rows.value.size)
     }
 
     @Test
-    fun theSixtySecondFloorAppliesUnlessForced() = runTest {
+    fun theCallersForceReachesTheRunnerAndTheDefaultsKeepTheirSixtySecondFloor() = runTest {
         var reads = 0
-        val env = CategoryTestEnv(backgroundScope) { reads++; jsonResponse(200, ok(it)) }
+        val env = CategoryTestEnv(backgroundScope) { reads++; jsonResponse(200, defaults(it)) }
         env.signedIn()
         env.service.refresh(force = true)
-        assertEquals(2, reads)
+        assertEquals(1, reads)
         env.clock.now = env.clock.now + 30.seconds
         env.service.refresh(force = false)
-        assertEquals(2, reads)
+        assertEquals(1, reads, "the defaults are not read again within a minute")
         env.service.refresh(force = true)
-        assertEquals(4, reads)
+        assertEquals(2, reads)
         env.clock.now = env.clock.now + 61.seconds
         env.service.refresh(force = false)
-        assertEquals(6, reads)
+        assertEquals(3, reads)
+        assertEquals(listOf(true, false, true, false), env.runner.refreshes.map { it.second })
     }
 
     @Test
-    fun offlineAndFailedKeepTheLocalDataAndDoNotStartTheFloor() = runTest {
-        var mode = "offline"
-        var reads = 0
+    fun theScreensOutcomeIsDoneOnlyWhenBothReadsCompletedOfflineWhenEitherWasUnreachableAndFailedOtherwise() = runTest {
+        var defaultsMode = "ok"
         val env = CategoryTestEnv(backgroundScope) {
-            reads++
-            when (mode) {
+            when (defaultsMode) {
                 "offline" -> throw kotlinx.io.IOException("offline")
                 "fail" -> jsonResponse(503, problemBody(503, "SERVICE_UNAVAILABLE"))
-                else -> jsonResponse(200, ok(it))
+                else -> jsonResponse(200, defaults(it))
             }
         }
         env.signedIn()
-        env.seed(categoryJson("keep"))
+        env.runner.outcome = ReadOutcome.Offline
+        assertEquals(RefreshOutcome.Offline, env.service.refresh(force = true))
+        env.runner.outcome = ReadOutcome.Failed
+        defaultsMode = "offline"
+        assertEquals(RefreshOutcome.Offline, env.service.refresh(force = true))
         env.seedDefaults(platformJson("kept"))
-        assertEquals(RefreshOutcome.Offline, env.service.refresh())
-        mode = "fail"
-        assertEquals(RefreshOutcome.Failed, env.service.refresh())
-        assertNotNull(env.categoryDao.rows.value["keep"])
-        assertEquals("kept", env.platformDao.rows.value.single().id)
-        mode = "ok"
-        assertEquals(RefreshOutcome.Done, env.service.refresh())
+        defaultsMode = "fail"
+        assertEquals(RefreshOutcome.Failed, env.service.refresh(force = true))
+        assertEquals("kept", env.platformDao.rows.value.single().id, "a failed read keeps the cached set")
+        env.runner.outcome = ReadOutcome.Done
+        defaultsMode = "ok"
+        assertEquals(RefreshOutcome.Done, env.service.refresh(force = true))
     }
 
     @Test
     fun aForcedRefreshAlsoAsksTheEngineToSend() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, ok(it)) }
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, defaults(it)) }
         env.signedIn()
         env.service.refresh(force = false)
         assertEquals(0, env.scheduler.enqueued.size)

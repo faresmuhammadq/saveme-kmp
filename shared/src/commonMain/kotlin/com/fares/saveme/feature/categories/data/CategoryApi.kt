@@ -7,7 +7,6 @@ import com.fares.saveme.feature.categories.data.dto.CategoryDto
 import com.fares.saveme.feature.categories.data.dto.CategoryVersionRequest
 import com.fares.saveme.feature.categories.data.dto.CategoryWriteRequest
 import com.fares.saveme.feature.categories.data.dto.PlatformCategoryDto
-import io.ktor.client.request.parameter
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
@@ -19,13 +18,6 @@ import io.ktor.http.contentType
  * `PATCH /categories/{id}` and `GET /categories/{id}` are never called (research R-05).
  */
 class CategoryApi(private val client: ApiClient) {
-
-    suspend fun list(cursor: String?): ApiResult<Page<CategoryDto>> = client.callPage {
-        method = HttpMethod.Get
-        url("categories")
-        parameter("limit", PAGE_SIZE)
-        if (cursor != null) parameter("cursor", cursor)
-    }
 
     /** Creates (version 0) or saves; the server answers an identical replay with 200. */
     suspend fun put(id: String, request: CategoryWriteRequest): ApiResult<CategoryDto> = client.call {
@@ -54,9 +46,5 @@ class CategoryApi(private val client: ApiClient) {
     suspend fun listDefaults(): ApiResult<Page<PlatformCategoryDto>> = client.callPage {
         method = HttpMethod.Get
         url("platform-categories")
-    }
-
-    companion object {
-        const val PAGE_SIZE = 200
     }
 }

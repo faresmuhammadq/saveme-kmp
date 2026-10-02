@@ -26,6 +26,18 @@ class ProfileRepository(
 
     suspend fun push(request: ProfileWriteRequest): ApiResult<ProfileDto> = api.saveProfile(request)
 
+    /**
+     * Writes a copy that arrived without being asked for (a change feed row, `GET /me`): only when its
+     * version is the same or newer than the stored one, so an older copy never replaces a newer one
+     * (spec 009 FR-004). Returns true when it was written.
+     */
+    suspend fun storeFeedCopy(dto: ProfileDto): Boolean {
+        val stored = profiles.get()
+        if (stored != null && stored.userId == dto.userId && stored.version > dto.version) return false
+        storeServerCopy(dto)
+        return true
+    }
+
     /** Writes the server copy; queued edits live in the sync queue and are untouched (P-04.2). */
     suspend fun storeServerCopy(dto: ProfileDto) {
         val now = clock.now().toString()

@@ -1,0 +1,48 @@
+# deferred: E2E on owner's device
+# US3 (brief C14): Given a wallet created and then deleted from another session, When the person refreshes, Then it appears with its transactions and then leaves, each within one refresh.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Gamma", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Gamma", AMOUNT: "1500", NOTE: "Seen from the phone" }
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    visible: "Gamma"
+    timeout: 30000
+- tapOn: "Gamma"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.transactions"
+    timeout: 15000
+- tapOn:
+    id: "walletDetail.transactions"
+- extendedWaitUntil:
+    visible: "Seen from the phone"
+    timeout: 30000
+- tapOn: "Back"
+- tapOn: "Back"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: deleteWallet, SLOT: B, WALLET: "Gamma" }
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    notVisible: "Gamma"
+    timeout: 30000

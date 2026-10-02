@@ -36,14 +36,15 @@ class SyncEngine(
     private val loadAccount: suspend () -> Unit = {},
     private val clock: Clock = Clock.System,
     private val backoff: Backoff = Backoff(),
+    /** The batch upload (spec 009); without it every change is sent per record, as in spec 004. */
+    private val syncApi: SyncApi? = null,
+    /** Shared with the feed puller; one drain at a time, so `Sending` rows found at the start are always leftovers. */
+    private val lock: SyncLock = SyncLock(),
 ) {
     private val handlers = handlers.associateBy { it.recordType }
 
     /** Guards every read-modify-write of a row. */
     private val rows = Mutex()
-
-    /** One drain at a time, so `Sending` rows found at the start are always leftovers. */
-    private val draining = Mutex()
 
     val status: Flow<SyncStatus> = combine(
         dao.observeWaitingCount(),
@@ -133,31 +134,213 @@ class SyncEngine(
     }
 
     /**
-     * Sends every due change of the signed-in account, oldest first (FR-006, FR-007). Called by
-     * the scheduler; safe to call at any time.
+     * Sends every due change of the signed-in account, oldest first (FR-006, FR-007): through the
+     * batch upload, up to 50 per request, each item answered on its own (spec 009 FR-017, FR-019).
+     * A change the batch cannot carry is sent per record at its place in the order (FR-018). Called
+     * by the runner; safe to call at any time. Returns the scopes written to.
      */
-    suspend fun drain() = draining.withLock {
+    suspend fun drain(): DrainReport = lock.withLock {
         loadAccount()
-        val account = currentAccountId() ?: return@withLock
+        val account = currentAccountId() ?: return@withLock DrainReport()
         dao.resetSending()
-        for (row in dao.due(account, clock.now().stamp())) {
+        val run = DrainRun(account)
+        for (row in dao.due(account, clock.now().syncStamp())) {
+            if (currentAccountId() != account) return@withLock run.report()
             val handler = handlers[row.recordType]
             if (handler == null) {
                 log.w { "no handler for ${row.recordType}; left waiting" }
                 continue
             }
-            rows.withLock { dao.upsert(row.copy(state = ChangeState.Sending.name)) }
-            val result = handler.send(row.toDomain())
-            val stop = rows.withLock { settle(row, handler, result) }
-            if (stop) return@withLock
+            val change = row.toDomain()
+            val prerequisites = handler.prerequisites(change)
+            val item = if (syncApi != null) handler.batchItem(change) else null
+            if (item == null) {
+                if (flush(run)) return@withLock run.report()
+                if (isHeld(prerequisites, emptySet())) {
+                    run.held = true
+                    continue
+                }
+                if (sendOne(run, Entry(row, handler, null, prerequisites))) return@withLock run.report()
+            } else {
+                if (isHeld(prerequisites, run.keys)) {
+                    run.held = true
+                    continue
+                }
+                run.entries += Entry(row, handler, item, prerequisites)
+                run.keys += item.key
+                if (run.entries.size >= MAX_BATCH && flush(run)) return@withLock run.report()
+            }
         }
+        if (flush(run)) return@withLock run.report()
+        // A prerequisite accepted in this run lets what it held go next run (FR-022).
+        if (run.appliedAny && run.held) scheduler.enqueue()
         // A run can start before a row's wait is over (the scheduler's timing is approximate, and a
         // row can be rescheduled while this run was queued). Without this the row would wait until
-        // the app is next opened. Rows due now but unsent (no handler) are not rescheduled, or this
-        // would loop.
-        val next = dao.nextDueAt(account)?.takeIf { it.isNotEmpty() }?.let { Instant.parse(it) } ?: return@withLock
-        scheduler.enqueue((next - clock.now()).coerceAtLeast(Duration.ZERO))
+        // the app is next opened. Rows due now but unsent (no handler, or held) are not rescheduled,
+        // or this would loop.
+        dao.nextDueAt(account)?.takeIf { it.isNotEmpty() }?.let { next ->
+            scheduler.enqueue((Instant.parse(next) - clock.now()).coerceAtLeast(Duration.ZERO))
+        }
+        run.report()
     }
+
+    /** What one drain has done so far. */
+    private class DrainRun(val account: String) {
+        val entries = mutableListOf<Entry>()
+        val keys = mutableSetOf<RecordKey>()
+        val written = linkedSetOf<SyncScope>()
+        var appliedAny = false
+        var held = false
+        var offline = false
+
+        fun report() = DrainReport(written, appliedAny, offline)
+    }
+
+    /** A due row with its handler, its batch item (null = per record) and what it needs first. */
+    private class Entry(
+        val row: PendingChangeEntity,
+        val handler: SyncHandler,
+        val item: BatchItem?,
+        val prerequisites: List<RecordKey>,
+    )
+
+    /**
+     * A prerequisite blocks only while its own create (base version 0) still waits on this phone
+     * and is not an item earlier in the same request (spec 009 R-07).
+     */
+    private suspend fun isHeld(prerequisites: List<RecordKey>, inRequest: Set<RecordKey>): Boolean =
+        prerequisites.any { key -> key !in inRequest && dao.get(key.recordType, key.recordId)?.baseVersion == 0L }
+
+    /** Sends the batch built so far; true when nothing else can be sent now. */
+    private suspend fun flush(run: DrainRun): Boolean {
+        val entries = run.entries.toList()
+        run.entries.clear()
+        run.keys.clear()
+        if (entries.isEmpty()) return false
+        val api = checkNotNull(syncApi) { "batch entries without a batch client" }
+        rows.withLock { entries.forEach { dao.upsert(it.row.copy(state = ChangeState.Sending.name)) } }
+        val answer = api.batch(entries.map { it.item!!.toDto() })
+        // Signed out while the request was in flight: sign-out emptied the queue and the tables, so nothing is applied (FR-028).
+        if (currentAccountId() != run.account) return true
+        return when {
+            answer is ApiResult.Success && answerMatches(entries, answer.value) -> {
+                log.i { "batch of ${entries.size} items answered" }
+                settleItems(run, entries, answer.value)
+            }
+            answer is ApiResult.Success -> {
+                log.w { "batch answer does not match its ${entries.size} items; sending per record" }
+                sendEach(run, entries)
+            }
+            answer is ApiResult.Failure && answer.isShapeOrEndpointRefusal() -> {
+                log.w { "batch refused as a whole (${answer.problem.code.ifEmpty { "no code" }}, status ${answer.problem.status}, request ${answer.problem.requestId}); sending per record" }
+                sendEach(run, entries)
+            }
+            else -> {
+                // A request-level answer is every item's answer, as a single write would have had it (FR-020).
+                val failure = answer as ApiResult<Nothing>
+                log.i {
+                    "batch of ${entries.size} items not answered: " +
+                        (if (answer is ApiResult.Failure) "${answer.problem.code} (request ${answer.problem.requestId})" else answer::class.simpleName)
+                }
+                if (answer is ApiResult.Offline || answer is ApiResult.Timeout) run.offline = true
+                var stop = false
+                for (entry in entries) stop = rows.withLock { settle(entry.row, entry.handler, failure) } || stop
+                stop
+            }
+        }
+    }
+
+    /** Each item's answer through [settle]; a dependent of an item that was not accepted waits instead (FR-022). */
+    private suspend fun settleItems(run: DrainRun, entries: List<Entry>, results: List<BatchItemResultDto>): Boolean {
+        val notAccepted = mutableSetOf<RecordKey>()
+        var stop = false
+        for ((entry, result) in entries.zip(results)) {
+            val key = entry.item!!.key
+            if (entry.prerequisites.any { it in notAccepted }) {
+                returnToWaiting(entry.row)
+                notAccepted += key
+                continue
+            }
+            val answer = result.toApiResult()
+            stop = settleOne(run, entry, answer) || stop
+            if (answer !is ApiResult.Success) notAccepted += key
+        }
+        return stop
+    }
+
+    /** The per-record fallback for a batch (FR-021): the same rows, in the same order, one request each. */
+    private suspend fun sendEach(run: DrainRun, entries: List<Entry>): Boolean {
+        val notAccepted = mutableSetOf<RecordKey>()
+        for (entry in entries) {
+            val key = entry.item?.key ?: RecordKey(entry.row.recordType, entry.row.recordId)
+            if (entry.prerequisites.any { it in notAccepted }) {
+                returnToWaiting(entry.row)
+                notAccepted += key
+                continue
+            }
+            if (currentAccountId() != run.account) return true
+            val answer = entry.handler.send(entry.row.toDomain())
+            if (currentAccountId() != run.account) return true
+            val stop = settleOne(run, entry, answer)
+            if (answer !is ApiResult.Success) notAccepted += key
+            if (stop) return true
+        }
+        return false
+    }
+
+    /** One change on its own request (spec 004 path). */
+    private suspend fun sendOne(run: DrainRun, entry: Entry): Boolean {
+        rows.withLock { dao.upsert(entry.row.copy(state = ChangeState.Sending.name)) }
+        val answer = entry.handler.send(entry.row.toDomain())
+        if (currentAccountId() != run.account) return true
+        return settleOne(run, entry, answer)
+    }
+
+    private suspend fun settleOne(run: DrainRun, entry: Entry, answer: ApiResult<JsonElement>): Boolean {
+        val stop = rows.withLock { settle(entry.row, entry.handler, answer) }
+        when (answer) {
+            is ApiResult.Success -> {
+                run.appliedAny = true
+                run.written += SyncScope(ScopeKind.fromWire(entry.row.scopeKind), entry.row.scopeId)
+            }
+            ApiResult.Offline, ApiResult.Timeout -> run.offline = true
+            is ApiResult.Failure -> Unit
+        }
+        return stop
+    }
+
+    /** The change goes back to waiting with nothing counted: its prerequisite was not accepted. */
+    private suspend fun returnToWaiting(row: PendingChangeEntity) = rows.withLock {
+        val current = dao.get(row.recordType, row.recordId) ?: return@withLock
+        if (current.state == ChangeState.Sending.name) dao.upsert(current.copy(state = ChangeState.Waiting.name))
+    }
+
+    private fun answerMatches(entries: List<Entry>, results: List<BatchItemResultDto>): Boolean =
+        results.size == entries.size && entries.zip(results).all { (entry, result) ->
+            val item = entry.item!!
+            result.id == item.id && result.type == item.type && when (result.outcome) {
+                OUTCOME_APPLIED -> result.record != null
+                OUTCOME_CONFLICT, OUTCOME_REJECTED -> result.problem != null
+                else -> false
+            }
+        }
+
+    private fun BatchItemResultDto.toApiResult(): ApiResult<JsonElement> = when (outcome) {
+        OUTCOME_APPLIED -> ApiResult.Success(checkNotNull(record))
+        else -> {
+            val problem = checkNotNull(problem)
+            ApiResult.Failure(problem, ApiErrorCode.from(problem.code), problem.retryAfterSeconds)
+        }
+    }
+
+    private fun BatchItem.toDto() = BatchItemDto(type = type, op = op.wire, id = id, walletId = walletId, data = data)
+
+    /**
+     * Refused for a reason that is not about the changes: the request shape, the endpoint, the
+     * negotiated type, or an answer that could not be read (spec 009 FR-021).
+     */
+    private fun ApiResult.Failure.isShapeOrEndpointRefusal(): Boolean = problem.status == 200 ||
+        code in FALLBACK_CODES || (code == ApiErrorCode.UNKNOWN && problem.status in FALLBACK_STATUSES)
 
     /** Applies one send's answer; returns true when nothing else can be sent now (no connection). */
     private suspend fun settle(sent: PendingChangeEntity, handler: SyncHandler, result: ApiResult<JsonElement>): Boolean {
@@ -167,8 +350,8 @@ class SyncEngine(
         val editedMeanwhile = current != null && current.revision != sent.revision
         when (result) {
             is ApiResult.Success -> {
-                handler.applyServerCopy(result.value)
-                scopes.markPushed(SyncScope(ScopeKind.fromWire(sent.scopeKind), sent.scopeId).key, now.stamp())
+                handler.applySentAnswer(result.value)
+                scopes.markPushed(SyncScope(ScopeKind.fromWire(sent.scopeKind), sent.scopeId).key, now.syncStamp())
                 when {
                     current == null -> Unit
                     editedMeanwhile -> {
@@ -206,7 +389,7 @@ class SyncEngine(
                     result.code.retryClass == RetryClass.Automatic || result.code == ApiErrorCode.VERSION_CONFLICT -> {
                         val attempts = row.attempts + 1
                         val wait = backoff.delayFor(attempts, result.retryAfterSeconds)
-                        dao.upsert(row.copy(state = ChangeState.Waiting.name, attempts = attempts, nextAttemptAt = (now + wait).stamp()))
+                        dao.upsert(row.copy(state = ChangeState.Waiting.name, attempts = attempts, nextAttemptAt = (now + wait).syncStamp()))
                         scheduler.enqueue(wait)
                         log.i { "retrying ${sent.recordType}/${sent.recordId} in $wait (${result.problem.code}, request ${result.problem.requestId})" }
                         return false
@@ -242,7 +425,7 @@ class SyncEngine(
                         it.copy(
                             state = ChangeState.Waiting.name,
                             attempts = attempts,
-                            nextAttemptAt = if (wait == Duration.ZERO) null else (now + wait).stamp(),
+                            nextAttemptAt = if (wait == Duration.ZERO) null else (now + wait).syncStamp(),
                         ),
                     )
                 }
@@ -300,14 +483,16 @@ class SyncEngine(
     private companion object {
         val log = Logger.withTag("sync")
 
-        /**
-         * A fixed-width UTC instant (millisecond precision), so stored times compare as strings in
-         * the DAO. `Instant.toString()` drops a zero fraction ("…:50Z" sorts after "…:50.1Z").
-         */
-        fun Instant.stamp(): String {
-            val text = Instant.fromEpochMilliseconds(toEpochMilliseconds()).toString()
-            return if ('.' in text) text else text.removeSuffix("Z") + ".000Z"
-        }
+        const val MAX_BATCH = 50
+        const val OUTCOME_APPLIED = "applied"
+        const val OUTCOME_CONFLICT = "conflict"
+        const val OUTCOME_REJECTED = "rejected"
+
+        val FALLBACK_CODES = setOf(
+            ApiErrorCode.VALIDATION_FAILED, ApiErrorCode.MALFORMED_JSON, ApiErrorCode.UNSUPPORTED_MEDIA_TYPE,
+            ApiErrorCode.NOT_ACCEPTABLE, ApiErrorCode.NOT_FOUND,
+        )
+        val FALLBACK_STATUSES = setOf(404, 405, 406, 415)
 
         fun JsonElement.version(): Long? = (this as? JsonObject)?.get("version")?.jsonPrimitive?.longOrNull
 
@@ -317,3 +502,10 @@ class SyncEngine(
         }
     }
 }
+
+/** What one upload run did: the scopes it wrote to, whether anything was accepted, and whether the connection failed. */
+data class DrainReport(
+    val written: Set<SyncScope> = emptySet(),
+    val appliedAny: Boolean = false,
+    val offline: Boolean = false,
+)

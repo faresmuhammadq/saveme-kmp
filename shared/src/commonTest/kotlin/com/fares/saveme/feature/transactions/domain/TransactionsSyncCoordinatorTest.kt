@@ -18,21 +18,21 @@ import kotlin.test.assertTrue
 class TransactionsSyncCoordinatorTest {
 
     @Test
-    fun comingBackToTheForegroundSettlesAPendingCarryWithOneWalletRead() = runTest {
-        val env = TransactionTestEnv(backgroundScope) { jsonResponse(200, com.fares.saveme.feature.wallets.pageOf(listOf(walletJson(id = "w1")))) }
+    fun comingBackToTheForegroundSettlesAPendingCarryWithOneReadOfTheWallet() = runTest {
+        val env = TransactionTestEnv(backgroundScope) { jsonResponse(200, walletBody(walletJson(id = "w1"))) }
         env.signedIn()
         env.seedWallet(walletJson(id = "w1"))
         env.repository.storeServerCopy(dto(transactionJson(version = 2)), own = true)
         val coordinator = TransactionsSyncCoordinator(env.authState, env.reconciler, backgroundScope)
         coordinator.onForeground()
         awaitReal { env.transactionDao.rows.value.values.none { it.carryConfirmedAt != null } }
-        assertTrue(env.requests.any { it.url.encodedPath.endsWith("/wallets") })
+        assertEquals(listOf<Pair<com.fares.saveme.core.sync.ReadTarget, Boolean>>(com.fares.saveme.core.sync.ReadTarget.Wallet("w1") to true), env.runner.refreshes)
         assertEquals(emptyList(), env.transactionDao.rows.value.values.filter { it.carryConfirmedAt != null })
     }
 
     @Test
     fun theReconcilerOnlyStartsWatchingOnceSignedIn() = runTest {
-        val env = TransactionTestEnv(backgroundScope) { jsonResponse(200, com.fares.saveme.feature.wallets.pageOf(listOf(walletJson(id = "w1")))) }
+        val env = TransactionTestEnv(backgroundScope) { jsonResponse(200, walletBody(walletJson(id = "w1"))) }
         env.signedIn()
         env.authState.value = AuthState.SignedOut(com.fares.saveme.feature.auth.domain.SignOutReason.None)
         env.seedWallet(walletJson(id = "w1"))
@@ -40,10 +40,10 @@ class TransactionsSyncCoordinatorTest {
         runCurrent()
         env.repository.storeServerCopy(dto(transactionJson(version = 2)), own = true)
         runCurrent()
-        assertEquals(0, env.requests.size)
+        assertEquals(0, env.runner.refreshes.size)
         env.authState.value = AuthState.SignedIn(com.fares.saveme.feature.transactions.txAccount)
         awaitReal { env.transactionDao.rows.value.values.none { it.carryConfirmedAt != null } }
-        assertTrue(env.requests.isNotEmpty())
+        assertTrue(env.runner.refreshes.isNotEmpty())
     }
 
     @Test
@@ -52,6 +52,6 @@ class TransactionsSyncCoordinatorTest {
         env.authState.value = AuthState.SignedOut(com.fares.saveme.feature.auth.domain.SignOutReason.None)
         TransactionsSyncCoordinator(env.authState, env.reconciler, backgroundScope).onForeground()
         runCurrent()
-        assertEquals(0, env.requests.size)
+        assertEquals(0, env.runner.refreshes.size)
     }
 }

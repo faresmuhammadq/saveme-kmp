@@ -25,7 +25,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -64,8 +66,10 @@ class TransactionCapturedResponsesTest {
         }
     }
 
-    private fun cashJson(balance: Long = 100_000) = walletJson(id = Captured.CASH, name = "QA Cash", opening = 100_000, balance = balance)
-    private fun bankJson(role: String = "owner") = walletJson(id = Captured.BANK, name = "QA Bank", opening = 0, balance = 0, role = role)
+    // At the position the live wallets had before QA's first transaction (WALLET_UNLOCKED_200): a copy at a later
+    // position would already count the captured transactions (spec 009 FR-013).
+    private fun cashJson(balance: Long = 100_000) = walletJson(id = Captured.CASH, name = "QA Cash", opening = 100_000, balance = balance, changeSeq = 3)
+    private fun bankJson(role: String = "owner") = walletJson(id = Captured.BANK, name = "QA Bank", opening = 0, balance = 0, role = role, changeSeq = 3)
 
     private fun dataOf(body: String): String =
         AppJson.parseToJsonElement(body).jsonObject.getValue("data").toString()
@@ -76,6 +80,18 @@ class TransactionCapturedResponsesTest {
     private suspend fun TransactionTestEnv.seedCashAndBank(cashBalance: Long = 100_000, bankRole: String = "owner") {
         seedWallet(cashJson(cashBalance))
         seedWallet(bankJson(bankRole))
+    }
+
+    /**
+     * A complete read of a wallet's feed from the start whose rows are the `data` of the captured pages: the
+     * rows go to the transaction applier in order, then the sweep removes what was not returned (spec 009).
+     */
+    private suspend fun TransactionTestEnv.readFeed(walletId: String, vararg pages: String) {
+        val records = pages.flatMap { AppJson.parseToJsonElement(it).jsonObject.getValue("data").jsonArray }
+        val applier = TransactionFeedApplier(repository)
+        val scope = com.fares.saveme.core.sync.SyncScope(com.fares.saveme.core.sync.ScopeKind.Wallet, walletId)
+        applier.apply(scope, records)
+        applier.sweep(scope, records.map { it.jsonObject.getValue("id").jsonPrimitive.content }.toSet())
     }
 
     private suspend fun TransactionTestEnv.view(id: String, from: String = Captured.CASH) =
@@ -94,25 +110,13 @@ class TransactionCapturedResponsesTest {
     ) = TransactionDraft(Captured.CASH, kind, date, amount, "EGP", category, counter, note, memo, person, cleared)
 
     @Test
-    fun theRealListPagesAreAllReadByCursorAndEveryRowIsStoredWithNullRecurringLinks() = runTest {
-        val script = Script()
-        script.on(HttpMethod.Get, "/transactions?limit=200", 200, Captured.LIST_PAGE1_200)
-        script.on(HttpMethod.Get, "cursor=eyJrIjoiMDgyMTg1ZDE3NDZiY2UxYyIsInAiOnsidmFsdWUiOiIyMDI2LTEwLTAxIiwiaWQiOiIwMWEwZmQ1Yi00MTYyLTcwOWUtYmUyOS0yYzhlMDc4NDk0N2QifX0", 200, Captured.LIST_PAGE2_200)
-        script.on(HttpMethod.Get, "cursor=eyJrIjoiMDgyMTg1ZDE3NDZiY2UxYyIsInAiOnsidmFsdWUiOiIyMDI2LTEwLTAxIiwiaWQiOiIwMWEwZmQ1Yi0yMTBkLTdhNmYtOWE2NS03MWE3MTgyY2JmMmEifX0", 200, Captured.LIST_PAGE3_200)
-        val env = env(backgroundScope, script)
+    fun theRealListPagesAreAllAppliedAndEveryRowIsStoredWithNullRecurringLinks() = runTest {
+        val env = env(backgroundScope, Script())
         env.signedIn()
         env.seedCashAndBank()
 
-        val read = assertIs<ApiResult.Success<WalletRead>>(env.repository.refreshWallet(Captured.CASH))
-        assertTrue(read.value.changed)
-        val gets = env.requests.filter { it.method == HttpMethod.Get }
-        assertEquals(3, gets.size)
-        gets.forEach {
-            assertEquals("200", it.url.parameters["limit"])
-            // No filter, sort or search reaches the server: search and filters run on the phone (FR-027, FR-028).
-            assertTrue(it.url.parameters.names().all { name -> name == "limit" || name == "cursor" })
-        }
-        assertNull(gets[0].url.parameters["cursor"])
+        env.readFeed(Captured.CASH, Captured.LIST_PAGE1_200, Captured.LIST_PAGE2_200, Captured.LIST_PAGE3_200)
+
         val rows = env.transactionDao.getAll()
         assertEquals(5, rows.size)
         assertTrue(rows.all { it.recurringRuleId == null && it.occurrenceId == null })
@@ -132,8 +136,8 @@ class TransactionCapturedResponsesTest {
         val env = env(backgroundScope, script)
         env.signedIn()
         env.seedCashAndBank()
-        env.repository.refreshWallet(Captured.CASH)
-        env.repository.refreshWallet(Captured.BANK)
+        env.readFeed(Captured.CASH, Captured.LIST_CASH_200)
+        env.readFeed(Captured.BANK, Captured.LIST_BANK_200)
 
         assertEquals(1, env.transactionDao.getAll().count { it.id == Captured.TRANSFER })
         val fromCash = env.view(Captured.TRANSFER, Captured.CASH)!!
@@ -154,10 +158,11 @@ class TransactionCapturedResponsesTest {
     fun aCreateSendsWhatQaSentAndTheBalanceNeverJumpsWhileItSyncsAndSettles() = runTest {
         val script = Script()
         script.on(HttpMethod.Put, "transactions/${Captured.EXPENSE}", 201, Captured.PUT_CREATED_201)
-        script.on(HttpMethod.Get, "wallets?", 200, pageOf(listOf(dataOf(Captured.WALLET_AFTER_CREATE_200), dataOf(Captured.WALLET_BANK_AFTER_TRANSFER_200).replace("50000", "0"))))
         val env = env(backgroundScope, script, ids = listOf(Captured.EXPENSE))
         env.signedIn()
         env.seedCashAndBank()
+        // The wallet's feed read re-sends the wallet record with the balance and the lock the first transaction brought.
+        env.runner.onRefresh = { _, _ -> env.seedWallet(dataOf(Captured.WALLET_AFTER_CREATE_200)) }
 
         val created = assertIs<CreateResult.Created>(env.service.create(draft(4_550, note = "Weekly shop")))
         assertEquals(Captured.EXPENSE, created.id)
@@ -278,7 +283,7 @@ class TransactionCapturedResponsesTest {
         env.seedCashAndBank()
         env.seed(dataOf(Captured.PUT_SAVED_200))
         val opened = env.view(Captured.EXPENSE)!!.server!!
-        env.repository.refreshWallet(Captured.CASH)
+        env.readFeed(Captured.CASH, Captured.LIST_BANK_200)
         assertNull(env.view(Captured.EXPENSE))
 
         script.on(HttpMethod.Put, "transactions/${Captured.EXPENSE}", 409, Captured.PUT_AFTER_DELETE_CONFLICT_409)
@@ -286,7 +291,7 @@ class TransactionCapturedResponsesTest {
         assertEquals(SaveResult.Saved, env.service.save(Captured.EXPENSE, edit, baseVersion = 2, lastSeen = opened))
         // Listed again with the person's values while the change waits; a read meanwhile keeps it.
         assertEquals(8_000, env.view(Captured.EXPENSE)!!.shown.amountMinor)
-        env.repository.refreshWallet(Captured.CASH)
+        env.readFeed(Captured.CASH, Captured.LIST_BANK_200)
         assertNotNull(env.view(Captured.EXPENSE))
 
         env.engine.drain()
@@ -307,6 +312,7 @@ class TransactionCapturedResponsesTest {
         val env = env(backgroundScope, script)
         env.signedIn()
         env.seedCashAndBank(cashBalance = 94_000)
+        env.runner.onRefresh = { _, _ -> env.seedWallet(cashJson(100_000)) }
         env.seed(dataOf(Captured.PUT_SAVED_200))
         assertEquals(SaveResult.Saved, env.service.delete(Captured.EXPENSE))
         assertEquals(100_000, env.wallets.observeWallet(Captured.CASH).first()!!.displayedBalanceMinor)
@@ -469,7 +475,7 @@ class TransactionCapturedResponsesTest {
         env.signedIn()
         env.seedWallet(walletJson(id = Captured.CASH, name = "QA Cash"))
         env.seedMember(Captured.USER_B, "Omar", walletId = Captured.CASH)
-        env.repository.refreshWallet(Captured.CASH)
+        env.readFeed(Captured.CASH, Captured.LIST_CASH_WITH_PARTNER_TRANSFER_200)
 
         val view = env.view(Captured.PARTNER_TRANSFER)!!
         assertEquals(Counterpart.Unknown, view.counterpart)
