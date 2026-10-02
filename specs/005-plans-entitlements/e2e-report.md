@@ -55,3 +55,27 @@ the same build:
   value from accessibility; budget-day "Applies from" note). Not caused by this feature.
 - `001-design-system-auth` US2-S5 (session ended elsewhere): pass.
 - `003-auth-completion` US3-S4 (reset ends this phone's session): pass.
+
+## Post-rebase smoke
+
+Rerun on 2026-10-02 after rebasing onto main `aeba15a` (spec 004 sync engine merged), on build
+`c665094`, emulator-5554, backend http://saveme-backend.test (127.0.0.1:43871, saveme-backend-main).
+`run-e2e.sh 005-plans-entitlements`: 11/11 flows pass (13 files; US1-S3 and US2-S5 run in two parts).
+
+| Flow | Result |
+| --- | --- |
+| US1-S1-free-answer-on-sign-in | pass |
+| US1-S3-refresh-after-operator-grant (2 parts) | pass |
+| US2-S1-free-plan-no-dates | pass |
+| US2-S2-active-subscription | pass |
+| US2-S3-grace-period | pass |
+| US2-S4-no-end-date | pass |
+| US2-S5-granted-while-app-open (2 parts) | pass |
+| US3-S1-catalogue-in-order | pass |
+| US3-S2-current-plan-marked-in-text | pass |
+| US3-S3-no-price-without-google-play | pass |
+| US3-S4-names-follow-language | pass |
+
+Spec 004 has no Maestro flows (`.maestro/004-*` absent); its behaviour is covered by the host tests,
+which pass after the rebase (484 tests, Roborazzi verify green). The Account screen goldens were
+re-recorded because the screen now shows both the sync card (004) and the Plan row (005).
