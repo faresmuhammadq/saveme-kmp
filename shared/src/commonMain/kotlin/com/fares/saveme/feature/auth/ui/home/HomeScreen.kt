@@ -83,6 +83,8 @@ fun HomeScreen(
             signingOut = state.signingOut,
             onConfirm = { onIntent(HomeIntent.SignOutConfirmed) },
             onDismiss = { onIntent(HomeIntent.SignOutDismissed) },
+            pendingChanges = state.sync.pending,
+            onSyncNow = { onIntent(HomeIntent.SyncNowClicked) },
         )
     }
 }

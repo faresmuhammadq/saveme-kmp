@@ -1,5 +1,11 @@
 package com.fares.saveme.feature.account.ui.account
 
+import androidx.compose.ui.platform.testTag
+import com.fares.saveme.core.sync.SyncStatus
+import com.fares.saveme.designsystem.component.SecondaryButton
+import com.fares.saveme.designsystem.format.formatDateTime
+import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.pluralStringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +22,12 @@ import com.fares.saveme.feature.account.ui.BackBar
 import com.fares.saveme.feature.auth.ui.signout.SignOutConfirmSheet
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.action_sync_now
+import saveme.shared.generated.resources.sync_all_synced
+import saveme.shared.generated.resources.sync_last_synced
+import saveme.shared.generated.resources.sync_needs_decision_count
+import saveme.shared.generated.resources.sync_never
+import saveme.shared.generated.resources.sync_waiting_count
 import saveme.shared.generated.resources.account_change_password
 import saveme.shared.generated.resources.account_delete
 import saveme.shared.generated.resources.account_devices
@@ -36,6 +48,7 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                 color = AppTheme.colors.caption,
             )
         }
+        SyncStatusCard(state.sync, onSyncNow = { onIntent(AccountIntent.SyncNowClicked) })
         Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
             AppListItem(
                 stringResource(Res.string.account_profile),
@@ -76,7 +89,35 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
             signingOut = state.signingOut,
             onConfirm = { onIntent(AccountIntent.SignOutConfirmed) },
             onDismiss = { onIntent(AccountIntent.SignOutDismissed) },
+            pendingChanges = state.sync.pending,
+            onSyncNow = { onIntent(AccountIntent.SyncNowClicked) },
         )
+    }
+}
+
+/** What is still only on this phone, and when the app last synced (spec 004 FR-016, FR-010). */
+@Composable
+private fun SyncStatusCard(sync: SyncStatus, onSyncNow: () -> Unit) {
+    val headline = when {
+        sync.waiting > 0 -> pluralStringResource(Res.plurals.sync_waiting_count, sync.waiting, sync.waiting)
+        sync.needsDecision > 0 -> pluralStringResource(Res.plurals.sync_needs_decision_count, sync.needsDecision, sync.needsDecision)
+        else -> stringResource(Res.string.sync_all_synced)
+    }
+    val lines = listOfNotNull(
+        pluralStringResource(Res.plurals.sync_needs_decision_count, sync.needsDecision, sync.needsDecision)
+            .takeIf { sync.waiting > 0 && sync.needsDecision > 0 },
+        sync.lastSyncedAt?.let { stringResource(Res.string.sync_last_synced, formatDateTime(it, TimeZone.currentSystemDefault().id)) }
+            ?: stringResource(Res.string.sync_never).takeIf { sync.pending > 0 },
+    )
+    Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
+        AppListItem(
+            headline,
+            modifier = Modifier.testTag("account.syncStatus"),
+            supporting = lines.joinToString("\n").ifEmpty { null },
+        )
+        if (sync.waiting > 0) {
+            SecondaryButton(stringResource(Res.string.action_sync_now), onSyncNow, modifier = Modifier.testTag("account.syncNow"))
+        }
     }
 }
 

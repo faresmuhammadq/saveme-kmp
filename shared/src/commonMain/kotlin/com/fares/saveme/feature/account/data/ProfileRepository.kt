@@ -26,7 +26,7 @@ class ProfileRepository(
 
     suspend fun push(request: ProfileWriteRequest): ApiResult<ProfileDto> = api.saveProfile(request)
 
-    /** Writes the server copy; a pending edit, conflict or rejection stays as it is (P-04.2). */
+    /** Writes the server copy; queued edits live in the sync queue and are untouched (P-04.2). */
     suspend fun storeServerCopy(dto: ProfileDto) {
         val now = clock.now().toString()
         val updated = profiles.updateServerCopy(
@@ -61,14 +61,4 @@ class ProfileRepository(
         }
         scopes.upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, now))
     }
-
-    suspend fun savePending(json: String, baseVersion: Long) = profiles.setPending(json, baseVersion)
-
-    suspend fun storeConflict(json: String) = profiles.setConflict(json)
-
-    suspend fun storeRejection(json: String) = profiles.setRejection(json)
-
-    suspend fun rebasePending(baseVersion: Long) = profiles.rebasePending(baseVersion)
-
-    suspend fun clearPending() = profiles.clearPending()
 }

@@ -51,7 +51,14 @@ class SignOutWipeTest {
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
         db.profileDao().upsert(
-            ProfileEntity("u1", "p1", 3, "Sara", "ar", "Africa/Cairo", "EGP", false, 1, null, "2026-09-28T10:00:00Z", pendingJson = "{}", pendingBaseVersion = 3),
+            ProfileEntity("u1", "p1", 3, "Sara", "ar", "Africa/Cairo", "EGP", false, 1, null, "2026-09-28T10:00:00Z"),
+        )
+        // A waiting edit (spec 004): it goes with the account, never sent under another (FR-018).
+        db.pendingChangeDao().upsert(
+            com.fares.saveme.core.sync.PendingChangeEntity(
+                "profile", "p1", "u1", "user", "u1", 3, "{}", false, false, 0, 1, "Waiting", 0, null, null, null,
+                "2026-09-28T10:00:00Z",
+            ),
         )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
@@ -60,6 +67,7 @@ class SignOutWipeTest {
         SignOutUseCase(env.repository, sessions, serverTimeout = null)()
 
         assertNull(db.profileDao().get())
+        assertNull(db.pendingChangeDao().get("profile", "p1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())
         assertNull(db.syncScopeDao().observe(SyncScopeEntity.PROFILE).first())
         assertNull(env.keyValues.values["app_language"])

@@ -19,14 +19,12 @@ import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
 
 /** Offline-first profile writes (P-04.2, P-04.4; research R-02, R-03). */
 class ProfileSyncerTest {
@@ -35,7 +33,7 @@ class ProfileSyncerTest {
         val env = AccountTestEnv { request ->
             if (request.method == HttpMethod.Get) jsonResponse(200, meBody()) else put(request)
         }
-        val syncer = ProfileSyncer(env.profiles, env.languages, scope.backgroundScope as CoroutineScope, listOf(5.seconds, 15.seconds))
+        val syncer = ProfileSyncer(env.profiles, env.languages, env.engine, scope.backgroundScope as CoroutineScope)
         val sessions = SessionManager(env.auth.repository, env.events, scope.backgroundScope)
         val refresher = AccountRefresher(env.profiles, syncer, sessions, env.languages)
         val puts get() = env.requests.filter { it.method == HttpMethod.Put }
@@ -60,8 +58,14 @@ class ProfileSyncerTest {
         assertEquals("Sara M", view.server.displayName)
     }
 
+    /**
+     * Spec 004 moved retries into the sync engine: offline no longer schedules an in-process timer
+     * here, it asks the engine's scheduler for a drain once a connection exists (no delay). Backoff
+     * itself is covered by SyncEngineRetryTest. The person-visible behaviour is unchanged: the edit
+     * stays waiting and is sent once online.
+     */
     @Test
-    fun offlineKeepsTheEditAndRetriesWithBackoff() = runTest {
+    fun offlineKeepsTheEditAndSendsItOnceOnline() = runTest {
         var online = false
         val h = Harness(this) {
             if (online) jsonResponse(200, """{"data":${profileJson(version = 4, displayName = "Sara M")},"meta":{}}""") else throw IOException("offline")
@@ -72,19 +76,11 @@ class ProfileSyncerTest {
         h.syncer.saveLocally(edit)!!.join()
         assertEquals(1, h.puts.size)
         assertEquals(edit, h.syncer.view.first()!!.pending)
+        assertEquals(Duration.ZERO, h.env.scheduler.enqueued.last(), "waits for a connection, no backoff")
 
-        advanceTimeBy(4.seconds)
-        runCurrent()
-        assertEquals(1, h.puts.size, "no retry before 5 s")
-        val first = h.syncer.retryJob!!
-        advanceTimeBy(2.seconds)
-        first.join()
-        assertEquals(2, h.puts.size, "first retry after 5 s")
         online = true
-        val second = h.syncer.retryJob!!
-        advanceTimeBy(16.seconds)
-        second.join()
-        assertEquals(3, h.puts.size, "second retry after 15 s")
+        h.env.engine.drain() // what the scheduler runs once a connection exists
+        assertEquals(2, h.puts.size)
         assertNull(h.syncer.view.first()!!.pending)
     }
 
@@ -169,7 +165,7 @@ class ProfileSyncerTest {
         h.env.auth.keyValues.values.clear()
         val env = AccountTestEnv { jsonResponse(200, meBody(profile = profileJson(locale = "ar"))) }
         env.signedIn()
-        val refresher = AccountRefresher(env.profiles, ProfileSyncer(env.profiles, env.languages, backgroundScope), SessionManager(env.auth.repository, env.events, backgroundScope), env.languages)
+        val refresher = AccountRefresher(env.profiles, ProfileSyncer(env.profiles, env.languages, env.engine, backgroundScope), SessionManager(env.auth.repository, env.events, backgroundScope), env.languages)
         refresher.refresh()
         assertEquals(AppLanguage.Ar, env.languages.effective())
     }

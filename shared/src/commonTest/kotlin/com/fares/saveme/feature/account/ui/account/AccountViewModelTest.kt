@@ -51,3 +51,30 @@ class AccountViewModelTest {
         assertEquals(1, calls)
     }
 }
+
+/** Spec 004 US2 and US5: what is still only on the phone, and "Sync now". */
+class AccountSyncStatusTest {
+    private val status = MutableStateFlow(com.fares.saveme.core.sync.SyncStatus())
+
+    @Test
+    fun mirrorsTheSyncStatusAndSyncNowCallsOnce() = runMviTest {
+        var syncs = 0
+        val vm = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = {}, syncStatus = status, syncNow = { syncs++ })
+        status.value = com.fares.saveme.core.sync.SyncStatus(waiting = 2, needsDecision = 1)
+        assertEquals(2, vm.state.value.sync.waiting)
+        assertEquals(3, vm.state.value.sync.pending, "the sign-out sheet warns about all of them")
+
+        vm.onIntent(AccountIntent.SyncNowClicked)
+        assertEquals(1, syncs)
+    }
+
+    @Test
+    fun confirmingSignOutStillSignsOutWithChangesWaiting() = runMviTest {
+        var signedOut = 0
+        val vm = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = { signedOut++ }, syncStatus = status)
+        status.value = com.fares.saveme.core.sync.SyncStatus(waiting = 1)
+        vm.onIntent(AccountIntent.SignOutClicked)
+        vm.onIntent(AccountIntent.SignOutConfirmed)
+        assertEquals(1, signedOut)
+    }
+}

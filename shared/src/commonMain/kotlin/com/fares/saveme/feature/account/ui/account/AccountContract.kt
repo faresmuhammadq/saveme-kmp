@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.account.ui.account
 
+import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.AccountState as AccountStatus
 import kotlin.time.Instant
@@ -10,6 +11,8 @@ data class AccountState(
     val deletionPendingOn: Instant? = null,
     val confirmSignOutVisible: Boolean = false,
     val signingOut: Boolean = false,
+    /** Changes still only on this phone (spec 004 FR-016). */
+    val sync: SyncStatus = SyncStatus(),
 )
 
 enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount }
@@ -20,6 +23,7 @@ sealed interface AccountIntent {
     data object SignOutClicked : AccountIntent
     data object SignOutConfirmed : AccountIntent
     data object SignOutDismissed : AccountIntent
+    data object SyncNowClicked : AccountIntent
 }
 
 sealed interface AccountEffect {
@@ -31,6 +35,7 @@ sealed interface AccountChange {
     data class Account(val signedIn: AuthState.SignedIn) : AccountChange
     data class SignOutConfirmVisible(val visible: Boolean) : AccountChange
     data object SigningOut : AccountChange
+    data class Sync(val status: SyncStatus) : AccountChange
 }
 
 fun reduce(state: AccountState, change: AccountChange): AccountState = when (change) {
@@ -42,4 +47,5 @@ fun reduce(state: AccountState, change: AccountChange): AccountState = when (cha
     )
     is AccountChange.SignOutConfirmVisible -> state.copy(confirmSignOutVisible = change.visible)
     AccountChange.SigningOut -> state.copy(signingOut = true)
+    is AccountChange.Sync -> state.copy(sync = change.status)
 }

@@ -55,6 +55,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.koin.android)
+            implementation(libs.androidx.work.runtime.ktx)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -99,6 +100,8 @@ kotlin {
             implementation(libs.roborazzi.compose)
             implementation(libs.androidx.compose.uiTestJunit4)
             implementation(libs.androidx.compose.uiTestManifest)
+            implementation(libs.androidx.room.testing)
+            implementation(libs.androidx.work.testing)
         }
     }
 }

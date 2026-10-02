@@ -9,8 +9,8 @@ import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /**
- * The signed-in person's profile: the last server copy, plus a local edit waiting to sync and
- * any conflict or rejection the server answered it with (data-model §1).
+ * The signed-in person's profile: the last server copy. A local edit waiting to sync, and any
+ * clash or refusal, live in the sync queue (spec 004, `pending_change`).
  */
 @Entity(tableName = "profile")
 data class ProfileEntity(
@@ -25,10 +25,6 @@ data class ProfileEntity(
     @ColumnInfo(name = "budget_period_start_day") val budgetPeriodStartDay: Int,
     @ColumnInfo(name = "budget_period_start_day_from") val budgetPeriodStartDayFrom: String?,
     @ColumnInfo(name = "refreshed_at") val refreshedAt: String,
-    @ColumnInfo(name = "pending_json") val pendingJson: String? = null,
-    @ColumnInfo(name = "pending_base_version") val pendingBaseVersion: Long? = null,
-    @ColumnInfo(name = "conflict_json") val conflictJson: String? = null,
-    @ColumnInfo(name = "rejection_json") val rejectionJson: String? = null,
 )
 
 @Dao
@@ -45,7 +41,7 @@ interface ProfileDao {
     @Query("DELETE FROM profile")
     suspend fun deleteAll()
 
-    /** Writes the server copy only; a pending edit, conflict or rejection is left alone (P-04.2). */
+    /** Writes the server copy only; queued edits live elsewhere and are never touched (P-04.2). */
     @Query(
         """UPDATE profile SET id = :id, version = :version, display_name = :displayName, locale = :locale,
         timezone = :timezone, default_currency = :defaultCurrency, default_currency_locked = :defaultCurrencyLocked,
@@ -65,19 +61,4 @@ interface ProfileDao {
         budgetPeriodStartDayFrom: String?,
         refreshedAt: String,
     ): Int
-
-    @Query("UPDATE profile SET pending_json = :json, pending_base_version = :baseVersion, rejection_json = NULL")
-    suspend fun setPending(json: String, baseVersion: Long)
-
-    @Query("UPDATE profile SET conflict_json = :json")
-    suspend fun setConflict(json: String)
-
-    @Query("UPDATE profile SET rejection_json = :json")
-    suspend fun setRejection(json: String)
-
-    @Query("UPDATE profile SET pending_json = NULL, pending_base_version = NULL, conflict_json = NULL, rejection_json = NULL")
-    suspend fun clearPending()
-
-    @Query("UPDATE profile SET pending_base_version = :baseVersion, conflict_json = NULL")
-    suspend fun rebasePending(baseVersion: Long)
 }

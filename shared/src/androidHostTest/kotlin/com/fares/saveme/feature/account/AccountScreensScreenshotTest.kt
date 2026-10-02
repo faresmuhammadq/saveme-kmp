@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.LayoutDirection
 import com.fares.saveme.core.network.ApiErrorCode
+import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.account.domain.model.DeviceSession
 import com.fares.saveme.feature.account.domain.model.Profile
@@ -89,6 +90,15 @@ class AccountScreensScreenshotTest(
                 HomeScreen(HomeState(email = "sara@example.com", deletionPendingOn = Instant.parse("2026-10-28T10:00:00Z")), {})
             }),
             arrayOf("account", @Composable { AccountScreen(AccountState("sara@example.com", emailVerified = false)) {} }),
+            arrayOf("account_sync_waiting", @Composable {
+                AccountScreen(AccountState("sara@example.com", sync = SyncStatus(waiting = 2, needsDecision = 1, lastSyncedAt = at))) {}
+            }),
+            arrayOf("account_synced", @Composable {
+                AccountScreen(AccountState("sara@example.com", sync = SyncStatus(lastSyncedAt = at))) {}
+            }),
+            arrayOf("sign_out_pending", @Composable {
+                AccountScreen(AccountState("sara@example.com", confirmSignOutVisible = true, sync = SyncStatus(waiting = 2))) {}
+            }),
             arrayOf("sessions", @Composable {
                 DeviceSessionsScreen(DeviceSessionsState(sessions, at, "Africa/Cairo"), {})
             }),

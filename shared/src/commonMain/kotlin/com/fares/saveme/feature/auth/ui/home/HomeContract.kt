@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.auth.ui.home
 
+import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.auth.ui.verify.ResendChange
@@ -18,6 +19,8 @@ data class HomeState(
     val signingOut: Boolean = false,
     /** Verify prompt's "Resend email" (spec 003 FR-012, FR-013). */
     val resend: ResendState = ResendState(),
+    /** Changes still only on this phone; the sign-out sheet warns about them (spec 004 FR-017). */
+    val sync: SyncStatus = SyncStatus(),
 )
 
 /** What cancelling a pending deletion came to, as far as Home needs to know. */
@@ -31,6 +34,7 @@ sealed interface HomeIntent {
     data object SignOutConfirmed : HomeIntent
     data object SignOutDismissed : HomeIntent
     data object ResendClicked : HomeIntent
+    data object SyncNowClicked : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -47,6 +51,7 @@ sealed interface HomeChange {
     data class SignOutConfirmVisible(val visible: Boolean) : HomeChange
     data object SigningOut : HomeChange
     data class Resend(val change: ResendChange) : HomeChange
+    data class Sync(val status: SyncStatus) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -62,4 +67,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.SignOutConfirmVisible -> state.copy(confirmSignOutVisible = change.visible)
     HomeChange.SigningOut -> state.copy(signingOut = true)
     is HomeChange.Resend -> state.copy(resend = reduceResend(state.resend, change.change))
+    is HomeChange.Sync -> state.copy(sync = change.status)
 }
