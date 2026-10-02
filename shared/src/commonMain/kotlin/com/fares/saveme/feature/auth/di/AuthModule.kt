@@ -3,6 +3,8 @@ package com.fares.saveme.feature.auth.di
 import com.fares.saveme.core.config.AppConfig
 import com.fares.saveme.core.config.Environment
 import com.fares.saveme.core.session.UserDataCleaner
+import com.fares.saveme.core.sync.CurrentAccount
+import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.data.AccountSnapshotStore
 import com.fares.saveme.feature.auth.data.AuthRepository
 import com.fares.saveme.feature.auth.data.IdentityApi
@@ -47,6 +49,15 @@ val authModule = module {
     single {
         val config = get<AppConfig>()
         AuthLinkParser(config.linkHost, config.linkPort, scheme = if (config.environment == Environment.Dev) "http" else "https")
+    }
+    single<CurrentAccount> {
+        val sessions = get<SessionManager>()
+        object : CurrentAccount {
+            override fun userId() = (sessions.state.value as? AuthState.SignedIn)?.account?.userId
+            override suspend fun load() {
+                if (sessions.state.value == AuthState.Unknown) sessions.restore()
+            }
+        }
     }
     factory { SignInUseCase(get(), get(), get(), get()) }
     factory { SignOutUseCase(get(), get()) }

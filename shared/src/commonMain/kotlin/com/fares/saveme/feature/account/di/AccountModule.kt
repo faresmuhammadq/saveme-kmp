@@ -4,7 +4,10 @@ import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
+import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.account.data.ProfileRepository
+import com.fares.saveme.feature.account.data.ProfileSyncHandler
 import com.fares.saveme.feature.account.domain.AccountRefresher
 import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
 import com.fares.saveme.feature.account.domain.ProfileSyncer
@@ -34,6 +37,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val accountModule = module {
@@ -41,10 +45,11 @@ val accountModule = module {
     single { DeviceSessionRepository(get(), get<AppDatabase>().deviceSessionDao(), get<AppDatabase>().syncScopeDao()) }
     single { SessionRefresher(get()) }
     single { ProfileRepository(get(), get<AppDatabase>().profileDao(), get<AppDatabase>().syncScopeDao()) }
-    single { ProfileSyncer(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    single { ProfileSyncHandler(get(), get()) } bind SyncHandler::class
+    single { ProfileSyncer(get(), get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
     single { AccountRefresher(get(), get(), get(), get()) }
     single(createdAtStart = true) {
-        AccountSyncCoordinator(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)).also { it.start() }
+        AccountSyncCoordinator(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), get()).also { it.start() }
     }
     factory { EndSessionUseCase(get(), get()) }
     factory { EndOtherSessionsUseCase(get(), get()) }
@@ -56,6 +61,7 @@ val accountModule = module {
         val signOut = get<SignOutUseCase>()
         val cancel = get<CancelDeletionUseCase>()
         val resend = get<ResendVerificationUseCase>()
+        val engine = get<SyncEngine>()
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -67,6 +73,8 @@ val accountModule = module {
                 }
             },
             resendVerification = { resend() },
+            syncStatus = engine.status,
+            syncNow = { engine.syncNow() },
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's
@@ -86,7 +94,13 @@ val accountModule = module {
     }
     viewModel {
         val signOut = get<SignOutUseCase>()
-        AccountViewModel(get<SessionManager>().state, signOut = { signOut() })
+        val engine = get<SyncEngine>()
+        AccountViewModel(
+            get<SessionManager>().state,
+            signOut = { signOut() },
+            syncStatus = engine.status,
+            syncNow = { engine.syncNow() },
+        )
     }
     viewModel {
         val refresher = get<SessionRefresher>()

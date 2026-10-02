@@ -9,6 +9,8 @@ import com.fares.saveme.core.storage.InMemoryKeyValueStore
 import com.fares.saveme.core.storage.KeyValueStore
 import com.fares.saveme.core.storage.SecureStore
 import com.fares.saveme.core.storage.StubSecureStore
+import com.fares.saveme.core.sync.NoopSyncScheduler
+import com.fares.saveme.core.sync.SyncScheduler
 import org.koin.dsl.module
 
 fun iosPlatformModule() = module {
@@ -16,4 +18,5 @@ fun iosPlatformModule() = module {
     single<SecureStore> { StubSecureStore() }
     single<KeyValueStore> { InMemoryKeyValueStore() }
     single<AppDatabase> { buildAppDatabase(databaseBuilder()) }
+    single<SyncScheduler> { NoopSyncScheduler() }
 }

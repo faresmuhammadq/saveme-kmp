@@ -286,4 +286,24 @@
     <string name="paste_link_body">Paste a verification or reset link from a mail to open it here.</string>
     <string name="action_open">Open</string>
     <string name="paste_link_error">Not a verification or reset link</string>
+    <!-- Sync engine (spec 004) -->
+    <plurals name="sync_waiting_count">
+        <item quantity="one">%1$d change waiting to sync</item>
+        <item quantity="other">%1$d changes waiting to sync</item>
+    </plurals>
+    <plurals name="sync_needs_decision_count">
+        <item quantity="one">%1$d change needs your decision</item>
+        <item quantity="other">%1$d changes need your decision</item>
+    </plurals>
+    <string name="sync_all_synced">Everything is synced</string>
+    <string name="sync_last_synced">Last synced %1$s</string>
+    <string name="sync_never">Not synced yet</string>
+    <string name="action_sync_now">Sync now</string>
+    <plurals name="sign_out_pending_warning">
+        <item quantity="one">%1$d change hasn’t synced. Signing out now discards it.</item>
+        <item quantity="other">%1$d changes haven’t synced. Signing out now discards them.</item>
+    </plurals>
+    <string name="sync_deleted_elsewhere">Deleted on another device.</string>
+    <string name="action_restore_with_mine">Restore with my change</string>
+    <string name="action_accept_deletion">Accept the deletion</string>
 </resources>

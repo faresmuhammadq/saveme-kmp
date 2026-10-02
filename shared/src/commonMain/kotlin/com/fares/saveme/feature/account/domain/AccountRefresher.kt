@@ -25,8 +25,7 @@ class AccountRefresher(
         val me = result.value
         repository.storeServerCopy(me.profile)
         sessions.updateAccount(me.account)
-        val row = repository.read()
-        if (row?.pendingJson == null) {
+        if (!syncer.hasPendingEdit()) {
             AppLanguage.fromTag(me.profile.locale)?.let { languages.set(it) }
         } else {
             syncer.push()

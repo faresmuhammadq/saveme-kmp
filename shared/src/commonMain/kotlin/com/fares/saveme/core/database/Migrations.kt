@@ -1,0 +1,49 @@
+package com.fares.saveme.core.database
+
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
+
+/**
+ * v1 → v2 (spec 004, research R-09): the profile's waiting edit moves into the shared sync queue,
+ * so an edit made before the update still syncs after it (FR-005).
+ */
+internal val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `pending_change` (`record_type` TEXT NOT NULL, `record_id` TEXT NOT NULL,
+            `account_id` TEXT NOT NULL, `scope_kind` TEXT NOT NULL, `scope_id` TEXT NOT NULL,
+            `base_version` INTEGER NOT NULL, `payload_json` TEXT NOT NULL, `is_delete` INTEGER NOT NULL,
+            `restore` INTEGER NOT NULL, `revision` INTEGER NOT NULL, `created_order` INTEGER NOT NULL,
+            `state` TEXT NOT NULL, `attempts` INTEGER NOT NULL, `next_attempt_at` TEXT, `clash_json` TEXT,
+            `refusal_json` TEXT, `updated_at` TEXT NOT NULL, PRIMARY KEY(`record_type`, `record_id`))""",
+        )
+        // A rejection was stored as {field: code}; the queue keeps {code, fields} (data-model §1).
+        connection.execSQL(
+            """INSERT INTO `pending_change` (`record_type`, `record_id`, `account_id`, `scope_kind`, `scope_id`,
+            `base_version`, `payload_json`, `is_delete`, `restore`, `revision`, `created_order`, `state`, `attempts`,
+            `next_attempt_at`, `clash_json`, `refusal_json`, `updated_at`)
+            SELECT 'profile', `id`, `user_id`, 'user', `user_id`, COALESCE(`pending_base_version`, `version`),
+            `pending_json`, 0, 0, 0, 1,
+            CASE WHEN `conflict_json` IS NOT NULL THEN 'Clash' WHEN `rejection_json` IS NOT NULL THEN 'Refused' ELSE 'Waiting' END,
+            0, NULL, `conflict_json`,
+            CASE WHEN `rejection_json` IS NOT NULL THEN '{"code":"VALIDATION_FAILED","fields":' || `rejection_json` || '}' END,
+            `refreshed_at`
+            FROM `profile` WHERE `pending_json` IS NOT NULL""",
+        )
+        connection.execSQL(
+            """CREATE TABLE `profile_new` (`user_id` TEXT NOT NULL, `id` TEXT NOT NULL, `version` INTEGER NOT NULL,
+            `display_name` TEXT, `locale` TEXT NOT NULL, `timezone` TEXT NOT NULL, `default_currency` TEXT NOT NULL,
+            `default_currency_locked` INTEGER NOT NULL, `budget_period_start_day` INTEGER NOT NULL,
+            `budget_period_start_day_from` TEXT, `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`user_id`))""",
+        )
+        connection.execSQL(
+            """INSERT INTO `profile_new` SELECT `user_id`, `id`, `version`, `display_name`, `locale`, `timezone`,
+            `default_currency`, `default_currency_locked`, `budget_period_start_day`, `budget_period_start_day_from`,
+            `refreshed_at` FROM `profile`""",
+        )
+        connection.execSQL("DROP TABLE `profile`")
+        connection.execSQL("ALTER TABLE `profile_new` RENAME TO `profile`")
+        connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `last_pushed_at` TEXT")
+    }
+}

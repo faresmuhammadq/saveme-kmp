@@ -6,7 +6,11 @@ import com.fares.saveme.core.storage.StoredSession
 import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.core.locale.AppLanguageStore
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
+import com.fares.saveme.core.sync.FakePendingChangeDao
+import com.fares.saveme.core.sync.FakeSyncScheduler
+import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.feature.account.data.ProfileRepository
+import com.fares.saveme.feature.account.data.ProfileSyncHandler
 import com.fares.saveme.feature.account.data.local.DeviceSessionDao
 import com.fares.saveme.feature.account.data.local.DeviceSessionEntity
 import com.fares.saveme.feature.account.data.local.ProfileDao
@@ -39,6 +43,11 @@ class FakeSyncScopeDao : SyncScopeDao {
     override suspend fun upsert(entity: SyncScopeEntity) { rows.value = rows.value + (entity.scope to entity) }
     override suspend fun deleteAll() { rows.value = emptyMap() }
     override fun observe(scope: String): Flow<SyncScopeEntity?> = rows.map { it[scope] }
+    override suspend fun markPushed(scope: String, at: String) {
+        val current = rows.value[scope] ?: SyncScopeEntity(scope, "")
+        rows.value = rows.value + (scope to current.copy(lastPushedAt = at))
+    }
+    override fun observeLastPushed(): Flow<String?> = rows.map { r -> r.values.mapNotNull { it.lastPushedAt }.maxOrNull() }
 }
 
 class FakeProfileDao : ProfileDao {
@@ -61,11 +70,6 @@ class FakeProfileDao : ProfileDao {
         )
         return 1
     }
-    override suspend fun setPending(json: String, baseVersion: Long) { row.value = row.value?.copy(pendingJson = json, pendingBaseVersion = baseVersion, rejectionJson = null) }
-    override suspend fun setConflict(json: String) { row.value = row.value?.copy(conflictJson = json) }
-    override suspend fun setRejection(json: String) { row.value = row.value?.copy(rejectionJson = json) }
-    override suspend fun clearPending() { row.value = row.value?.copy(pendingJson = null, pendingBaseVersion = null, conflictJson = null, rejectionJson = null) }
-    override suspend fun rebasePending(baseVersion: Long) { row.value = row.value?.copy(pendingBaseVersion = baseVersion, conflictJson = null) }
 }
 
 fun profileJson(
@@ -110,6 +114,10 @@ class AccountTestEnv(handler: suspend MockRequestHandleScope.(HttpRequestData) -
     val sessions = DeviceSessionRepository(api, sessionDao, scopeDao)
     val profiles = ProfileRepository(api, profileDao, scopeDao)
     val languages = AppLanguageStore(auth.keyValues, auth.clientInfo)
+    val pendingDao = FakePendingChangeDao()
+    val scheduler = FakeSyncScheduler()
+    val profileHandler = ProfileSyncHandler(profiles, languages)
+    val engine = SyncEngine(pendingDao, scopeDao, listOf(profileHandler), scheduler, currentAccountId = { "u1" })
     val requests get() = auth.requests
     val events get() = auth.events
 

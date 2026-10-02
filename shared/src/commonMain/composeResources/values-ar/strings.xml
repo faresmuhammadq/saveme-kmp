@@ -298,4 +298,36 @@
     <string name="paste_link_body">الصق رابط تأكيد أو إعادة تعيين من بريد لفتحه هنا.</string>
     <string name="action_open">فتح</string>
     <string name="paste_link_error">ليس رابط تأكيد أو إعادة تعيين</string>
+    <!-- Sync engine (spec 004) -->
+    <plurals name="sync_waiting_count">
+        <item quantity="zero">لا تغييرات بانتظار المزامنة</item>
+        <item quantity="one">تغيير واحد بانتظار المزامنة</item>
+        <item quantity="two">تغييران بانتظار المزامنة</item>
+        <item quantity="few">%1$d تغييرات بانتظار المزامنة</item>
+        <item quantity="many">%1$d تغييرًا بانتظار المزامنة</item>
+        <item quantity="other">%1$d تغيير بانتظار المزامنة</item>
+    </plurals>
+    <plurals name="sync_needs_decision_count">
+        <item quantity="zero">لا تغييرات تحتاج إلى قرارك</item>
+        <item quantity="one">تغيير واحد يحتاج إلى قرارك</item>
+        <item quantity="two">تغييران يحتاجان إلى قرارك</item>
+        <item quantity="few">%1$d تغييرات تحتاج إلى قرارك</item>
+        <item quantity="many">%1$d تغييرًا يحتاج إلى قرارك</item>
+        <item quantity="other">%1$d تغيير يحتاج إلى قرارك</item>
+    </plurals>
+    <string name="sync_all_synced">كل شيء متزامن</string>
+    <string name="sync_last_synced">آخر مزامنة %1$s</string>
+    <string name="sync_never">لم تتم المزامنة بعد</string>
+    <string name="action_sync_now">زامن الآن</string>
+    <plurals name="sign_out_pending_warning">
+        <item quantity="zero">لا تغييرات غير متزامنة.</item>
+        <item quantity="one">تغيير واحد لم يُزامَن بعد. تسجيل الخروج الآن يتجاهله.</item>
+        <item quantity="two">تغييران لم يُزامَنا بعد. تسجيل الخروج الآن يتجاهلهما.</item>
+        <item quantity="few">%1$d تغييرات لم تُزامَن بعد. تسجيل الخروج الآن يتجاهلها.</item>
+        <item quantity="many">%1$d تغييرًا لم يُزامَن بعد. تسجيل الخروج الآن يتجاهلها.</item>
+        <item quantity="other">%1$d تغيير لم يُزامَن بعد. تسجيل الخروج الآن يتجاهلها.</item>
+    </plurals>
+    <string name="sync_deleted_elsewhere">حُذف على جهاز آخر.</string>
+    <string name="action_restore_with_mine">استعادة مع تغييري</string>
+    <string name="action_accept_deletion">قبول الحذف</string>
 </resources>

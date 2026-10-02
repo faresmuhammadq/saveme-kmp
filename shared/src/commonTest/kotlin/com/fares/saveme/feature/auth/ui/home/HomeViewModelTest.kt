@@ -80,3 +80,16 @@ class HomeSignOutAndDeletionTest {
         }
     }
 }
+
+/** Spec 004 US5: Home's sign-out sheet knows what hasn't synced. */
+class HomeSyncStatusTest {
+    @Test
+    fun carriesThePendingCountAndSyncsNow() = runMviTest {
+        val status = MutableStateFlow(com.fares.saveme.core.sync.SyncStatus(waiting = 1, needsDecision = 1))
+        var syncs = 0
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)), syncStatus = status, syncNow = { syncs++ })
+        assertEquals(2, vm.state.value.sync.pending)
+        vm.onIntent(HomeIntent.SyncNowClicked)
+        assertEquals(1, syncs)
+    }
+}
