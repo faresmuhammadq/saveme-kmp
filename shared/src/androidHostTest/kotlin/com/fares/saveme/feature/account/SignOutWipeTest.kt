@@ -46,7 +46,7 @@ class SignOutWipeTest {
             if (!signedIn) { signedIn = true; jsonResponse(200, signInSuccessBody()) } else respond("", HttpStatusCode.NoContent)
         }
         val languages = AppLanguageStore(env.keyValues, com.fares.saveme.core.network.FakeClientInfo(language = "en"))
-        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(DatabaseCleaner(db), languages))
+        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, sessions)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
@@ -82,6 +82,14 @@ class SignOutWipeTest {
             "w1",
             listOf(com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity("r1", "w1", "p1", "u2", "expense", "Partner", null, null, 1, 1, stamp)),
         )
+        // Transactions are wiped too, and so is the last wallet recorded in (spec 008 FR-032).
+        db.transactionDao().upsert(
+            com.fares.saveme.feature.transactions.data.local.TransactionEntity(
+                "t1", "u1", "w1", null, "expense", "2026-09-28", 4_550, "EGP", "c1", null, null, null, false, "u1", null, null, 1, 1,
+                stamp, stamp, null, stamp,
+            ),
+        )
+        env.keyValues.set("transactions.lastWallet", "w1")
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         languages.set(AppLanguage.Ar)
@@ -93,6 +101,8 @@ class SignOutWipeTest {
         assertNull(db.walletDao().get("w1"))
         assertEquals(emptyList<com.fares.saveme.feature.wallets.data.local.WalletMemberEntity>(), db.walletMemberDao().get("w1"))
         assertNull(db.categoryDao().get("c1"))
+        assertEquals(emptyList<com.fares.saveme.feature.transactions.data.local.TransactionEntity>(), db.transactionDao().getAll())
+        assertNull(env.keyValues.values["transactions.lastWallet"])
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity>(), db.platformCategoryDao().getAll())
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity>(), db.categoryReferenceDao().get("w1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())

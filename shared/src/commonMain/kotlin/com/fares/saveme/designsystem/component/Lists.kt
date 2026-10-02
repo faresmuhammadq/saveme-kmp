@@ -29,7 +29,11 @@ import saveme.shared.generated.resources.role_editor
 import saveme.shared.generated.resources.role_owner
 import saveme.shared.generated.resources.role_viewer
 
-/** 72dp row. A pending dot means the change has not reached the server yet. */
+/**
+ * 72dp row. A pending dot means the change has not reached the server yet. [leading] (a category
+ * tile) and [status] (words for what the dot means, P-08.3) are optional; [directionLabel] names
+ * money in or out for screen readers, since the sign alone is not announced (FR-035).
+ */
 @Composable
 fun TransactionRow(
     title: String,
@@ -40,8 +44,22 @@ fun TransactionRow(
     pendingSync: Boolean,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
+    status: String? = null,
+    directionLabel: String? = null,
+    amountModifier: Modifier = Modifier,
+    statusModifier: Modifier = Modifier,
 ) {
     val notSynced = stringResource(Res.string.cd_not_synced)
+    val amountText = formatMoney(
+        when (kind) {
+            MoneyKind.Income -> kotlin.math.abs(amountMinor)
+            MoneyKind.Expense -> -kotlin.math.abs(amountMinor)
+            else -> amountMinor
+        },
+        currency,
+        showPlus = kind == MoneyKind.Income,
+    )
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.s),
@@ -49,11 +67,15 @@ fun TransactionRow(
             .fillMaxWidth()
             .heightIn(min = AppTheme.sizes.rowTwoLine)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = AppTheme.spacing.m),
+            .padding(horizontal = AppTheme.spacing.m, vertical = if (leading != null || status != null) AppTheme.spacing.xs else 0.dp),
     ) {
+        leading?.invoke()
         Column(Modifier.weight(1f)) {
             Text(title, style = AppTheme.type.itemTitle, color = AppTheme.colors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(subtitle, style = AppTheme.type.caption, color = AppTheme.colors.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (status != null) {
+                Text(status, style = AppTheme.type.caption, color = AppTheme.money.pending, modifier = statusModifier)
+            }
         }
         if (pendingSync) {
             Box(
@@ -63,7 +85,12 @@ fun TransactionRow(
                     .semantics { contentDescription = notSynced },
             )
         }
-        MoneyText(amountMinor, currency, kind)
+        MoneyText(
+            amountMinor, currency, kind,
+            modifier = amountModifier.then(
+                if (directionLabel != null) Modifier.semantics { contentDescription = "$directionLabel $amountText" } else Modifier,
+            ),
+        )
     }
 }
 

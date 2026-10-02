@@ -31,6 +31,7 @@ sealed interface HomeIntent {
     data object AccountClicked : HomeIntent
     data object WalletsClicked : HomeIntent
     data object CategoriesClicked : HomeIntent
+    data object AddTransactionClicked : HomeIntent
     data object CancelDeletion : HomeIntent
     data object SignOutClicked : HomeIntent
     data object SignOutConfirmed : HomeIntent
@@ -43,6 +44,7 @@ sealed interface HomeEffect {
     data object NavigateAccount : HomeEffect
     data object NavigateWallets : HomeEffect
     data object NavigateCategories : HomeEffect
+    data object NavigateAddTransaction : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 

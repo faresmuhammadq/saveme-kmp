@@ -1,0 +1,21 @@
+# US1-S2 (offline): Given no connection, When the person records an expense, Then it is saved on the phone, listed marked "Waiting to sync" with the balance including it, and sent once a connection returns. Part 1: online, on the wallet's transactions.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible: "EGP 100.00"
+# e2e-between: network-off

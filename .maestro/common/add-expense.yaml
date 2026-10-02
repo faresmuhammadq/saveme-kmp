@@ -1,0 +1,28 @@
+# From a wallet's transactions: records an expense of ${AMOUNT} (typed as shown, e.g. "45.50") in the category named ${CATEGORY}
+# and waits until the list is back. The category choice is a sheet in its own window, so it is tapped by its text.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- inputText: ${AMOUNT}
+- hideKeyboard
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: ${CATEGORY}
+    timeout: 15000
+- tapOn: ${CATEGORY}
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000

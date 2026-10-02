@@ -1,0 +1,56 @@
+# US1-S5: Given the editor, When the person chooses yesterday's date, Then the transaction is listed under Yesterday.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- inputText: "10"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: "Fares"
+    timeout: 15000
+- tapOn: "Fares"
+# The picker opens on today's month and shows day numbers as text. On the 1st, yesterday is in the
+# previous month: page back first (Material 3's "Change to previous month" button).
+- tapOn:
+    id: "txEditor.date"
+- extendedWaitUntil:
+    visible: "Done"
+    timeout: 15000
+- evalScript: ${output.yesterday = new Date(Date.now() - 86400000).getDate().toString()}
+- evalScript: ${output.firstOfMonth = new Date().getDate() === 1}
+- runFlow:
+    when:
+      true: ${output.firstOfMonth}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: ${output.yesterday}
+- tapOn: "Done"
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible: "Yesterday"
+    timeout: 15000

@@ -1,10 +1,17 @@
 package com.fares.saveme.designsystem.component
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,4 +100,41 @@ fun MoneyText(
             maxLines = 1,
         )
     }
+}
+
+/**
+ * The large amount input of the transaction editor (research R-15): digits and one decimal mark,
+ * the currency code beside it, always left-to-right inside right-to-left layouts (P-06.3). The text
+ * is what the person typed; the store parses it, never a float (P-03.2).
+ */
+@Composable
+fun AmountField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    currency: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    errorText: String? = null,
+    supportingText: String? = null,
+    autoFocus: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val focus = remember { FocusRequester() }
+    if (autoFocus) {
+        LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    }
+    AppTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        supportingText = supportingText,
+        errorText = errorText,
+        enabled = enabled,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        trailingIcon = {
+            Text(currency, style = AppTheme.type.label.ltr(), color = AppTheme.colors.ink2, modifier = Modifier.padding(end = AppTheme.spacing.s))
+        },
+        textStyle = AppTheme.type.numeralL.ltr(),
+        modifier = modifier.focusRequester(focus),
+    )
 }

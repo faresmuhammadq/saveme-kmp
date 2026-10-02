@@ -1,0 +1,48 @@
+# US3-S1: Given a recorded transaction, When the person changes its amount and category, Then the list and the balance follow and the kind stays read-only.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "Taxi" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createCategory, SLOT: B, NAME: "Other fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn: "Taxi"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.kind"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- eraseText: 10
+- inputText: "25"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: "Other fares"
+    timeout: 15000
+- tapOn: "Other fares"
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible: "−EGP 25.00"
+    timeout: 15000
+- assertVisible: "Other fares"
+- assertVisible: "EGP 75.00"

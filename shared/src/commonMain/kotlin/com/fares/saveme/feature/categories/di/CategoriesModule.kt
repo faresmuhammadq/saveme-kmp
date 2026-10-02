@@ -17,8 +17,6 @@ import com.fares.saveme.feature.categories.domain.CategoriesService
 import com.fares.saveme.feature.categories.domain.CategoriesSyncCoordinator
 import com.fares.saveme.feature.categories.domain.CategoryReferencesCleanup
 import com.fares.saveme.feature.categories.domain.DefaultCategoriesService
-import com.fares.saveme.feature.categories.domain.NoPendingCategoryUses
-import com.fares.saveme.feature.categories.domain.PendingCategoryUses
 import com.fares.saveme.feature.categories.domain.model.CategoryKind
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorViewModel
 import com.fares.saveme.feature.categories.ui.list.CategoriesViewModel
@@ -34,7 +32,6 @@ import org.koin.dsl.module
 val categoriesModule = module {
     single { CategoryApi(get()) }
     single { CategoryReferenceApi(get()) }
-    single<PendingCategoryUses> { NoPendingCategoryUses }
     single {
         val db = get<AppDatabase>()
         val sessions = get<SessionManager>()

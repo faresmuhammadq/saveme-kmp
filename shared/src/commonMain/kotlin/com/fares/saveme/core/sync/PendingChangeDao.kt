@@ -16,6 +16,10 @@ interface PendingChangeDao {
     @Query("SELECT * FROM pending_change WHERE record_type = :type AND record_id = :id")
     fun observe(type: String, id: String): Flow<PendingChangeEntity?>
 
+    /** Every row of one record type, in any state (research R-21 of spec 008). */
+    @Query("SELECT * FROM pending_change WHERE record_type = :type ORDER BY created_order")
+    fun observeByType(type: String): Flow<List<PendingChangeEntity>>
+
     /** Rows ready to send for [accountId], oldest first. ISO-8601 UTC strings compare in time order. */
     @Query(
         """SELECT * FROM pending_change WHERE account_id = :accountId AND state = 'Waiting'

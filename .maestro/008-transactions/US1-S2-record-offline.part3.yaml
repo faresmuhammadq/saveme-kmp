@@ -1,0 +1,20 @@
+# Part 3: the connection is back; the mark clears without any action, the balance does not jump and the server has the expense.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 90000
+- assertVisible: "EGP 54.50"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.wallet.balance_minor == 5450}

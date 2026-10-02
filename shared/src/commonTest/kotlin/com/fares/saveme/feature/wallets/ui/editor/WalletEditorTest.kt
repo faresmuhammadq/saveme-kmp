@@ -202,4 +202,15 @@ class WalletEditorViewModelTest {
         assertEquals(WalletFieldProblem.NameTooLong, vm.state.value.errors[WalletField.Name])
         assertFalse(vm.state.value.saving)
     }
+
+    @Test
+    fun theCurrencyIsReadOnlyWhileAnUnsentTransactionExistsEvenIfTheServerHasNotLockedIt() = runMviTest {
+        val locked = walletView(locked = false).copy(hasPendingPostings = true)
+        val vm = vm(id = "w1", view = locked)
+        assertTrue(vm.state.value.currencyLocked)
+        assertFalse(vm.state.value.currencyEditable)
+        vm.onIntent(WalletEditorIntent.CurrencyClicked)
+        assertFalse(vm.state.value.currencyPickerVisible)
+        assertFalse(vm(id = "w1", view = walletView()).state.value.currencyLocked)
+    }
 }

@@ -1,0 +1,26 @@
+# Part 2: offline; record an expense and delete it again.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "45.50", CATEGORY: "Fares" }
+- tapOn:
+    id: "transactions.row.0"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.delete"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.delete"
+- extendedWaitUntil:
+    visible: "Delete this transaction?"
+    timeout: 15000
+- tapOn: "Delete transaction"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.empty"
+    timeout: 15000
+- assertVisible: "EGP 100.00"
+# e2e-between: network-on

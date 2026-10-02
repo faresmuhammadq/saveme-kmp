@@ -1,0 +1,32 @@
+# US1-S3: Given own categories and the default set, When the person opens the category choice for an expense, Then it offers their own categories and the defaults and nothing else (C5 US4-S1).
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.category"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: "Your categories"
+    timeout: 15000
+- assertVisible: "Fares"
+- assertVisible: "Default categories"

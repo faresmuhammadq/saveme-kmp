@@ -17,6 +17,8 @@ import com.fares.saveme.feature.categories.data.local.CategoryReferenceDao
 import com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity
 import com.fares.saveme.feature.categories.data.local.PlatformCategoryDao
 import com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity
+import com.fares.saveme.feature.transactions.data.local.TransactionDao
+import com.fares.saveme.feature.transactions.data.local.TransactionEntity
 import com.fares.saveme.feature.wallets.data.local.WalletDao
 import com.fares.saveme.feature.wallets.data.local.WalletEntity
 import com.fares.saveme.feature.wallets.data.local.WalletMemberDao
@@ -30,8 +32,9 @@ import kotlinx.coroutines.IO
         ProfileEntity::class, DeviceSessionEntity::class, SyncScopeEntity::class, PendingChangeEntity::class,
         WalletEntity::class, WalletMemberEntity::class,
         CategoryEntity::class, PlatformCategoryEntity::class, CategoryReferenceEntity::class,
+        TransactionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -45,6 +48,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun platformCategoryDao(): PlatformCategoryDao
     abstract fun categoryReferenceDao(): CategoryReferenceDao
+    abstract fun transactionDao(): TransactionDao
 }
 
 @Suppress("KotlinNoActualForExpect", "NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -54,7 +58,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 fun buildAppDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
     builder
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

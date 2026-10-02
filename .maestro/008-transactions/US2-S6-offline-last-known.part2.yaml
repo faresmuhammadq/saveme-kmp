@@ -1,0 +1,15 @@
+# Part 2: offline; the list shows what the phone holds and when it was updated.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- tapOn: "Back"
+- tapOn:
+    id: "walletDetail.transactions"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- assertVisible: "Known"
+- assertVisible:
+    id: "transactions.updatedAt"

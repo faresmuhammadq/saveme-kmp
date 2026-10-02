@@ -1,0 +1,54 @@
+# US1-S7: Given the person last recorded in one wallet, When they use Home's "Add transaction", Then that wallet is preselected and they can switch to another.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Beta", OPENING: "20000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Beta" }
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "5", CATEGORY: "Fares" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+# Editor, transactions, wallet detail and the wallet list: four screens back to Home.
+- tapOn: "Back"
+- tapOn: "Back"
+- tapOn: "Back"
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible:
+      id: "home.addTransaction"
+    timeout: 15000
+- tapOn:
+    id: "home.addTransaction"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.wallet"
+    timeout: 15000
+- assertVisible: "Beta"
+- tapOn:
+    id: "txEditor.wallet"
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 15000
+- tapOn: "Alpha"
+- assertVisible: "Alpha"

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -36,6 +37,8 @@ fun AppTextField(
     singleLine: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: (@Composable () -> Unit)? = null,
+    textStyle: TextStyle = AppTheme.type.body,
+    minLines: Int = 1,
 ) {
     val colors = AppTheme.colors
     OutlinedTextField(
@@ -50,7 +53,8 @@ fun AppTextField(
         keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
         trailingIcon = trailingIcon,
-        textStyle = AppTheme.type.body,
+        textStyle = textStyle,
+        minLines = minLines,
         shape = AppTheme.shapes.control,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = colors.primary,

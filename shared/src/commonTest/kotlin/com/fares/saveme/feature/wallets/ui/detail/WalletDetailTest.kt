@@ -216,3 +216,41 @@ class WalletDetailViewModelTest {
         assertTrue((vm.state.value.wallet!!.syncState as SyncState.Refused).reason.canRetryUnchanged)
     }
 }
+
+class WalletDetailTransactionsTest {
+    private val wallet = MutableStateFlow<WalletView?>(view())
+
+    private fun vm() = WalletDetailViewModel(
+        "w1", wallet, MutableStateFlow(emptyList()), { RefreshOutcome.Done }, { SaveResult.Saved }, { SaveResult.Saved },
+        keepMine = {}, useTheirs = {}, tryAgain = {}, discard = {}, transfer = { TransferResult.Done },
+    )
+
+    @Test
+    fun theTransactionsRowOpensTheWalletsTransactions() = runMviTest {
+        val vm = vm()
+        vm.effects.test {
+            vm.onIntent(WalletDetailIntent.TransactionsClicked)
+            assertEquals(WalletDetailEffect.OpenTransactions("w1"), awaitItem())
+        }
+    }
+
+    @Test
+    fun addTransactionIsOfferedToOwnersAndEditorsOfAnActiveWalletOnly() = runMviTest {
+        val vm = vm()
+        assertTrue(vm.state.value.canAddTransaction)
+        vm.effects.test {
+            vm.onIntent(WalletDetailIntent.AddTransactionClicked)
+            assertEquals(WalletDetailEffect.OpenAddTransaction("w1"), awaitItem())
+        }
+        wallet.value = view(WalletRole.Editor)
+        assertTrue(vm.state.value.canAddTransaction)
+        wallet.value = view(WalletRole.Viewer)
+        assertFalse(vm.state.value.canAddTransaction)
+        wallet.value = view(archivedAt = Instant.parse("2026-09-30T00:00:00Z"))
+        assertFalse(vm.state.value.canAddTransaction)
+        vm.effects.test {
+            vm.onIntent(WalletDetailIntent.AddTransactionClicked)
+            expectNoEvents()
+        }
+    }
+}

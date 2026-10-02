@@ -115,3 +115,14 @@ class HomeSyncStatusTest {
         assertEquals(1, syncs)
     }
 }
+
+class HomeAddTransactionTest {
+    @Test
+    fun addTransactionClickedNavigatesToTheEditor() = runMviTest {
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
+        vm.effects.test {
+            vm.onIntent(HomeIntent.AddTransactionClicked)
+            assertEquals(HomeEffect.NavigateAddTransaction, awaitItem())
+        }
+    }
+}

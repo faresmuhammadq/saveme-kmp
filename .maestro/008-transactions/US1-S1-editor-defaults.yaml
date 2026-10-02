@@ -1,0 +1,33 @@
+# US1-S1: Given a wallet the person can write to, When they open "Add transaction" from its transactions, Then the editor opens with that wallet, Expense selected, today's date and the amount focused.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- assertVisible: "Alpha"
+- assertVisible:
+    id: "txEditor.kind.expense"
+    checked: true
+- assertVisible:
+    id: "txEditor.date"
+- assertVisible:
+    id: "txEditor.save"

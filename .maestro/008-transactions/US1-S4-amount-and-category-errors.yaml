@@ -1,0 +1,46 @@
+# US1-S4: Given the editor, When the person saves with an empty amount, a zero amount, three decimals in EGP or no category, Then each is refused next to its field and nothing is queued.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.save"
+- assertVisible: "Enter an amount."
+- tapOn:
+    id: "txEditor.amount"
+- inputText: "0"
+- tapOn:
+    id: "txEditor.save"
+- assertVisible: "Enter an amount greater than zero."
+- eraseText: 10
+- inputText: "1.234"
+- hideKeyboard
+- assertVisible: "Use at most 2 digits after the decimal point."
+- eraseText: 10
+- inputText: "5"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.save"
+- assertVisible: "Choose a category."
+- assertVisible:
+    id: "txEditor.save"

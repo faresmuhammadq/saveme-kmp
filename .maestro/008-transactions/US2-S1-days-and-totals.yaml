@@ -1,0 +1,34 @@
+# US2-S1: Given transactions on two dates, When the person opens the wallet's transactions, Then they are grouped under date headers with each day's total.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "One", DATE: "2026-09-20" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "2000", NOTE: "Two", DATE: "2026-09-21" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "500", NOTE: "Three", DATE: "2026-09-21" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible:
+    id: "transactions.day.2026-09-21"
+- assertVisible:
+    id: "transactions.day.2026-09-20"
+- assertVisible: "−EGP 25.00"
+- assertVisible: "−EGP 10.00"

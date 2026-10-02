@@ -1,0 +1,22 @@
+# From Home: opens the transactions of the wallet named ${WALLET} (Home, Wallets, the wallet, Transactions) and waits for them.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "home.wallets"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.list"
+    timeout: 15000
+- tapOn: ${WALLET}
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.transactions"
+    timeout: 15000
+- tapOn:
+    id: "walletDetail.transactions"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000

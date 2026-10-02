@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -39,6 +40,7 @@ fun AppSelectField(
     supportingText: String? = null,
     errorText: String? = null,
     enabled: Boolean = true,
+    trailingIcon: ImageVector = AppIcons.ChevronForward,
 ) {
     Box(modifier) {
         AppTextField(
@@ -49,7 +51,7 @@ fun AppSelectField(
             errorText = errorText,
             enabled = enabled,
             trailingIcon = if (enabled) {
-                { Icon(AppIcons.ChevronForward, contentDescription = null, tint = AppTheme.colors.outline) }
+                { Icon(trailingIcon, contentDescription = null, tint = AppTheme.colors.outline) }
             } else {
                 null
             },

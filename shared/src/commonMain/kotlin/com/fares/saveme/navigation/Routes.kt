@@ -52,6 +52,17 @@ data object CategoriesKey : NavKey
 @Serializable
 data class CategoryEditorKey(val categoryId: String? = null, val kind: String = "expense") : NavKey
 
+/** One wallet's transactions (spec 008). */
+@Serializable
+data class TransactionsKey(val walletId: String) : NavKey
+
+/**
+ * A null [transactionId] records a transaction (in [walletId], or the default wallet when that is null);
+ * otherwise the transaction is shown and edited from [walletId]'s side.
+ */
+@Serializable
+data class TransactionEditorKey(val transactionId: String? = null, val walletId: String? = null) : NavKey
+
 @Serializable
 data object ChangePasswordKey : NavKey
 

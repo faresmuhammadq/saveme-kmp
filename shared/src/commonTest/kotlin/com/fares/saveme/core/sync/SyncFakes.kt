@@ -22,6 +22,9 @@ class FakePendingChangeDao : PendingChangeDao {
 
     override fun observe(type: String, id: String): Flow<PendingChangeEntity?> = rows.map { it[type to id] }
 
+    override fun observeByType(type: String): Flow<List<PendingChangeEntity>> =
+        rows.map { r -> r.values.filter { it.recordType == type }.sortedBy { it.createdOrder } }
+
     override suspend fun due(accountId: String, now: String) = rows.value.values
         .filter { it.accountId == accountId && it.state == "Waiting" && (it.nextAttemptAt == null || it.nextAttemptAt <= now) }
         .sortedBy { it.createdOrder }

@@ -1,0 +1,18 @@
+# Records a transaction from the second device (slot B, signed in already): WALLET (name), AMOUNT in minor units, NOTE, CATEGORY (name),
+# and optionally KIND, DATE (default today) and COUNTER_WALLET_ID.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: createTransaction
+      SLOT: B
+      WALLET: ${WALLET}
+      AMOUNT: ${AMOUNT}
+      NOTE: ${NOTE}
+      CATEGORY: "${typeof CATEGORY !== 'undefined' ? CATEGORY : 'Fares'}"
+      KIND: "${typeof KIND !== 'undefined' ? KIND : 'expense'}"
+      DATE: "${typeof DATE !== 'undefined' ? DATE : ''}"
+      COUNTER_WALLET_ID: "${typeof COUNTER_WALLET_ID !== 'undefined' ? COUNTER_WALLET_ID : ''}"

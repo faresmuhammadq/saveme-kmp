@@ -22,7 +22,6 @@ import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.BalanceHero
 import com.fares.saveme.designsystem.component.DestructiveButton
-import com.fares.saveme.designsystem.component.EmptyState
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.ListTrailing
 import com.fares.saveme.designsystem.component.MemberRole
@@ -89,7 +88,8 @@ import saveme.shared.generated.resources.wallet_field_name
 import saveme.shared.generated.resources.wallet_field_opening_balance
 import saveme.shared.generated.resources.wallet_keep_mine
 import saveme.shared.generated.resources.wallet_members
-import saveme.shared.generated.resources.wallet_no_transactions
+import saveme.shared.generated.resources.transactions_add
+import saveme.shared.generated.resources.wallet_transactions
 import saveme.shared.generated.resources.wallet_none
 import saveme.shared.generated.resources.wallet_other_device
 import saveme.shared.generated.resources.wallet_status_clash
@@ -120,15 +120,32 @@ fun WalletDetailScreen(
         StatusArea(view, state.busy, onIntent)
         Balance(view)
         if (view.archived) ArchivedPill()
+        TransactionsSection(state, onIntent)
         MembersSection(state)
         if (state.canEdit) OwnerActions(state, view, onIntent)
-        EmptyState(
-            title = stringResource(Res.string.wallet_no_transactions),
-            body = "",
-            modifier = Modifier.testTag("walletDetail.noTransactions"),
-        )
     }
     Confirmations(state, onIntent)
+}
+
+/** The wallet's transactions and, for an owner or editor of an active wallet, "Add transaction" (spec 008). */
+@Composable
+private fun TransactionsSection(state: WalletDetailState, onIntent: (WalletDetailIntent) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
+        AppListItem(
+            stringResource(Res.string.wallet_transactions),
+            modifier = Modifier.testTag("walletDetail.transactions"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(WalletDetailIntent.TransactionsClicked) },
+        )
+        if (state.canAddTransaction) {
+            AppListItem(
+                stringResource(Res.string.transactions_add),
+                modifier = Modifier.testTag("walletDetail.addTransaction"),
+                trailing = ListTrailing.Chevron,
+                onClick = { onIntent(WalletDetailIntent.AddTransactionClicked) },
+            )
+        }
+    }
 }
 
 @Composable

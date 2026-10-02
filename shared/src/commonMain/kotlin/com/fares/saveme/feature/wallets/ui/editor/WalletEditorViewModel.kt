@@ -52,7 +52,8 @@ class WalletEditorViewModel(
                         typeWire = shown.type,
                         name = shown.name,
                         currency = shown.currency,
-                        currencyLocked = view.server.currencyLocked,
+                        // A wallet with an unsent transaction is locked too: the server locks it as soon as one arrives (FR-029).
+                        currencyLocked = view.server.currencyLocked || view.hasPendingPostings,
                         amountText = AmountInput.format(shown.openingBalanceMinor, shown.currency, shown.walletType.isLiability),
                         iconKey = shown.icon,
                         accentKey = shown.color,

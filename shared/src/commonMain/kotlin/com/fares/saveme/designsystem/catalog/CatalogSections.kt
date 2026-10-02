@@ -109,6 +109,7 @@ fun CatalogSections() {
         EmptySection()
         RowsSection()
         DialogsSection()
+        TransactionsSection()
     }
 }
 
