@@ -234,7 +234,7 @@ description: "Task list for 008-transactions"
 - [ ] T087 Run quickstart.md manual checks 1–12 on the dev build; record deviations in plan.md "Implementation notes" — **deferred: E2E on owner's device**
 - [ ] T088 Run the full `/speckit-e2e 008-transactions` and write `specs/008-transactions/e2e-report.md`, including the brief's integration checkpoint (three offline transactions sync; transfer moves both balances; API edit → conflict choice) and C5's (SC-007); no `FAIL (app)` or `FAIL (env)` attributable to the contract — **deferred: E2E on owner's device**
 - [X] T089 Update the C6 row in `specs/briefs/README.md` ("Backend state" built, "Client state" built) and the C5 row's note that its choice and display are now used by C6
-- [ ] T090 Write `specs/008-transactions/summary.md`
+- [X] T090 Write `specs/008-transactions/summary.md`
 
 ---
 
