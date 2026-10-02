@@ -21,6 +21,7 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    actionModifier: Modifier = Modifier,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -30,7 +31,7 @@ fun EmptyState(
         Text(title, style = AppTheme.type.title, color = AppTheme.colors.ink, textAlign = TextAlign.Center)
         Text(body, style = AppTheme.type.body, color = AppTheme.colors.ink2, textAlign = TextAlign.Center)
         if (actionLabel != null && onAction != null) {
-            PrimaryButton(actionLabel, onAction, fullWidth = false, modifier = Modifier.padding(top = AppTheme.spacing.xs))
+            PrimaryButton(actionLabel, onAction, fullWidth = false, modifier = actionModifier.padding(top = AppTheme.spacing.xs))
         }
     }
 }

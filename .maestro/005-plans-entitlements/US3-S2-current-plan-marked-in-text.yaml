@@ -1,0 +1,27 @@
+# US3-S2: Given the catalogue plan equal to the person's plan, When listed, Then it is marked "Current plan" in text.
+# e2e-seed: verified-user+plus
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- scrollUntilVisible:
+    element:
+      id: "plan.card.1.current"
+    direction: DOWN
+    timeout: 20000
+- assertVisible:
+    id: "plan.card.1.current"
+    text: "Current plan"
+- assertVisible:
+    id: "plan.card.0"
+- assertNotVisible:
+    id: "plan.card.0.current"
+- scrollUntilVisible:
+    element:
+      id: "plan.card.2"
+    direction: DOWN
+    timeout: 20000
+- assertNotVisible:
+    id: "plan.card.2.current"

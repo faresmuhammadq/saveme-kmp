@@ -1,0 +1,14 @@
+# US2-S2: Given a person with an active paid subscription, When they open Plan, Then they see the plan name, "Active" and the date the period ends (a manual grant does not renew).
+# e2e-seed: verified-user+plus
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.name"
+    text: "Plus · Monthly"
+- assertVisible:
+    id: "plan.current.status"
+    text: "Active · Ends on .*"

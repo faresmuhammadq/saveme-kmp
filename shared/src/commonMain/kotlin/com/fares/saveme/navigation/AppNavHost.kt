@@ -38,6 +38,8 @@ import com.fares.saveme.feature.account.ui.profile.ProfileEffect
 import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
+import com.fares.saveme.feature.billing.ui.plan.PlanEffect
+import com.fares.saveme.feature.billing.ui.plan.PlanRoute
 import com.fares.saveme.feature.auth.domain.AuthLink
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
 import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxEffect
@@ -216,6 +218,7 @@ fun AppNavHost(
                                 AccountDestination.Devices -> DeviceSessionsKey
                                 AccountDestination.ChangePassword -> ChangePasswordKey
                                 AccountDestination.DeleteAccount -> DeleteAccountKey
+                                AccountDestination.Plan -> PlanKey
                             },
                         )
                         AccountEffect.NavigateBack -> appStack.pop()
@@ -251,6 +254,13 @@ fun AppNavHost(
                     when (effect) {
                         DeviceSessionsEffect.NavigateBack -> appStack.pop()
                         is DeviceSessionsEffect.Ended -> Unit // shown by the route
+                    }
+                })
+            }
+            entry<PlanKey> {
+                PlanRoute(onEffect = { effect ->
+                    when (effect) {
+                        PlanEffect.NavigateBack -> appStack.pop()
                     }
                 })
             }

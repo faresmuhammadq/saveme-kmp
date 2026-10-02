@@ -28,6 +28,7 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
     VERIFICATION_TOKEN_INVALID(RetryClass.AfterChange),
     RESET_TOKEN_INVALID(RetryClass.AfterChange),
     VERSION_CONFLICT(RetryClass.AfterChange),
+    FEATURE_NOT_ENTITLED(RetryClass.Never),
     UNKNOWN(RetryClass.Never);
 
     companion object {

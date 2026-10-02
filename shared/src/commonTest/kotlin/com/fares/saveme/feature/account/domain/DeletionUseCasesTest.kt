@@ -32,7 +32,7 @@ class DeletionUseCasesTest {
                 else -> respond("", HttpStatusCode.NoContent)
             }
         }
-        val sessions = SessionManager(env.auth.repository, env.events, backgroundScope)
+        val sessions = SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope)
         SignInUseCase(env.auth.clientInfo, DeviceIdentityStore(env.auth.keyValues), env.auth.repository, sessions)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )

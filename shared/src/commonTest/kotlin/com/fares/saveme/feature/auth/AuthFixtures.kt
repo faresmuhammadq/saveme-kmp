@@ -10,6 +10,7 @@ import com.fares.saveme.core.storage.InMemorySecureStore
 import com.fares.saveme.core.storage.KeyValueStore
 import com.fares.saveme.feature.auth.data.AccountSnapshotStore
 import com.fares.saveme.feature.auth.data.AuthRepository
+import com.fares.saveme.feature.auth.data.EntitlementsApi
 import com.fares.saveme.feature.auth.data.IdentityApi
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -73,6 +74,7 @@ class AuthTestEnv(
         events,
     )
     val api = IdentityApi(client)
+    val entitlementsApi = EntitlementsApi(client)
     val snapshots = AccountSnapshotStore(keyValues)
     val repository = AuthRepository(api, secureStore, snapshots)
 }

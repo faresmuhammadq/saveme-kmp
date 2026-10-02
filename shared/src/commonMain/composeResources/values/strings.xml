@@ -306,4 +306,36 @@
     <string name="sync_deleted_elsewhere">Deleted on another device.</string>
     <string name="action_restore_with_mine">Restore with my change</string>
     <string name="action_accept_deletion">Accept the deletion</string>
+
+    <!-- Plans & entitlements (spec 005) -->
+    <string name="account_plan">Plan</string>
+    <string name="plan_title">Plan</string>
+    <string name="plan_current_heading">Your plan</string>
+    <string name="plan_status_active_renews">Active · Renews on %1$s</string>
+    <string name="plan_status_active_ends">Active · Ends on %1$s</string>
+    <string name="plan_status_no_end">Active · No end date</string>
+    <string name="plan_status_grace">Payment due · Access until %1$s</string>
+    <string name="plan_catalogue_heading">Plans</string>
+    <string name="plan_current_label">Current plan</string>
+    <string name="plan_period_monthly">Monthly</string>
+    <string name="plan_period_yearly">Yearly</string>
+    <string name="plan_period_lifetime">One time</string>
+    <string name="plan_period_every_days">Every %1$d days</string>
+    <string name="plan_cap_sharing_off">Sharing: not included</string>
+    <string name="plan_cap_sharing_members">Share wallets with up to %1$d people</string>
+    <string name="plan_cap_sharing_unlimited">Share wallets with any number of people</string>
+    <string name="plan_cap_wallets_unlimited">Unlimited wallets</string>
+    <string name="plan_cap_wallets_max">Up to %1$d wallets</string>
+    <string name="plan_cap_export_on">Export: included</string>
+    <string name="plan_cap_export_off">Export: not included</string>
+    <string name="plan_cap_reports_on">Advanced reports: included</string>
+    <string name="plan_cap_reports_off">Advanced reports: not included</string>
+    <string name="plan_stale">Showing your last known plan. It may be out of date.</string>
+    <string name="plan_catalogue_unavailable">Plans aren’t available right now</string>
+    <string name="plan_catalogue_unavailable_body">Check your connection and try again.</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="error_feature_not_entitled">Your plan doesn’t include this.</string>
+    <string name="catalog_section_plans">Plans</string>
+    <string name="catalog_plan_free">Free</string>
+    <string name="catalog_plan_plus">Plus</string>
 </resources>

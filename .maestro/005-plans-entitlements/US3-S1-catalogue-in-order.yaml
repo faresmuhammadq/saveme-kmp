@@ -1,0 +1,29 @@
+# US3-S1: Given the catalogue, When the Plan screen loads, Then every active plan is listed in catalogue order with its name and capabilities.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- extendedWaitUntil:
+    visible:
+      id: "plan.card.0"
+    timeout: 20000
+- assertVisible:
+    text: "Free"
+    childOf:
+      id: "plan.card.0"
+- assertVisible:
+    text: "Plus · Monthly"
+    childOf:
+      id: "plan.card.1"
+- scrollUntilVisible:
+    element:
+      id: "plan.card.2"
+    direction: DOWN
+    timeout: 20000
+- assertVisible:
+    text: "Plus · Yearly"
+    childOf:
+      id: "plan.card.2"

@@ -131,6 +131,7 @@ class ApiClient(
                 events.publish(ApiEvent.SessionEnded)
             response.status == HttpStatusCode.UpgradeRequired -> events.publish(ApiEvent.UpdateRequired(problem.minimumVersion))
             code == ApiErrorCode.EMAIL_NOT_VERIFIED -> events.publish(ApiEvent.EmailNotVerified)
+            code == ApiErrorCode.FEATURE_NOT_ENTITLED -> events.publish(ApiEvent.FeatureNotEntitled)
         }
     }
 }

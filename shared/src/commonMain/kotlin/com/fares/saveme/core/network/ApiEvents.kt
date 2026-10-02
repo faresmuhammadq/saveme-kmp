@@ -14,6 +14,9 @@ sealed interface ApiEvent {
 
     /** 403 EMAIL_NOT_VERIFIED: the action needs a verified address. */
     data object EmailNotVerified : ApiEvent
+
+    /** 403 FEATURE_NOT_ENTITLED: the plan no longer allows this; entitlements are stale. */
+    data object FeatureNotEntitled : ApiEvent
 }
 
 class ApiEvents {

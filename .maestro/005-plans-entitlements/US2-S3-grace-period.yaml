@@ -1,0 +1,14 @@
+# US2-S3: Given a subscription in its grace period, When they open Plan, Then they see "Payment due" and the date the grace ends, with the paid plan's capabilities.
+# e2e-seed: verified-user+plus-grace
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.status"
+    text: "Payment due · Access until .*"
+- assertVisible:
+    text: "Share wallets with up to 5 people"
+    above: "Plans"

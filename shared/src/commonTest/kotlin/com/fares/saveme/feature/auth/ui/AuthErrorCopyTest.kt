@@ -5,6 +5,7 @@ import com.fares.saveme.core.network.RetryClass
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.error_account_locked
 import saveme.shared.generated.resources.error_email_already_registered
+import saveme.shared.generated.resources.error_feature_not_entitled
 import saveme.shared.generated.resources.error_generic_reference
 import saveme.shared.generated.resources.error_invalid_credentials
 import kotlin.test.Test
@@ -25,6 +26,12 @@ class AuthErrorCopyTest {
         assertEquals(ApiErrorCode.EMAIL_ALREADY_REGISTERED, ApiErrorCode.from("EMAIL_ALREADY_REGISTERED"))
         assertEquals(RetryClass.Never, ApiErrorCode.EMAIL_ALREADY_REGISTERED.retryClass)
         assertEquals(Res.string.error_email_already_registered, ApiErrorCode.EMAIL_ALREADY_REGISTERED.message())
+    }
+
+    @Test
+    fun notEntitledIsRecognisedAndNeverRetried() {
+        assertEquals(ApiErrorCode.FEATURE_NOT_ENTITLED, ApiErrorCode.from("FEATURE_NOT_ENTITLED"))
+        assertEquals(Res.string.error_feature_not_entitled, ApiErrorCode.FEATURE_NOT_ENTITLED.message())
     }
 
     @Test

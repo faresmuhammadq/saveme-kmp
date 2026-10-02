@@ -1,0 +1,14 @@
+# US1-S3: Given the plan changed on the server (an operator grant), When the person refreshes the Plan screen, Then the app's answer matches the server's without signing in again. Part 1: Free.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.name"
+    text: "Free"
+- assertVisible:
+    text: "Sharing: not included"
+    above: "Plans"

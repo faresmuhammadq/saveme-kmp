@@ -1,0 +1,22 @@
+# US3-S3: Given plans with no Google Play list price (the launch seed has InstaPay prices only), When listed, Then no price shows and no payment channel is named. The Play-price case is proven by CataloguePlanTest.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- extendedWaitUntil:
+    visible:
+      id: "plan.card.1"
+    timeout: 20000
+- assertNotVisible:
+    id: "plan.card.1.price"
+- scrollUntilVisible:
+    element:
+      id: "plan.card.2"
+    direction: DOWN
+    timeout: 20000
+- assertNotVisible:
+    id: "plan.card.2.price"
+- assertNotVisible: ".*InstaPay.*"

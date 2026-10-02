@@ -1,0 +1,16 @@
+# e2e-between: grant-plus
+# Part 2 continues in the same app session after the runner granted Plus.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- tapOn:
+    id: "plan.refresh"
+- extendedWaitUntil:
+    visible:
+      id: "plan.current.name"
+      text: "Plus · Monthly"
+    timeout: 20000
+- assertVisible:
+    id: "plan.current.status"
+    text: "Active · Ends on .*"

@@ -1,0 +1,21 @@
+# e2e-between: grant-plus
+# Part 2 continues in the same app session after the runner granted Plus.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn:
+    id: "plan.refresh"
+- extendedWaitUntil:
+    visible:
+      id: "plan.current.name"
+      text: "Plus · Monthly"
+    timeout: 20000
+# The current-plan section sits above the "Plans" heading; the catalogue's Free card below it
+# still reads "Sharing: not included".
+- assertVisible:
+    text: "Share wallets with up to 5 people"
+    above: "Plans"
+- assertNotVisible:
+    text: "Sharing: not included"
+    above: "Plans"

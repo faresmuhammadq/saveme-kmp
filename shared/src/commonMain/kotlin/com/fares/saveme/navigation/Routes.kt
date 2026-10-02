@@ -33,6 +33,9 @@ data object ProfileKey : NavKey
 data object DeviceSessionsKey : NavKey
 
 @Serializable
+data object PlanKey : NavKey
+
+@Serializable
 data object ChangePasswordKey : NavKey
 
 @Serializable

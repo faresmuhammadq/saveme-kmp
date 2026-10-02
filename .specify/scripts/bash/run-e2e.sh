@@ -5,6 +5,7 @@
 # Each flow declares the account it needs in a header comment:
 #   # e2e-seed: none | verified-user | unverified-user
 #   #           | unverified-user+verify-link | verified-user+reset-link
+#   #           | verified-user+plus | verified-user+plus-grace | verified-user+plus-lifetime
 # The runner creates a fresh account per flow (unique address, so the shared dev database needs no
 # reset) and passes it to Maestro as E2E_EMAIL / E2E_PASSWORD, plus E2E_API (the backend base URL
 # as seen from this machine, for .maestro/common/api.js). Accounts are created through the
@@ -15,6 +16,17 @@
 # live. Both use the app's dev link host (http://localhost:<port>) so Maestro's openLink goes
 # through the real deep-link intake. The secrets belong to throwaway dev accounts; Maestro writes
 # them into build/e2e debug output, which is git-ignored.
+#
+# verified-user+plus also grants Plus · Monthly for 30 days (backend OperatorSubscriptions::grant, the
+# audited use case the back office will call; no HTTP endpoint grants) before the app launches.
+# +plus-lifetime grants it with no end date; +plus-grace grants it and then puts the subscription in
+# its grace period for 3 days (no use case lapses a subscription on demand, so the row is updated).
+# A flow that must see an entitlement change while the app stays open is split in two files:
+# <name>.part1.yaml (carries the e2e-seed header) and <name>.part2.yaml with the header line
+#   # e2e-between: grant-plus
+# The runner runs part 1, grants Plus to the same account, then runs part 2 WITHOUT resetting the
+# app. Part 2 should tap the Plan screen's refresh (plan.refresh), because a foreground return can
+# fall inside the 60 s refresh floor. A flow is named by its base (<name>) for --flow.
 #
 # Usage: run-e2e.sh <feature-dir-name> [--skip-install] [--flow <name>]
 # Env:   E2E_BACKEND_CONTAINER (default: saveme-backend-main)
@@ -68,6 +80,7 @@ shopt -s nullglob
 flows=("$flow_dir"/*.yaml)
 if [[ -n "$only_flow" ]]; then
     flows=("$flow_dir/${only_flow%.yaml}.yaml")
+    [[ -f "${flows[0]}" ]] || flows=("$flow_dir/${only_flow%.yaml}.part1.yaml")
     [[ -f "${flows[0]}" ]] || fail_preflight "no flow ${flows[0]#"$REPO_ROOT"/}"
 fi
 
@@ -126,6 +139,31 @@ seed_account() {
     " 2>&1 | grep -q seeded
 }
 
+# Grants Plus · Monthly for 30 days to <email> through the backend's operator use case (spec 005 R-12).
+# The plan id is looked up by its backend code (plus_monthly); codes are not exposed to clients, but
+# this runs inside the backend. The operator id is a fixed UUID: the audit log's actor_id is a uuid.
+E2E_OPERATOR_ID="00000000-0000-7000-8000-0000000000e2"
+grant_plus() {
+    local email="$1" days="${2:-30}" grace="${3:-0}"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \$id = \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))->value('id');
+        \$plan = \App\Modules\Billing\Infrastructure\Models\Plan::where('code', 'plus_monthly')->value('id');
+        app(\App\Modules\Billing\Application\Subscriptions\OperatorSubscriptions::class)->grant('$E2E_OPERATOR_ID', \$id, \$plan, $days === 0 ? null : $days, 'e2e');
+        if ($grace) {
+            \App\Modules\Billing\Infrastructure\Models\Subscription::where('user_id', \$id)->update(['status' => 'grace', 'grace_until' => now()->addDays(3)]);
+        }
+        echo 'granted';
+    " 2>&1 | grep -q granted
+}
+
+# Runs one Maestro file with the current env_args; <label> names its report and log.
+run_maestro() {
+    local file="$1" label="$2"
+    maestro --device "$serial" test "$file" "${env_args[@]}" \
+        --format junit --output "$out_dir/$label.xml" \
+        --debug-output "$out_dir/debug/$label" > "$out_dir/$label.log" 2>&1
+}
+
 # Issues a live <kind> link (VerifyAddress | ResetPassword) for <email> and prints its secret.
 # Registration queues a welcome mail that issues its own verification link (database queue, run
 # by the container's worker). If that job ran after this, it would supersede our link, so wait up
@@ -144,7 +182,7 @@ issue_link() {
 # --- Run --------------------------------------------------------------------------------------
 # A single-flow rerun keeps the other flows' results.
 if [[ -n "$only_flow" ]]; then
-    n="${only_flow%.yaml}"; rm -rf "$out_dir/$n.xml" "$out_dir/$n.log" "$out_dir/debug/$n"
+    n="${only_flow%.yaml}"; rm -rf "$out_dir/$n".* "$out_dir/debug/$n" "$out_dir/debug/$n.part"*
 else
     rm -rf "$out_dir"
 fi
@@ -152,18 +190,30 @@ mkdir -p "$out_dir"
 run_id=$(date +%Y%m%d%H%M%S)
 failed=0
 for flow in "${flows[@]}"; do
-    name=$(basename "$flow" .yaml)
+    [[ "$flow" == *.part2.yaml ]] && continue # run right after its part 1
+    name=$(basename "$flow" .yaml); name="${name%.part1}"
+    part2="${flow%.part1.yaml}.part2.yaml"
+    [[ "$flow" == *.part1.yaml && -f "$part2" ]] || part2=""
     seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
     case "${seed:-none}" in
         none) ;;
-        verified-user|unverified-user|unverified-user+verify-link|verified-user+reset-link)
+        verified-user|unverified-user|unverified-user+verify-link|verified-user+reset-link|verified-user+plus|verified-user+plus-grace|verified-user+plus-lifetime)
             email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")@example.com"
             verified=$([[ "$seed" == verified-user* ]] && echo true || echo false)
             if ! seed_account "$email" "$verified"; then
                 echo "FAIL $name (seeding $seed failed)"; failed=1; continue
             fi
             env_args+=(-e "E2E_EMAIL=$email" -e "E2E_PASSWORD=$PASSWORD")
+            case "$seed" in
+                *+plus) grant_args=(30 0) ;;
+                *+plus-lifetime) grant_args=(0 0) ;;
+                *+plus-grace) grant_args=(30 1) ;;
+                *) grant_args=() ;;
+            esac
+            if [[ ${#grant_args[@]} -gt 0 ]] && ! grant_plus "$email" "${grant_args[@]}"; then
+                echo "FAIL $name (granting Plus failed)"; failed=1; continue
+            fi
             if [[ "$seed" == *-link ]]; then
                 if [[ "$seed" == *verify-link ]]; then kind=VerifyAddress path=verify-email; else kind=ResetPassword path=reset-password; fi
                 old=$(issue_link "$email" "$kind")
@@ -180,10 +230,28 @@ for flow in "${flows[@]}"; do
     if ! reset_app; then
         echo "FAIL $name (could not reset the app)"; failed=1; continue
     fi
-    if maestro --device "$serial" test "$flow" "${env_args[@]}" \
-        --format junit --output "$out_dir/$name.xml" \
-        --debug-output "$out_dir/debug/$name" > "$out_dir/$name.log" 2>&1; then
-        echo "PASS $name"
+    if run_maestro "$flow" "$name"; then
+        if [[ -n "$part2" ]]; then
+            between=$(grep -m1 -oE '^# e2e-between: *[a-z-]+' "$part2" | sed -E 's/^# e2e-between: *//' || true)
+            case "${between:-none}" in
+                none) ;;
+                grant-plus)
+                    if ! grant_plus "$email"; then
+                        echo "FAIL $name (granting Plus between the parts failed)"; failed=1; continue
+                    fi
+                    ;;
+                *) echo "FAIL $name (unknown e2e-between '$between')"; failed=1; continue ;;
+            esac
+            # No reset: part 2 continues in the same app session.
+            if run_maestro "$part2" "$name.part2"; then
+                echo "PASS $name (2 parts)"
+            else
+                echo "FAIL $name part 2 (log: ${out_dir#"$REPO_ROOT"/}/$name.part2.log, debug: ${out_dir#"$REPO_ROOT"/}/debug/$name.part2)"
+                failed=1
+            fi
+        else
+            echo "PASS $name"
+        fi
     else
         echo "FAIL $name (log: ${out_dir#"$REPO_ROOT"/}/$name.log, debug: ${out_dir#"$REPO_ROOT"/}/debug/$name)"
         failed=1

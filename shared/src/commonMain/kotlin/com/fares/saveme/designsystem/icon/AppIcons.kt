@@ -16,6 +16,7 @@ object AppIcons {
     val VisibilityOff by lazy { icon("VisibilityOff", "M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3 3.9M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2") }
     val Plus by lazy { icon("Plus", "M12 5v14M5 12h14") }
     val Check by lazy { icon("Check", "M5 12l5 5 9-10") }
+    val Minus by lazy { icon("Minus", "M6 12h12") }
     val Info by lazy { icon("Info", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 16v-5M12 8h.01") }
     val Warning by lazy { icon("Warning", "M12 3l10 18H2L12 3zM12 10v4M12 17.5h.01") }
     val Error by lazy { icon("Error", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 7v6M12 16.5h.01") }

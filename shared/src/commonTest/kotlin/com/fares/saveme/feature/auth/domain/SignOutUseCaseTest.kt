@@ -41,7 +41,7 @@ class SignOutUseCaseTest {
 
     private fun alwaysClearsThisPhone(server: Server) = runTest {
         val env = signOutWith(server)
-        val manager = SessionManager(env.repository, env.events, backgroundScope)
+        val manager = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope)
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, manager)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )

@@ -21,6 +21,7 @@ class SignOutCleanupTest {
         val calls = mutableListOf<String>()
         val manager = SessionManager(
             repository = env.repository,
+            entitlementsApi = env.entitlementsApi,
             apiEvents = env.events,
             scope = backgroundScope,
             cleaners = listOf(
@@ -39,7 +40,7 @@ class SignOutCleanupTest {
     @Test
     fun updatesKeepThePersonSignedInWithNewAccountState() = runTest {
         val env = AuthTestEnv { jsonResponse(200, signInSuccessBody()) }
-        val manager = SessionManager(env.repository, env.events, backgroundScope)
+        val manager = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope)
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, manager)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
