@@ -220,7 +220,7 @@ description: "Task list for 006-wallets"
 - [X] T077 Rerun `speckit-contract-check`; confirm `wallets.yaml` is unchanged since `310aa24`; record drift as FRs or follow-ups in spec §5
 - [ ] T078 Run the full `/speckit-e2e 006-wallets` (brief integration checkpoint: US1-S3, US2-S4, US3-S5) and write `specs/006-wallets/e2e-report.md`; no `FAIL (app)` or `FAIL (env)` attributable to the contract (SC-007) **Not run here**: the full E2E run and `e2e-report.md` are a separate step. **deferred: E2E on owner's device** (partial emulator results in `e2e-report.md`).
 - [X] T079 Update the C4 row in `specs/briefs/README.md` ("Client state") to built
-- [ ] T080 Write `specs/006-wallets/summary.md`
+- [X] T080 Write `specs/006-wallets/summary.md`
 
 ---
 
