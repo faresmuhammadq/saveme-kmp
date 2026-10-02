@@ -1,0 +1,28 @@
+# US2-S1: Given the person belongs to wallets, When they open the wallet list, Then each active wallet shows its name, type icon and balance in its own currency.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Beta", OPENING: "20000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Gamma", OPENING: "5000", CURRENCY: "USD" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000
+- assertVisible: "Beta"
+- assertVisible: "Gamma"
+- assertVisible: "EGP 100.00"
+- assertVisible: "EGP 200.00"
+- assertVisible: "USD 50.00"

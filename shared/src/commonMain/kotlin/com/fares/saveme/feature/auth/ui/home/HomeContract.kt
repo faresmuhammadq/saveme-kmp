@@ -29,6 +29,7 @@ enum class CancelDeletionResult { Done, Offline, Failed }
 sealed interface HomeIntent {
     data object DismissDeletionNotice : HomeIntent
     data object AccountClicked : HomeIntent
+    data object WalletsClicked : HomeIntent
     data object CancelDeletion : HomeIntent
     data object SignOutClicked : HomeIntent
     data object SignOutConfirmed : HomeIntent
@@ -39,6 +40,7 @@ sealed interface HomeIntent {
 
 sealed interface HomeEffect {
     data object NavigateAccount : HomeEffect
+    data object NavigateWallets : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 

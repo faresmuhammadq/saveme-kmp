@@ -1,0 +1,27 @@
+# US2-S7: Given the person opens a wallet, When the detail shows, Then it shows the balance, type, currency, the members with their roles, and the actions the person's role allows.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.balance"
+    timeout: 15000
+- assertVisible: "EGP 100.00"
+- assertVisible: "Cash · EGP"
+- assertVisible:
+    id: "walletDetail.member.0"
+- assertVisible: "You"
+- assertVisible: "Owner"
+- assertVisible:
+    id: "walletDetail.edit"

@@ -9,6 +9,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AlertTone
 import com.fares.saveme.designsystem.component.AppIconButton
+import com.fares.saveme.designsystem.component.AppListItem
+import com.fares.saveme.designsystem.component.ListTrailing
 import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.AppTopAppBar
 import com.fares.saveme.designsystem.component.DestructiveButton
@@ -29,6 +31,7 @@ import saveme.shared.generated.resources.home_deletion_cancelled
 import saveme.shared.generated.resources.home_deletion_pending
 import saveme.shared.generated.resources.home_signed_in_as
 import saveme.shared.generated.resources.home_title
+import saveme.shared.generated.resources.home_wallets
 import saveme.shared.generated.resources.sign_out_action
 import kotlin.time.Instant
 
@@ -75,6 +78,12 @@ fun HomeScreen(
                 text = stringResource(Res.string.home_deletion_cancelled),
             )
         }
+        AppListItem(
+            headline = stringResource(Res.string.home_wallets),
+            modifier = Modifier.testTag("home.wallets"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(HomeIntent.WalletsClicked) },
+        )
         Text(stringResource(Res.string.home_signed_in_as, state.email), style = AppTheme.type.body, color = AppTheme.colors.ink)
         DestructiveButton(stringResource(Res.string.sign_out_action), { onIntent(HomeIntent.SignOutClicked) })
     }

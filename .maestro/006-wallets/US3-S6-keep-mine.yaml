@@ -1,0 +1,44 @@
+# US3-S6: Given the clash choice, When the person keeps theirs, Then their edit is sent again and wins.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.edit"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.edit"
+- tapOn:
+    id: "walletEditor.name"
+- eraseText: 20
+- inputText: "Phone name"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.keepMine"
+    timeout: 30000
+- tapOn:
+    id: "walletDetail.keepMine"
+- extendedWaitUntil:
+    notVisible: "Changed on another device."
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Phone name" }
+- assertTrue: ${output.wallet.name == 'Phone name'}

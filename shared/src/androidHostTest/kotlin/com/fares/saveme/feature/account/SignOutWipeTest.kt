@@ -60,6 +60,16 @@ class SignOutWipeTest {
                 "2026-09-28T10:00:00Z",
             ),
         )
+        // Wallets and their members are wiped too (spec 006 FR-026).
+        db.walletDao().upsert(
+            com.fares.saveme.feature.wallets.data.local.WalletEntity(
+                "w1", "u1", "cash", "Pocket", "EGP", 100, 100, null, null, null, false, "owner", 1, 1,
+                "2026-09-28T10:00:00Z", "2026-09-28T10:00:00Z", "2026-09-28T10:00:00Z",
+            ),
+        )
+        db.walletMemberDao().insertAll(
+            listOf(com.fares.saveme.feature.wallets.data.local.WalletMemberEntity("m1", "w1", "u1", "Sara", "owner", 1, "2026-09-28T10:00:00Z")),
+        )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         languages.set(AppLanguage.Ar)
@@ -68,6 +78,8 @@ class SignOutWipeTest {
 
         assertNull(db.profileDao().get())
         assertNull(db.pendingChangeDao().get("profile", "p1"))
+        assertNull(db.walletDao().get("w1"))
+        assertEquals(emptyList<com.fares.saveme.feature.wallets.data.local.WalletMemberEntity>(), db.walletMemberDao().get("w1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())
         assertNull(db.syncScopeDao().observe(SyncScopeEntity.PROFILE).first())
         assertNull(env.keyValues.values["app_language"])

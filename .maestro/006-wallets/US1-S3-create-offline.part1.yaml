@@ -1,0 +1,8 @@
+# US1-S3: Given no connection, When the person creates a wallet, Then it is saved on the phone, shown in the list marked "Waiting to sync", and sent once a connection returns without any action from them. Part 1: online, on the wallet list.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml

@@ -32,6 +32,17 @@ class HomeViewModelTest {
     }
 }
 
+class HomeWalletsRowTest {
+    @Test
+    fun walletsClickedNavigatesToTheWallets() = runMviTest {
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
+        vm.effects.test {
+            vm.onIntent(HomeIntent.WalletsClicked)
+            assertEquals(HomeEffect.NavigateWallets, awaitItem())
+        }
+    }
+}
+
 class HomeSignOutAndDeletionTest {
     private val pending = account.copy(state = AccountState.PendingDeletion, deletionScheduledFor = Instant.parse("2026-10-28T10:00:00Z"))
 

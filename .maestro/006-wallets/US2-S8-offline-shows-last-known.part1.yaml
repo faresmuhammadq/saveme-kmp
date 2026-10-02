@@ -1,0 +1,17 @@
+# US2-S8: Given no connection, When the person opens the list or a wallet, Then the last known data is shown with when it was last updated. Part 1: online, list loaded.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000

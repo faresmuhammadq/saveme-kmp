@@ -1,0 +1,13 @@
+# US2-S6: Given no wallets, When the list is shown, Then an empty state invites the person to create their first wallet.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "wallets.empty"
+    timeout: 20000
+- assertVisible: "Create your first wallet"

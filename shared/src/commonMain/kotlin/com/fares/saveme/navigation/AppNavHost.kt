@@ -39,6 +39,12 @@ import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanEffect
+import com.fares.saveme.feature.wallets.ui.detail.WalletDetailEffect
+import com.fares.saveme.feature.wallets.ui.detail.WalletDetailRoute
+import com.fares.saveme.feature.wallets.ui.editor.WalletEditorEffect
+import com.fares.saveme.feature.wallets.ui.editor.WalletEditorRoute
+import com.fares.saveme.feature.wallets.ui.list.WalletsEffect
+import com.fares.saveme.feature.wallets.ui.list.WalletsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanRoute
 import com.fares.saveme.feature.auth.domain.AuthLink
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
@@ -205,6 +211,7 @@ fun AppNavHost(
                 HomeRoute(onEffect = { effect ->
                     when (effect) {
                         HomeEffect.NavigateAccount -> appStack.add(AccountKey)
+                        HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
                 })
@@ -263,6 +270,44 @@ fun AppNavHost(
                         PlanEffect.NavigateBack -> appStack.pop()
                     }
                 })
+            }
+            entry<WalletsKey> {
+                WalletsRoute(
+                    onEffect = { effect ->
+                        when (effect) {
+                            WalletsEffect.OpenEditor -> appStack.add(WalletEditorKey())
+                            is WalletsEffect.OpenDetail -> appStack.add(WalletDetailKey(effect.id))
+                            WalletsEffect.NavigateBack -> appStack.pop()
+                            WalletsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<WalletDetailKey> { key ->
+                WalletDetailRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
+                            WalletDetailEffect.NavigateBack -> appStack.pop()
+                            is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<WalletEditorKey> { key ->
+                WalletEditorRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is WalletEditorEffect.Saved, WalletEditorEffect.NavigateBack, WalletEditorEffect.NotEntitled -> appStack.pop()
+                            WalletEditorEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
             }
             entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
             entry<DevToolsKey> {

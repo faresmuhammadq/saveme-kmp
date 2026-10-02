@@ -15,8 +15,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.icon.AppIcons
@@ -51,6 +55,8 @@ fun AppSelectField(
             },
         )
         // The field itself never takes focus or a keyboard; the overlay turns it into one button.
+        // The overlay covers the field, so accessibility services see only the overlay: it carries
+        // the label and the chosen value itself ("Currency, EGP, button"), or both would be lost.
         Box(
             Modifier
                 .matchParentSize()
@@ -62,7 +68,13 @@ fun AppSelectField(
                                 indication = null,
                                 onClick = onClick,
                             )
-                            .semantics { role = Role.Button; onClick { onClick(); true } }
+                            .semantics {
+                                role = Role.Button
+                                contentDescription = label
+                                stateDescription = value
+                                text = AnnotatedString(value)
+                                onClick { onClick(); true }
+                            }
                     } else {
                         Modifier
                     },

@@ -30,9 +30,14 @@ fun AppAlertDialog(
     onDismiss: () -> Unit,
     destructive: Boolean = false,
     confirmLoading: Boolean = false,
+    confirmModifier: Modifier = Modifier,
+    dismissModifier: Modifier = Modifier,
 ) {
     Dialog(onDismissRequest = { if (!confirmLoading) onDismiss() }) {
-        AppAlertDialogCard(title, text, confirmLabel, onConfirm, dismissLabel, onDismiss, destructive, confirmLoading)
+        AppAlertDialogCard(
+            title, text, confirmLabel, onConfirm, dismissLabel, onDismiss, destructive, confirmLoading,
+            confirmModifier = confirmModifier, dismissModifier = dismissModifier,
+        )
     }
 }
 
@@ -48,6 +53,8 @@ fun AppAlertDialogCard(
     destructive: Boolean = false,
     confirmLoading: Boolean = false,
     modifier: Modifier = Modifier,
+    confirmModifier: Modifier = Modifier,
+    dismissModifier: Modifier = Modifier,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.s),
@@ -65,11 +72,11 @@ fun AppAlertDialogCard(
             modifier = Modifier.padding(top = AppTheme.spacing.xs),
         ) {
             if (destructive) {
-                DestructiveButton(confirmLabel, onConfirm, loading = confirmLoading)
+                DestructiveButton(confirmLabel, onConfirm, confirmModifier, loading = confirmLoading)
             } else {
-                PrimaryButton(confirmLabel, onConfirm, loading = confirmLoading)
+                PrimaryButton(confirmLabel, onConfirm, confirmModifier, loading = confirmLoading)
             }
-            AppTextButton(dismissLabel, onDismiss, Modifier.fillMaxWidth(), enabled = !confirmLoading)
+            AppTextButton(dismissLabel, onDismiss, dismissModifier.fillMaxWidth(), enabled = !confirmLoading)
         }
     }
 }

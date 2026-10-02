@@ -1,0 +1,17 @@
+# US2-S3: Given a wallet with a change that hasn't reached the server, When it is shown, Then it is marked "Waiting to sync" and its balance is the server's adjusted by the change on this phone. Part 1: online, wallet listed.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "EGP 100.00"
+    timeout: 20000

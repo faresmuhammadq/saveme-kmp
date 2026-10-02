@@ -1,0 +1,24 @@
+# US4-S2: Given the archive confirmation, When it is shown, Then it says archiving can't be undone and the wallet stays readable and editable.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.archive"
+- assertVisible: "Archive Alpha?"
+- assertVisible: "Archived wallets keep their balance and members and stay editable. This can’t be undone."
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Cancel"
+- assertNotVisible:
+    id: "walletDetail.archived"

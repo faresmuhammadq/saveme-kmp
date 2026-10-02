@@ -1,0 +1,19 @@
+# e2e-between: network-off
+# Part 2: offline, a pull finds no connection; the cards stay and the list says when it was updated.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    visible: "Updated .+"
+    timeout: 20000
+- assertVisible: "Alpha"
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.balance"
+    timeout: 15000
+- assertVisible: "EGP 100.00"

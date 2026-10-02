@@ -47,3 +47,29 @@ internal val MIGRATION_1_2 = object : Migration(1, 2) {
         connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `last_pushed_at` TEXT")
     }
 }
+
+/**
+ * v2 → v3 (spec 006, research R-02): the wallet tables. Nothing else is touched, so every existing
+ * row, including waiting changes in `pending_change`, survives the update.
+ */
+internal val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `wallet` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `type` TEXT NOT NULL,
+            `name` TEXT NOT NULL, `currency` TEXT NOT NULL, `opening_balance_minor` INTEGER NOT NULL,
+            `balance_minor` INTEGER NOT NULL, `icon` TEXT, `color` TEXT, `archived_at` TEXT,
+            `currency_locked` INTEGER NOT NULL, `my_role` TEXT NOT NULL, `version` INTEGER NOT NULL,
+            `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL,
+            `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_wallet_account_id_archived_at_created_at` ON `wallet` (`account_id`, `archived_at`, `created_at`)",
+        )
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `wallet_member` (`id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL,
+            `member_user_id` TEXT NOT NULL, `display_name` TEXT, `role` TEXT NOT NULL, `version` INTEGER NOT NULL,
+            `created_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_wallet_member_wallet_id` ON `wallet_member` (`wallet_id`)")
+    }
+}

@@ -1,0 +1,42 @@
+# US3-S6: Given the clash choice, When the person takes the other device's, Then their edit is dropped and the other device's values show.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.edit"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.edit"
+- tapOn:
+    id: "walletEditor.name"
+- eraseText: 20
+- inputText: "Phone name"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.useTheirs"
+    timeout: 30000
+- tapOn:
+    id: "walletDetail.useTheirs"
+- extendedWaitUntil:
+    visible: "Web name"
+    timeout: 20000
+- assertNotVisible: "Changed on another device."
+- assertNotVisible: "Phone name"

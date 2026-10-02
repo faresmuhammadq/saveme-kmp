@@ -1,0 +1,28 @@
+# US4-S3: Given the owner chooses Delete, When the confirmation is shown, Then it names the wallet and says deletion is final; nothing happens until they confirm.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.delete"
+- assertVisible: "Delete Alpha?"
+- assertVisible: "Deleting is final. The wallet and everything recorded in it will be removed for everyone."
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Cancel"
+- assertVisible:
+    id: "walletDetail.balance"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.wallet.deleted_at == null}

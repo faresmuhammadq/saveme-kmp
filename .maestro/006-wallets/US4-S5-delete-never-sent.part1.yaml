@@ -1,0 +1,8 @@
+# US4-S5: Given a wallet created on this phone and never sent, When it is deleted, Then nothing is sent to the server for it. Part 1: online, on the wallet list.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml

@@ -214,7 +214,7 @@ class SyncEngine(
                         return false
                     }
                     else -> {
-                        val refusal = Refusal(result.problem.code, handler.refusalFields(result.problem))
+                        val refusal = Refusal(result.problem.code, handler.refusalFields(result.problem), result.problem.requestId)
                         dao.upsert(
                             row.copy(
                                 state = ChangeState.Refused.name,

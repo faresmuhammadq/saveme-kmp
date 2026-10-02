@@ -1,0 +1,38 @@
+# US3-S1: Given the owner on a wallet's detail, When they edit the name and save, Then the change shows at once and is sent on its own.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.edit"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "walletEditor.name"
+- eraseText: 20
+- inputText: "Alpha 2"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible: "Alpha 2"
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Alpha 2" }
+- assertTrue: ${output.wallet.version == 2}
