@@ -51,6 +51,8 @@ function call(method, path, body, token) {
         case 'POST': r = http.post(apiBase + path, options); break
         case 'PUT': r = http.put(apiBase + path, options); break
         case 'DELETE': r = http.delete(apiBase + path, options); break
+        // Maestro's http.delete sends no body; wallets are deleted with {"version": n} in the body.
+        case 'DELETE_WITH_BODY': options.method = 'DELETE'; r = http.request(apiBase + path, options); break
     }
     return { status: r.status, body: r.body ? json(r.body) : null }
 }
@@ -80,6 +82,33 @@ function login(email, password, name) {
             app_version: '1.0.0',
         },
     })
+}
+
+// Wallets (spec 006). A wallet is found by ID, or by its WALLET name among the caller's wallets.
+function listAllWallets() {
+    return expect(call('GET', 'wallets?limit=50', undefined, token()), 200, 'listWallets').body.data
+}
+
+function findWallet() {
+    var id = arg('ID')
+    if (id) return expect(call('GET', 'wallets/' + id, undefined, token()), 200, 'getWallet').body.data
+    var name = arg('WALLET')
+    var matches = listAllWallets().filter(function (w) { return w.name === name })
+    if (matches.length !== 1) throw new Error('findWallet: expected one wallet named "' + name + '", found ' + matches.length)
+    return matches[0]
+}
+
+function putWallet(w, changes) {
+    var body = {
+        type: w.type,
+        name: changes.name !== undefined ? changes.name : w.name,
+        currency: w.currency,
+        opening_balance_minor: changes.opening !== undefined ? changes.opening : w.opening_balance_minor,
+        icon: w.icon,
+        color: w.color,
+        version: w.version,
+    }
+    return expect(call('PUT', 'wallets/' + w.id, body, token()), 200, 'saveWallet').body.data
 }
 
 var email = arg('EMAIL', arg('E2E_EMAIL'))
@@ -141,6 +170,55 @@ switch (arg('ACTION')) {
     // Schedules deletion from this slot.
     case 'requestDeletion':
         expect(call('POST', 'account/deletion-request', { password: password }, token()), 200, 'requestDeletion')
+        break
+
+    // Creates a wallet from this slot: NAME, TYPE (cash), CURRENCY (EGP), OPENING in minor units (10000).
+    // Copies it into output.wallet and its id into output.walletId.
+    case 'createWallet':
+        var id = uuid7()
+        var created = expect(call('PUT', 'wallets/' + id, {
+            type: arg('TYPE', 'cash'),
+            name: arg('NAME', 'API wallet'),
+            currency: arg('CURRENCY', 'EGP'),
+            opening_balance_minor: parseInt(arg('OPENING', '10000')),
+            icon: null,
+            color: null,
+            version: 0,
+        }, token()), 201, 'createWallet').body.data
+        output.wallet = created
+        output.walletId = created.id
+        break
+
+    // Copies one wallet (by ID or WALLET name) into output.wallet for assertTrue.
+    case 'getWallet':
+        output.wallet = findWallet()
+        break
+
+    // Copies the caller's wallets into output.wallets and their number into output.walletCount.
+    case 'listWallets':
+        output.wallets = listAllWallets()
+        output.walletCount = output.wallets.length
+        break
+
+    // Saves a wallet from this slot: NEW_NAME and/or OPENING (minor units).
+    case 'saveWallet':
+        var current = findWallet()
+        var changes = {}
+        if (arg('NEW_NAME') !== undefined) changes.name = arg('NEW_NAME')
+        if (arg('OPENING') !== undefined) changes.opening = parseInt(arg('OPENING'))
+        output.wallet = putWallet(current, changes)
+        break
+
+    // Archives a wallet from this slot.
+    case 'archiveWallet':
+        var toArchive = findWallet()
+        output.wallet = expect(call('POST', 'wallets/' + toArchive.id + '/archive', { version: toArchive.version }, token()), 200, 'archiveWallet').body.data
+        break
+
+    // Deletes a wallet from this slot (JSON body on DELETE, backend spec 010).
+    case 'deleteWallet':
+        var toDelete = findWallet()
+        expect(call('DELETE_WITH_BODY', 'wallets/' + toDelete.id, { version: toDelete.version }, token()), 200, 'deleteWallet')
         break
 
     default:

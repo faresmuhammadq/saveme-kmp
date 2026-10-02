@@ -26,6 +26,7 @@ import com.fares.saveme.designsystem.catalog.MoneySection
 import com.fares.saveme.designsystem.catalog.PlansSection
 import com.fares.saveme.designsystem.catalog.SelectionSection
 import com.fares.saveme.designsystem.catalog.SheetSection
+import com.fares.saveme.designsystem.catalog.WalletsSection
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -87,6 +88,7 @@ class ComponentScreenshotTest(
             arrayOf("money", @Composable { MoneySection() }),
             arrayOf("cards", @Composable { CardsSection() }),
             arrayOf("plans", @Composable { PlansSection() }),
+            arrayOf("wallets", @Composable { WalletsSection() }),
             arrayOf("lists", @Composable { ListsSection() }),
             arrayOf("budgets", @Composable { BudgetsSection() }),
             arrayOf("members", @Composable { MembersSection() }),

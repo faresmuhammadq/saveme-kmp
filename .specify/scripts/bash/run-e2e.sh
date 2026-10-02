@@ -27,6 +27,12 @@
 # The runner runs part 1, grants Plus to the same account, then runs part 2 WITHOUT resetting the
 # app. Part 2 should tap the Plan screen's refresh (plan.refresh), because a foreground return can
 # fall inside the 60 s refresh floor. A flow is named by its base (<name>) for --flow.
+# A flow can have up to nine parts (<name>.part1 … <name>.part9); each part after the first names
+# the step the runner takes before it. Besides grant-plus there are two for offline flows (spec 006):
+#   # e2e-between: network-off   cuts the phone's route to the backend (adb reverse --remove), so the
+#                                app sees "no connection" while the host-side api.js still works
+#   # e2e-between: network-on    restores it
+# The route is restored after every flow, even a failed one.
 #
 # Usage: run-e2e.sh <feature-dir-name> [--skip-install] [--flow <name>]
 # Env:   E2E_BACKEND_CONTAINER (default: saveme-backend-main)
@@ -46,7 +52,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-install) skip_install=1; shift ;;
         --flow) only_flow="$2"; shift 2 ;;
-        -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) feature="$1"; shift ;;
     esac
 done
@@ -179,6 +185,11 @@ issue_link() {
     " 2>&1 | grep -oE 'secret=[^[:space:]]+' | head -1 | cut -d= -f2-
 }
 
+# The phone reaches the backend only through adb reverse (see above), so removing the reverse is
+# the one lever that makes the app offline while the host keeps talking to the backend.
+network_off() { adb -s "$serial" reverse --remove "tcp:$PORT" >/dev/null 2>&1 || true; }
+network_on() { adb -s "$serial" reverse "tcp:$PORT" "tcp:$PORT" >/dev/null 2>&1 || true; }
+
 # --- Run --------------------------------------------------------------------------------------
 # A single-flow rerun keeps the other flows' results.
 if [[ -n "$only_flow" ]]; then
@@ -188,12 +199,20 @@ else
 fi
 mkdir -p "$out_dir"
 run_id=$(date +%Y%m%d%H%M%S)
+echo "Accounts: e2e+$run_id-<flow>@example.com"
 failed=0
 for flow in "${flows[@]}"; do
-    [[ "$flow" == *.part2.yaml ]] && continue # run right after its part 1
+    [[ "$flow" =~ \.part[2-9]\.yaml$ ]] && continue # run right after its part 1
     name=$(basename "$flow" .yaml); name="${name%.part1}"
-    part2="${flow%.part1.yaml}.part2.yaml"
-    [[ "$flow" == *.part1.yaml && -f "$part2" ]] || part2=""
+    later_parts=()
+    if [[ "$flow" == *.part1.yaml ]]; then
+        for n in 2 3 4 5 6 7 8 9; do
+            candidate="${flow%.part1.yaml}.part$n.yaml"
+            [[ -f "$candidate" ]] || break
+            later_parts+=("$candidate")
+        done
+    fi
+    network_on # a previous flow may have left the route cut
     seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
     case "${seed:-none}" in
@@ -230,30 +249,39 @@ for flow in "${flows[@]}"; do
     if ! reset_app; then
         echo "FAIL $name (could not reset the app)"; failed=1; continue
     fi
-    if run_maestro "$flow" "$name"; then
-        if [[ -n "$part2" ]]; then
-            between=$(grep -m1 -oE '^# e2e-between: *[a-z-]+' "$part2" | sed -E 's/^# e2e-between: *//' || true)
-            case "${between:-none}" in
-                none) ;;
-                grant-plus)
-                    if ! grant_plus "$email"; then
-                        echo "FAIL $name (granting Plus between the parts failed)"; failed=1; continue
-                    fi
-                    ;;
-                *) echo "FAIL $name (unknown e2e-between '$between')"; failed=1; continue ;;
-            esac
-            # No reset: part 2 continues in the same app session.
-            if run_maestro "$part2" "$name.part2"; then
-                echo "PASS $name (2 parts)"
-            else
-                echo "FAIL $name part 2 (log: ${out_dir#"$REPO_ROOT"/}/$name.part2.log, debug: ${out_dir#"$REPO_ROOT"/}/debug/$name.part2)"
-                failed=1
-            fi
-        else
-            echo "PASS $name"
-        fi
-    else
+    if ! run_maestro "$flow" "$name"; then
         echo "FAIL $name (log: ${out_dir#"$REPO_ROOT"/}/$name.log, debug: ${out_dir#"$REPO_ROOT"/}/debug/$name)"
+        failed=1
+        network_on
+        continue
+    fi
+    part_ok=1
+    part_no=1
+    for part in "${later_parts[@]}"; do
+        part_no=$((part_no + 1))
+        between=$(grep -m1 -oE '^# e2e-between: *[a-z-]+' "$part" | sed -E 's/^# e2e-between: *//' || true)
+        case "${between:-none}" in
+            none) ;;
+            grant-plus)
+                if ! grant_plus "$email"; then
+                    echo "FAIL $name (granting Plus before part $part_no failed)"; part_ok=0; break
+                fi
+                ;;
+            network-off) network_off ;;
+            network-on) network_on ;;
+            *) echo "FAIL $name (unknown e2e-between '$between')"; part_ok=0; break ;;
+        esac
+        # No reset: each later part continues in the same app session.
+        if ! run_maestro "$part" "$name.part$part_no"; then
+            echo "FAIL $name part $part_no (log: ${out_dir#"$REPO_ROOT"/}/$name.part$part_no.log, debug: ${out_dir#"$REPO_ROOT"/}/debug/$name.part$part_no)"
+            part_ok=0
+            break
+        fi
+    done
+    network_on
+    if [[ $part_ok -eq 1 ]]; then
+        if [[ ${#later_parts[@]} -gt 0 ]]; then echo "PASS $name ($part_no parts)"; else echo "PASS $name"; fi
+    else
         failed=1
     fi
 done

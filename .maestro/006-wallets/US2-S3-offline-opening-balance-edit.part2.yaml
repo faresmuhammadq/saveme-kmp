@@ -1,0 +1,26 @@
+# e2e-between: network-off
+# Part 2: offline, the opening balance goes from 100.00 to 150.00.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.edit"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "walletEditor.amount"
+- eraseText: 20
+- inputText: "150"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.status"
+    timeout: 15000
+- assertVisible: "Waiting to sync"
+- assertVisible: "EGP 150.00"

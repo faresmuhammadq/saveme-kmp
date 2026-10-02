@@ -1,0 +1,16 @@
+# e2e-between: network-on
+# Part 3: the connection is back; the mark clears without any action and the server has the wallet.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 90000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Cash offline" }
+- assertTrue: ${output.wallet.opening_balance_minor == 25000}

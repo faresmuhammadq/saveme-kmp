@@ -1,0 +1,16 @@
+# US1-S8: Given a person whose email address is not verified, When they try to create a wallet, Then the app asks them to verify their address first (the existing verify prompt) and nothing is queued.
+# e2e-seed: unverified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible: "Verify your email to do this. Check your inbox."
+    timeout: 15000
+- assertVisible: "Resend email"
+- assertNotVisible:
+    id: "walletEditor.name"

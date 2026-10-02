@@ -1,0 +1,26 @@
+# US2-S5: Given a wallet was deleted on another device and this phone has no unsent change to it, When the list refreshes, Then it disappears from the phone.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: deleteWallet, SLOT: B, WALLET: "Alpha" }
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    notVisible: "Alpha"
+    timeout: 20000

@@ -1,0 +1,24 @@
+# From the wallet list: creates a Cash wallet named ${NAME} with the opening balance ${AMOUNT}
+# (typed as shown, e.g. "250"), then waits until the list shows its name.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "walletEditor.name"
+- inputText: ${NAME}
+- tapOn:
+    id: "walletEditor.amount"
+- inputText: ${AMOUNT}
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible: ${NAME}
+    timeout: 15000

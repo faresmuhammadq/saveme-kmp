@@ -1,0 +1,26 @@
+# US2-S4: Given a wallet was edited on another device, When the person pulls to refresh the list, Then the change is shown on this phone.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Alpha renamed" }
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    visible: "Alpha renamed"
+    timeout: 20000

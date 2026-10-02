@@ -61,7 +61,17 @@ import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.component.SyncBanner
 import com.fares.saveme.designsystem.component.SyncBannerState
 import com.fares.saveme.designsystem.component.TransactionRow
+import com.fares.saveme.designsystem.component.ChoiceGrid
+import com.fares.saveme.designsystem.component.ChoiceItem
 import com.fares.saveme.designsystem.component.WalletCard
+import com.fares.saveme.designsystem.component.WalletCardStatus
+import com.fares.saveme.designsystem.component.WalletCardStatusKind
+import com.fares.saveme.designsystem.icon.WalletIcons
+import com.fares.saveme.designsystem.tokens.WalletAccents
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import com.fares.saveme.designsystem.component.WalletType
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
@@ -81,6 +91,7 @@ fun CatalogSections() {
         MoneySection()
         CardsSection()
         PlansSection()
+        WalletsSection()
         ListsSection()
         BudgetsSection()
         MembersSection()
@@ -189,6 +200,46 @@ fun CardsSection() = CatalogSection(Res.string.catalog_section_cards) {
     BalanceHero(stringResource(Res.string.catalog_total_balance), 4_821_575, "EGP", caption = stringResource(Res.string.catalog_liabilities_owed))
     WalletCard(stringResource(Res.string.catalog_wallet_cash), WalletType.Cash, 234_000, "EGP")
     WalletCard(stringResource(Res.string.catalog_wallet_credit_card), WalletType.CreditCard, -312_425, "EGP")
+}
+
+/** Wallet card options, the icon and colour pickers (spec 006, research R-13). */
+@Composable
+fun WalletsSection() = CatalogSection(Res.string.catalog_section_wallets) {
+    WalletCard(
+        stringResource(Res.string.catalog_wallet_cash), WalletType.Cash, 234_000, "EGP",
+        iconKey = "savings", accentKey = "#2C7A5B",
+    )
+    WalletCard(
+        stringResource(Res.string.catalog_wallet_cash), WalletType.Cash, 234_000, "EGP",
+        accentKey = "#A9503A", status = WalletCardStatus(WalletCardStatusKind.Waiting, stringResource(Res.string.wallet_status_waiting)),
+    )
+    WalletCard(
+        stringResource(Res.string.catalog_wallet_credit_card), WalletType.CreditCard, -312_425, "EGP",
+        status = WalletCardStatus(WalletCardStatusKind.Changed, stringResource(Res.string.wallet_status_clash)),
+        roleLabel = stringResource(Res.string.role_viewer),
+    )
+    WalletCard(
+        stringResource(Res.string.catalog_wallet_cash), WalletType.Cash, 5_000, "EGP",
+        iconKey = "unknown-key", accentKey = "#123456",
+        status = WalletCardStatus(WalletCardStatusKind.NotSaved, stringResource(Res.string.wallet_status_not_saved)),
+    )
+    WalletCard(stringResource(Res.string.catalog_wallet_cash), WalletType.Savings, 90_000, "EGP", archived = true)
+    Text(stringResource(Res.string.catalog_choice_grid_icon), style = AppTheme.type.label, color = AppTheme.colors.ink2)
+    ChoiceGrid(
+        items = WalletIcons.keys.map { key ->
+            ChoiceItem(key, key) { Icon(WalletIcons.find(key)!!, contentDescription = null, tint = AppTheme.colors.ink2, modifier = Modifier.size(24.dp)) }
+        },
+        selectedKey = "savings",
+        onSelect = {},
+    )
+    Text(stringResource(Res.string.catalog_choice_grid_color), style = AppTheme.type.label, color = AppTheme.colors.ink2)
+    ChoiceGrid(
+        items = WalletAccents.all.map { accent ->
+            ChoiceItem(accent.key, accent.key) { Box(Modifier.size(24.dp).background(accent.swatch, CircleShape)) }
+        },
+        selectedKey = WalletAccents.all[1].key,
+        onSelect = {},
+    )
 }
 
 @Composable

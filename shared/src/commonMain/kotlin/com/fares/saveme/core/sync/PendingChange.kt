@@ -22,9 +22,12 @@ data class SyncScope(val kind: ScopeKind, val id: String) {
     val key: String get() = "${kind.wire}:$id"
 }
 
-/** Why the server refused a change for good; [fields] are the feature's own field names. */
+/**
+ * Why the server refused a change for good; [fields] are the feature's own field names and
+ * [requestId] is the server's reference for support (P-13.2).
+ */
 @Serializable
-data class Refusal(val code: String, val fields: Map<String, String> = emptyMap())
+data class Refusal(val code: String, val fields: Map<String, String> = emptyMap(), val requestId: String? = null)
 
 /** One record's unsent change (data-model §3). The payload is never printed (P-09.2). */
 data class PendingChange(

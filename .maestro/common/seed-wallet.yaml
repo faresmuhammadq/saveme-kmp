@@ -1,0 +1,15 @@
+# Creates a wallet from the second device (slot B): NAME and OPENING (minor units) are passed through.
+# Signs slot B in first when it isn't yet.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: createWallet
+      SLOT: B
+      NAME: ${NAME}
+      OPENING: ${OPENING}
+      TYPE: "${typeof TYPE !== 'undefined' ? TYPE : 'cash'}"
+      CURRENCY: "${typeof CURRENCY !== 'undefined' ? CURRENCY : 'EGP'}"

@@ -2,6 +2,7 @@ package com.fares.saveme.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
 import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.designsystem.icon.WalletIcons
+import com.fares.saveme.designsystem.tokens.WalletAccents
 import com.fares.saveme.designsystem.theme.AppTheme
 
 /** Radius 22, solid primary, no gradient (board: BalanceHero). */
@@ -57,6 +63,15 @@ enum class WalletType(val isLiability: Boolean) {
         }
 }
 
+/** What a wallet's change is doing, shown as an icon and text, never colour alone (P-08.3). */
+enum class WalletCardStatusKind { Waiting, Changed, NotSaved }
+
+data class WalletCardStatus(val kind: WalletCardStatusKind, val label: String)
+
+/**
+ * [iconKey] and [accentKey] are the wire keys a wallet carries; an unknown or missing one falls
+ * back to the type's icon and the default tile colour. With no options the card looks as before.
+ */
 @Composable
 fun WalletCard(
     name: String,
@@ -64,7 +79,25 @@ fun WalletCard(
     amountMinor: Long,
     currency: String,
     modifier: Modifier = Modifier,
+    iconKey: String? = null,
+    accentKey: String? = null,
+    status: WalletCardStatus? = null,
+    archived: Boolean = false,
+    roleLabel: String? = null,
+    onClick: (() -> Unit)? = null,
+    statusModifier: Modifier = Modifier,
 ) {
+    val accent = WalletAccents.find(accentKey)
+    val tileColor = when {
+        archived -> AppTheme.colors.sunken
+        accent != null -> accent.container
+        else -> AppTheme.colors.primaryContainer
+    }
+    val iconColor = when {
+        archived -> AppTheme.colors.ink2
+        accent != null -> accent.tint
+        else -> AppTheme.colors.onPrimaryContainer
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.s),
@@ -72,24 +105,48 @@ fun WalletCard(
             .fillMaxWidth()
             .background(AppTheme.colors.surface, AppTheme.shapes.card)
             .border(androidx.compose.ui.unit.Dp.Hairline, AppTheme.colors.outlineVariant, AppTheme.shapes.card)
+            .then(if (onClick != null) Modifier.clip(AppTheme.shapes.card).clickable(role = Role.Button, onClick = onClick) else Modifier)
             .padding(AppTheme.spacing.m),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(AppTheme.sizes.iconTile)
-                .background(AppTheme.colors.primaryContainer, AppTheme.shapes.tile),
+                .background(tileColor, AppTheme.shapes.tile),
         ) {
-            Icon(type.icon, contentDescription = null, tint = AppTheme.colors.onPrimaryContainer)
+            Icon(WalletIcons.find(iconKey) ?: type.icon, contentDescription = null, tint = iconColor)
         }
-        Text(
-            name,
-            style = AppTheme.type.itemTitle,
-            color = AppTheme.colors.ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                name,
+                style = AppTheme.type.itemTitle,
+                color = if (archived) AppTheme.colors.ink2 else AppTheme.colors.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (roleLabel != null) {
+                Text(roleLabel, style = AppTheme.type.caption, color = AppTheme.colors.caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (status != null) WalletStatusLine(status, statusModifier)
+        }
         MoneyText(amountMinor, currency, if (type.isLiability) MoneyKind.Liability else MoneyKind.Balance)
+    }
+}
+
+/** The small "waiting / changed / not saved" line under a wallet's name. */
+@Composable
+fun WalletStatusLine(status: WalletCardStatus, modifier: Modifier = Modifier) {
+    val (icon, color) = when (status.kind) {
+        WalletCardStatusKind.Waiting -> AppIcons.Sync to AppTheme.money.pending
+        WalletCardStatusKind.Changed -> AppIcons.Warning to AppTheme.money.pending
+        WalletCardStatusKind.NotSaved -> AppIcons.Error to AppTheme.colors.error
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.xxs),
+        modifier = modifier,
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+        Text(status.label, style = AppTheme.type.caption, color = color)
     }
 }

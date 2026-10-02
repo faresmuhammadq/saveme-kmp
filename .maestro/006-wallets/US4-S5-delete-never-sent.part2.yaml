@@ -1,0 +1,22 @@
+# e2e-between: network-off
+# Part 2: offline, a wallet is created and deleted before it ever synced.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow:
+    file: ../common/create-wallet.yaml
+    env:
+      NAME: "Temp"
+      AMOUNT: "10"
+- tapOn: "Temp"
+- tapOn:
+    id: "walletDetail.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete wallet"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.empty"
+    timeout: 15000
+- assertNotVisible: "Temp"

@@ -1,0 +1,44 @@
+# US4-S1: Given the owner on an active wallet's detail, When they choose Archive and confirm, Then the wallet moves to the list's "Archived" section, no longer counts in the totals, and the change is sent on its own.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Beta", OPENING: "20000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible: "EGP 300.00"
+    timeout: 20000
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.archive"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Archive"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.archived"
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible:
+      id: "wallets.archivedHeader"
+    timeout: 15000
+- assertVisible: "EGP 200.00"
+- assertNotVisible: "EGP 300.00"
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.wallet.archived_at != null}

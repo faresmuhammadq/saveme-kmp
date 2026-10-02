@@ -1,0 +1,40 @@
+# US1-S6: Given a blank or over-long name (more than 100 characters), When they try to save, Then the form says what is wrong next to the name and nothing is saved.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "walletEditor.name"
+- inputText: "x"
+- eraseText: 1
+- assertVisible: "Enter a name for the wallet."
+# The keyboard covers Save on a phone-sized screen.
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+# Still on the form: nothing was saved.
+- assertVisible:
+    id: "walletEditor.name"
+- assertVisible: "Enter a name for the wallet."
+# Over-long: 101 characters.
+- tapOn:
+    id: "walletEditor.name"
+- inputText: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+- hideKeyboard
+- assertVisible: "Use at most 100 characters."
+- tapOn:
+    id: "walletEditor.save"
+- assertVisible:
+    id: "walletEditor.name"
+- back
+- assertVisible:
+    id: "wallets.empty"

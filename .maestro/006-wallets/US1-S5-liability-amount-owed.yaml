@@ -1,0 +1,42 @@
+# US1-S5: Given a liability type, When the person enters the opening amount, Then they enter the amount owed, and the wallet shows it as an amount owed, never as a positive balance.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "walletEditor.type.credit_card"
+- assertVisible: "Amount owed"
+- tapOn:
+    id: "walletEditor.name"
+- inputText: "Visa"
+- tapOn:
+    id: "walletEditor.amount"
+- inputText: "1000"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible: "Visa"
+    timeout: 15000
+- assertVisible: "EGP 1,000.00"
+# The card renders the suffix as its own text node, " owed".
+- assertVisible: " ?owed"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Visa" }
+- assertTrue: ${output.wallet.opening_balance_minor == -100000}

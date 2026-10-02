@@ -36,6 +36,16 @@ data object DeviceSessionsKey : NavKey
 data object PlanKey : NavKey
 
 @Serializable
+data object WalletsKey : NavKey
+
+@Serializable
+data class WalletDetailKey(val walletId: String) : NavKey
+
+/** A null [walletId] creates a wallet; otherwise the wallet is edited. */
+@Serializable
+data class WalletEditorKey(val walletId: String? = null) : NavKey
+
+@Serializable
 data object ChangePasswordKey : NavKey
 
 @Serializable

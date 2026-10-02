@@ -1,0 +1,28 @@
+# US1-S1: Given a signed-in, verified person on the wallet list, When they create a wallet with type, name, currency and opening balance, Then it appears in the list at once with that name, type icon and a balance equal to the opening balance.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- assertVisible:
+    id: "wallets.empty"
+- runFlow:
+    file: ../common/create-wallet.yaml
+    env:
+      NAME: "Pocket"
+      AMOUNT: "250"
+- assertVisible: "Pocket"
+- assertVisible: "EGP 250.00"
+# Online: the mark clears on its own and the server has the wallet.
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Pocket" }
+- assertTrue: ${output.wallet.opening_balance_minor == 25000}

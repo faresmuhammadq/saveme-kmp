@@ -1,0 +1,46 @@
+# US3-S5: Given a waiting edit to a wallet that was changed on another device, When it is sent, Then the detail shows "Changed on another device" with both values and "Keep mine" / "Use the other device's"; nothing is applied until the person chooses.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.edit"
+    timeout: 15000
+# The other device saves after this one synced.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.edit"
+- tapOn:
+    id: "walletEditor.name"
+- eraseText: 20
+- inputText: "Phone name"
+- hideKeyboard
+- tapOn:
+    id: "walletEditor.save"
+- extendedWaitUntil:
+    visible: "Changed on another device."
+    timeout: 30000
+- assertVisible: "This phone: Phone name"
+- assertVisible: "Other device: Web name"
+- assertVisible:
+    id: "walletDetail.keepMine"
+- assertVisible:
+    id: "walletDetail.useTheirs"
+# Nothing applied yet.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Web name" }
+- assertTrue: ${output.wallet.name == 'Web name'}

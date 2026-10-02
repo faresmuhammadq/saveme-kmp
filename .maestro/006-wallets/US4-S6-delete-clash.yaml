@@ -1,0 +1,38 @@
+# US4-S6: Given a waiting deletion of a wallet that was changed on another device, When it is sent, Then the wallet reappears marked "Changed on another device" with "Delete anyway" and "Keep the wallet"; nothing is deleted on the server until the person chooses.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.delete"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete wallet"
+- extendedWaitUntil:
+    visible: "Changed on another device."
+    timeout: 30000
+- assertVisible:
+    id: "walletDetail.deleteAnyway"
+- assertVisible:
+    id: "walletDetail.keepWallet"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Web name" }
+- assertTrue: ${output.wallet.deleted_at == null}

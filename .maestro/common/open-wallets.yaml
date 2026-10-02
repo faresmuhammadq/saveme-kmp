@@ -1,0 +1,11 @@
+# From Home: opens the wallet list and waits for it.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "home.wallets"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.list"
+    timeout: 15000

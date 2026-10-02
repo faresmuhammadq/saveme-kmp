@@ -10,6 +10,7 @@ import com.fares.saveme.core.locale.AppLocaleProvider
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
 import com.fares.saveme.feature.billing.domain.BillingSyncCoordinator
+import com.fares.saveme.feature.wallets.domain.WalletsSyncCoordinator
 import com.fares.saveme.navigation.AppNavHost
 import org.koin.compose.koinInject
 
@@ -18,6 +19,7 @@ fun App(
     languages: AppLanguageStore = koinInject(),
     accountSync: AccountSyncCoordinator = koinInject(),
     billingSync: BillingSyncCoordinator = koinInject(),
+    walletsSync: WalletsSyncCoordinator = koinInject(),
 ) {
     val override by languages.language.collectAsStateWithLifecycle()
     LaunchedEffect(languages) { languages.load() }
@@ -25,6 +27,7 @@ fun App(
     LifecycleStartEffect(accountSync) {
         accountSync.onForeground()
         billingSync.onForeground()
+        walletsSync.onForeground()
         onStopOrDispose { }
     }
     AppLocaleProvider(override = override, effective = override ?: languages.device()) {

@@ -1,0 +1,30 @@
+# US1-S4: Given the type "Savings", When it is shown anywhere, Then it reads "Savings" in English and "حصالة" in Arabic.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn: "العربية"
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "الملف الشخصي"
+    timeout: 20000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "الرئيسية"
+    timeout: 15000
+- runFlow: ../common/open-wallets.yaml
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.name"
+    timeout: 15000
+- assertVisible: "حصالة"

@@ -1,0 +1,30 @@
+# US1-S2: Given the create form, When it opens, Then the currency is preselected to the person's default currency, and every currency the app can format can be chosen instead.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn:
+    id: "wallets.create"
+- extendedWaitUntil:
+    visible:
+      id: "walletEditor.currency"
+    timeout: 15000
+- assertVisible: "EGP"
+- tapOn:
+    id: "walletEditor.currency"
+# The sheet lists every currency the app formats, alphabetically; USD is below the fold.
+- scrollUntilVisible:
+    element:
+      text: "USD"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "USD"
+- extendedWaitUntil:
+    notVisible: "Search"
+    timeout: 10000
+- assertVisible:
+    id: "walletEditor.currency"
+- assertVisible: "USD"

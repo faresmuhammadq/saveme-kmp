@@ -1,0 +1,22 @@
+# US5-S2: Given the person is the owner and the wallet has no other member, When the detail shows, Then no "Transfer ownership" action is offered.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.member.0"
+    timeout: 20000
+- assertVisible:
+    id: "walletDetail.edit"
+- assertNotVisible: "Transfer ownership"

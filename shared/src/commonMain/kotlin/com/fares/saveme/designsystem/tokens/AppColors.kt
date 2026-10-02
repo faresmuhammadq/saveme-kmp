@@ -54,3 +54,27 @@ fun AppColors.toColorScheme(): ColorScheme = lightColorScheme(
     onErrorContainer = error,
     scrim = ink,
 )
+
+/**
+ * One of the eight colours a wallet can be tagged with (spec 006, research R-13). [key] is the
+ * uppercase `#RRGGBB` the server stores without interpreting; [swatch] is the colour itself,
+ * [tint] draws the icon on the [container] tile. A key not listed here falls back to the default tile.
+ */
+@Immutable
+data class WalletAccent(val key: String, val swatch: Color, val tint: Color, val container: Color)
+
+/** Built from the existing tonal families (primary, positive, pending, error, ink) plus violet, teal and rose. */
+object WalletAccents {
+    val all: List<WalletAccent> = listOf(
+        WalletAccent("#4C6FD6", Color(0xFF4C6FD6), Color(0xFF3553B0), Color(0xFFE9EEFC)),
+        WalletAccent("#2C7A5B", Color(0xFF2C7A5B), Color(0xFF1F5C43), Color(0xFFE6F3EC)),
+        WalletAccent("#8F5E12", Color(0xFF8F5E12), Color(0xFF7A4F0C), Color(0xFFFBF1DE)),
+        WalletAccent("#A9503A", Color(0xFFA9503A), Color(0xFF8A3E2B), Color(0xFFF7E9E3)),
+        WalletAccent("#6B52B8", Color(0xFF6B52B8), Color(0xFF53409A), Color(0xFFEEE9F8)),
+        WalletAccent("#1F7F8C", Color(0xFF1F7F8C), Color(0xFF175F69), Color(0xFFE2F1F3)),
+        WalletAccent("#B04375", Color(0xFFB04375), Color(0xFF8D3360), Color(0xFFF8E6EE)),
+        WalletAccent("#5B6472", Color(0xFF5B6472), Color(0xFF414955), Color(0xFFEBEEF3)),
+    )
+
+    fun find(key: String?): WalletAccent? = key?.let { k -> all.firstOrNull { it.key.equals(k, ignoreCase = true) } }
+}

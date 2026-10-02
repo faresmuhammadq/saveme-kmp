@@ -1,0 +1,32 @@
+# US4-S4: Given they confirm, When the deletion is saved, Then the wallet disappears from every screen at once, and the deletion is sent on its own.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- tapOn:
+    id: "walletDetail.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete wallet"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.empty"
+    timeout: 15000
+- assertNotVisible: "Alpha"
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 30000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listWallets, SLOT: B }
+- assertTrue: ${output.walletCount == 0}

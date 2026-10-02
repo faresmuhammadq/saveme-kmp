@@ -1,0 +1,30 @@
+# US2-S2: Given wallets in more than one currency, When the list is shown, Then it shows one total per currency and never a total that adds different currencies.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Beta", OPENING: "20000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Gamma", OPENING: "5000", CURRENCY: "USD" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "wallets.total.EGP"
+    timeout: 20000
+- assertVisible:
+    id: "wallets.total.EGP"
+- assertVisible:
+    id: "wallets.total.USD"
+- assertVisible: "EGP 300.00"
+- assertVisible: "USD 50.00"

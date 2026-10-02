@@ -1,0 +1,17 @@
+# e2e-between: network-on
+# Part 3: back online, the server never heard of the wallet.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- assertNotVisible: "Temp"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listWallets, SLOT: B }
+- assertTrue: ${output.walletCount == 0}
