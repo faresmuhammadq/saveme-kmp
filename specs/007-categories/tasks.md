@@ -201,7 +201,7 @@ description: "Task list for 007-categories"
 - [ ] T070 Run quickstart.md manual checks 1–11 on the dev build; record deviations in plan.md "Implementation notes" — **deferred: E2E on owner's device**
 - [ ] T071 Run the full `/speckit-e2e 007-categories` and write `specs/007-categories/e2e-report.md`; no `FAIL (app)` or `FAIL (env)` attributable to the contract — **deferred: E2E on owner's device**
 - [X] T072 Update the C5 row in `specs/briefs/README.md` ("Backend state" built, "Client state" built)
-- [ ] T073 Write `specs/007-categories/summary.md`
+- [X] T073 Write `specs/007-categories/summary.md`
 
 ---
 
