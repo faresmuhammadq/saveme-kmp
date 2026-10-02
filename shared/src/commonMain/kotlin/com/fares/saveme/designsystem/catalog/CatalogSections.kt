@@ -48,9 +48,11 @@ import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.MemberRole
 import com.fares.saveme.designsystem.component.MemberRow
 import com.fares.saveme.designsystem.component.MoneyKind
+import com.fares.saveme.designsystem.component.PlanCapability
 import com.fares.saveme.designsystem.component.MoneyText
 import com.fares.saveme.designsystem.component.NavItem
 import com.fares.saveme.designsystem.component.PasswordField
+import com.fares.saveme.designsystem.component.PlanCard
 import com.fares.saveme.designsystem.component.PrimaryButton
 import com.fares.saveme.designsystem.component.SecondaryButton
 import com.fares.saveme.designsystem.component.SegmentedControl
@@ -78,6 +80,7 @@ fun CatalogSections() {
         FieldsSection()
         MoneySection()
         CardsSection()
+        PlansSection()
         ListsSection()
         BudgetsSection()
         MembersSection()
@@ -186,6 +189,28 @@ fun CardsSection() = CatalogSection(Res.string.catalog_section_cards) {
     BalanceHero(stringResource(Res.string.catalog_total_balance), 4_821_575, "EGP", caption = stringResource(Res.string.catalog_liabilities_owed))
     WalletCard(stringResource(Res.string.catalog_wallet_cash), WalletType.Cash, 234_000, "EGP")
     WalletCard(stringResource(Res.string.catalog_wallet_credit_card), WalletType.CreditCard, -312_425, "EGP")
+}
+
+@Composable
+fun PlansSection() = CatalogSection(Res.string.catalog_section_plans) {
+    PlanCard(
+        name = stringResource(Res.string.catalog_plan_free),
+        capabilities = listOf(
+            PlanCapability(stringResource(Res.string.plan_cap_wallets_unlimited)),
+            PlanCapability(stringResource(Res.string.plan_cap_sharing_off), included = false),
+        ),
+        currentLabel = stringResource(Res.string.plan_current_label),
+    )
+    PlanCard(
+        name = stringResource(Res.string.catalog_plan_plus),
+        periodLine = stringResource(Res.string.plan_period_monthly),
+        priceMinor = 9_900,
+        priceCurrency = "EGP",
+        capabilities = listOf(
+            PlanCapability(stringResource(Res.string.plan_cap_wallets_unlimited)),
+            PlanCapability(stringResource(Res.string.plan_cap_sharing_members, 5)),
+        ),
+    )
 }
 
 @Composable

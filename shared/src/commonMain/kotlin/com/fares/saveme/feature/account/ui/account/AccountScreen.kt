@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.AppScreen
@@ -33,6 +34,7 @@ import saveme.shared.generated.resources.account_delete
 import saveme.shared.generated.resources.account_devices
 import saveme.shared.generated.resources.account_email_unverified
 import saveme.shared.generated.resources.account_email_verified
+import saveme.shared.generated.resources.account_plan
 import saveme.shared.generated.resources.account_profile
 import saveme.shared.generated.resources.account_title
 import saveme.shared.generated.resources.sign_out_action
@@ -55,6 +57,13 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                 leadingIcon = AppIcons.Person,
                 trailing = ListTrailing.Chevron,
                 onClick = { onIntent(AccountIntent.Open(AccountDestination.Profile)) },
+            )
+            AppListItem(
+                stringResource(Res.string.account_plan),
+                leadingIcon = AppIcons.Card,
+                trailing = ListTrailing.Chevron,
+                modifier = Modifier.testTag("account.plan"),
+                onClick = { onIntent(AccountIntent.Open(AccountDestination.Plan)) },
             )
             AppListItem(
                 stringResource(Res.string.account_devices),

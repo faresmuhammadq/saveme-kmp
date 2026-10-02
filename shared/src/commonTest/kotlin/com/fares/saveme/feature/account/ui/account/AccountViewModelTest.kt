@@ -38,6 +38,15 @@ class AccountViewModelTest {
     }
 
     @Test
+    fun theWholeRowsIncludePlan() = runMviTest {
+        val vm = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = {})
+        vm.effects.test {
+            vm.onIntent(AccountIntent.Open(AccountDestination.Plan))
+            assertEquals(AccountEffect.Navigate(AccountDestination.Plan), awaitItem())
+        }
+    }
+
+    @Test
     fun signOutAsksFirstAndCallsOnce() = runMviTest {
         var calls = 0
         val vm = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = { calls++ })

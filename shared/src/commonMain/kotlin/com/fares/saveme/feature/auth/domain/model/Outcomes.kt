@@ -60,3 +60,6 @@ sealed interface ResetOutcome {
     data object Offline : ResetOutcome
     data class Error(val code: ApiErrorCode, val requestId: String?) : ResetOutcome
 }
+
+/** What a cached-entitlements refresh did (spec 005): the gate's `refreshAfterBillingAction` answers with it. */
+enum class RefreshOutcome { Done, Offline, Failed }

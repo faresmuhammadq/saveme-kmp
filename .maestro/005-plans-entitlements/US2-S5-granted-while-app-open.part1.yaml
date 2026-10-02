@@ -1,0 +1,11 @@
+# US2-S5 (the brief's checkpoint): Given Free shows Free, When an operator grants Plus while the app is open and the person refreshes the Plan screen, Then it shows Plus without signing in again. Part 1: Free.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.name"
+    text: "Free"

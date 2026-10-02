@@ -1,0 +1,16 @@
+# US2-S1: Given a person on the free plan, When they open Plan, Then they see "Free", its capabilities in plain words and no billing dates.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.name"
+    text: "Free"
+- assertVisible:
+    text: "Sharing: not included"
+    above: "Plans"
+- assertNotVisible:
+    id: "plan.current.status"

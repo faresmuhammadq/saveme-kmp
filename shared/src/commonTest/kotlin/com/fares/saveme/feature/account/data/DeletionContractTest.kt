@@ -54,7 +54,7 @@ class DeletionContractTest {
     fun wrongPasswordKeepsTheSession() = runTest {
         val env = AccountTestEnv { jsonResponse(401, problemBody(401, "INVALID_CREDENTIALS")) }
         env.signedIn()
-        val sessions = SessionManager(env.auth.repository, env.events, backgroundScope)
+        val sessions = SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope)
         env.events.events.test {
             assertEquals(DeletionOutcome.WrongPassword, RequestDeletionUseCase(env.api, sessions)("nope"))
             expectNoEvents()
@@ -66,7 +66,7 @@ class DeletionContractTest {
         suspend fun outcome(block: suspend io.ktor.client.engine.mock.MockRequestHandleScope.() -> io.ktor.client.request.HttpResponseData): DeletionOutcome {
             val env = AccountTestEnv { block() }
             env.signedIn()
-            return RequestDeletionUseCase(env.api, SessionManager(env.auth.repository, env.events, backgroundScope))("secret")
+            return RequestDeletionUseCase(env.api, SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope))("secret")
         }
         assertEquals(DeletionOutcome.Locked(900), outcome { jsonResponse(423, problemBody(423, "ACCOUNT_LOCKED"), "Retry-After" to "900") })
         assertEquals(
@@ -80,7 +80,7 @@ class DeletionContractTest {
     fun cancelOfflineIsReportedNotRetried() = runTest {
         val env = AccountTestEnv { throw IOException("offline") }
         env.signedIn()
-        val outcome = CancelDeletionUseCase(env.api, SessionManager(env.auth.repository, env.events, backgroundScope))()
+        val outcome = CancelDeletionUseCase(env.api, SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope))()
         assertEquals(ActionOutcome.Offline, outcome)
         assertEquals(1, env.requests.size)
     }

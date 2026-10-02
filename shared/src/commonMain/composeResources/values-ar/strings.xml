@@ -330,4 +330,36 @@
     <string name="sync_deleted_elsewhere">حُذف على جهاز آخر.</string>
     <string name="action_restore_with_mine">استعادة مع تغييري</string>
     <string name="action_accept_deletion">قبول الحذف</string>
+
+    <!-- Plans & entitlements (spec 005) -->
+    <string name="account_plan">الخطة</string>
+    <string name="plan_title">الخطة</string>
+    <string name="plan_current_heading">خطتك</string>
+    <string name="plan_status_active_renews">نشطة · تتجدد في %1$s</string>
+    <string name="plan_status_active_ends">نشطة · تنتهي في %1$s</string>
+    <string name="plan_status_no_end">نشطة · بلا تاريخ انتهاء</string>
+    <string name="plan_status_grace">الدفع مستحق · الوصول حتى %1$s</string>
+    <string name="plan_catalogue_heading">الخطط</string>
+    <string name="plan_current_label">الخطة الحالية</string>
+    <string name="plan_period_monthly">شهريًا</string>
+    <string name="plan_period_yearly">سنويًا</string>
+    <string name="plan_period_lifetime">مرة واحدة</string>
+    <string name="plan_period_every_days">كل %1$d يومًا</string>
+    <string name="plan_cap_sharing_off">المشاركة: غير مشمولة</string>
+    <string name="plan_cap_sharing_members">شارك المحافظ مع ما يصل إلى %1$d أشخاص</string>
+    <string name="plan_cap_sharing_unlimited">شارك المحافظ مع عدد غير محدود من الأشخاص</string>
+    <string name="plan_cap_wallets_unlimited">محافظ غير محدودة</string>
+    <string name="plan_cap_wallets_max">حتى %1$d محافظ</string>
+    <string name="plan_cap_export_on">التصدير: مشمول</string>
+    <string name="plan_cap_export_off">التصدير: غير مشمول</string>
+    <string name="plan_cap_reports_on">التقارير المتقدمة: مشمولة</string>
+    <string name="plan_cap_reports_off">التقارير المتقدمة: غير مشمولة</string>
+    <string name="plan_stale">نعرض آخر خطة معروفة لك. قد تكون قديمة.</string>
+    <string name="plan_catalogue_unavailable">الخطط غير متاحة الآن</string>
+    <string name="plan_catalogue_unavailable_body">تحقق من اتصالك وحاول مرة أخرى.</string>
+    <string name="cd_refresh">تحديث</string>
+    <string name="error_feature_not_entitled">خطتك لا تشمل هذه الميزة.</string>
+    <string name="catalog_section_plans">الخطط</string>
+    <string name="catalog_plan_free">المجانية</string>
+    <string name="catalog_plan_plus">بلس</string>
 </resources>

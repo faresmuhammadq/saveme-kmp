@@ -23,6 +23,7 @@ import com.fares.saveme.designsystem.catalog.FieldsSection
 import com.fares.saveme.designsystem.catalog.ListsSection
 import com.fares.saveme.designsystem.catalog.MembersSection
 import com.fares.saveme.designsystem.catalog.MoneySection
+import com.fares.saveme.designsystem.catalog.PlansSection
 import com.fares.saveme.designsystem.catalog.SelectionSection
 import com.fares.saveme.designsystem.catalog.SheetSection
 import com.fares.saveme.designsystem.theme.AppTheme
@@ -85,6 +86,7 @@ class ComponentScreenshotTest(
             arrayOf("fields", @Composable { FieldsSection() }),
             arrayOf("money", @Composable { MoneySection() }),
             arrayOf("cards", @Composable { CardsSection() }),
+            arrayOf("plans", @Composable { PlansSection() }),
             arrayOf("lists", @Composable { ListsSection() }),
             arrayOf("budgets", @Composable { BudgetsSection() }),
             arrayOf("members", @Composable { MembersSection() }),

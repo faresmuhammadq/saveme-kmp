@@ -24,7 +24,7 @@ import kotlin.test.assertTrue
 
 class SessionManagerTest {
 
-    private fun TestScope.manager(env: AuthTestEnv) = SessionManager(env.repository, env.events, backgroundScope)
+    private fun TestScope.manager(env: AuthTestEnv) = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope)
 
     private fun useCase(env: AuthTestEnv, manager: SessionManager, info: FakeClientInfo = env.clientInfo) =
         SignInUseCase(info, DeviceIdentityStore(env.keyValues), env.repository, manager)

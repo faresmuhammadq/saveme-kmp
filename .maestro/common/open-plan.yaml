@@ -1,0 +1,12 @@
+# From Home: opens Account, then the Plan screen, and waits for the current-plan section.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn: "Account"
+- tapOn:
+    id: "account.plan"
+- extendedWaitUntil:
+    visible:
+      id: "plan.current"
+    timeout: 15000

@@ -1,0 +1,11 @@
+# US2-S4: Given a subscription granted for life, When they open Plan, Then they see "No end date" instead of a date.
+# e2e-seed: verified-user+plus-lifetime
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    id: "plan.current.status"
+    text: "Active · No end date"

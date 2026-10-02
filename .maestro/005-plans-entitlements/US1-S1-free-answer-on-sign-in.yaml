@@ -1,0 +1,14 @@
+# US1-S1: Given a newly signed-in person on the free plan, When the app answers what the plan allows, Then sharing is off and wallets are unlimited (read on the Plan screen, which shows the gate's source).
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- assertVisible:
+    text: "Sharing: not included"
+    above: "Plans"
+- assertVisible:
+    text: "Unlimited wallets"
+    above: "Plans"

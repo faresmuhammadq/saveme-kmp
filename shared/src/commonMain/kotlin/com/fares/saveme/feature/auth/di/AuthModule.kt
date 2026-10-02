@@ -7,6 +7,7 @@ import com.fares.saveme.core.sync.CurrentAccount
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.data.AccountSnapshotStore
 import com.fares.saveme.feature.auth.data.AuthRepository
+import com.fares.saveme.feature.auth.data.EntitlementsApi
 import com.fares.saveme.feature.auth.data.IdentityApi
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
 import com.fares.saveme.feature.auth.domain.SessionManager
@@ -37,10 +38,12 @@ import org.koin.dsl.module
 val authModule = module {
     single { AccountSnapshotStore(get()) }
     single { IdentityApi(get()) }
+    single { EntitlementsApi(get()) }
     single { AuthRepository(get(), get(), get()) }
     single {
         SessionManager(
             repository = get(),
+            entitlementsApi = get(),
             apiEvents = get(),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
             cleaners = getAll<UserDataCleaner>(),

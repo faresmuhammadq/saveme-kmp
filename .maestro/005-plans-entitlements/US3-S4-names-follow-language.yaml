@@ -1,0 +1,35 @@
+# US3-S4: Given the app language changes, When the Plan screen is next shown, Then plan names follow the new language.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn: "العربية"
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "الملف الشخصي"
+    timeout: 20000
+- back
+- tapOn:
+    id: "account.plan"
+- extendedWaitUntil:
+    visible:
+      text: "بلس · شهري"
+      childOf:
+        id: "plan.card.1"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "plan.card.2"
+    direction: DOWN
+    timeout: 20000
+- assertVisible:
+    text: "بلس · سنوي"
+    childOf:
+      id: "plan.card.2"
