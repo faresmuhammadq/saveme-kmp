@@ -213,7 +213,7 @@ description: "Task list for 009-sync-feed-batch"
 - [X] T072 Re-run `.specify/scripts/bash/check-backend-contract.sh`; if `sync.yaml` changed since `6b8e290`, map each change to an FR or a follow-up in spec §5
 - [X] T073 [P] README "On-device database": note v6 and that sync reads changes since the last position per scope (one sentence; no new section)
 - [X] T074 Full gates: `./gradlew :shared:testAndroidHostTest --rerun-tasks`, `:shared:verifyRoborazziAndroidHostTest`, `:androidApp:assembleDevDebug`, `:shared:compileKotlinIosSimulatorArm64`; record counts and the implementation notes in plan.md
-- [ ] T075 Write specs/009-sync-feed-batch/summary.md (parent writes it)
+- [X] T075 Write specs/009-sync-feed-batch/summary.md (parent writes it)
 
 ---
 
