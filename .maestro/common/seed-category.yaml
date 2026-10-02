@@ -1,0 +1,13 @@
+# Creates a category from the second device (slot B): NAME is passed through; KIND, ICON and COLOR are optional.
+# Slot B must be signed in already (ACTION login).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: createCategory
+      SLOT: B
+      NAME: ${NAME}
+      KIND: "${typeof KIND !== 'undefined' ? KIND : 'expense'}"

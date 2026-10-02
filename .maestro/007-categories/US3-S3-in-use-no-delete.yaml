@@ -1,0 +1,31 @@
+# US3-S3: Given a category an expense already uses (recorded on another device), When the person refreshes and opens it, Then Delete is not offered and a note explains why.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Gym", KIND: "expense" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Spending", OPENING: "100000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createExpense, SLOT: B, CATEGORY: "Gym" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Gym"
+    timeout: 20000
+- tapOn: "Gym"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.inUseNote"
+    timeout: 15000
+- assertVisible: "This category is used, so it can’t be deleted. You can archive it instead."
+- assertNotVisible:
+    id: "categoryEditor.delete"

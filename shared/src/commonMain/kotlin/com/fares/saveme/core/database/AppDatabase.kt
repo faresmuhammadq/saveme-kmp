@@ -11,6 +11,12 @@ import com.fares.saveme.feature.account.data.local.DeviceSessionDao
 import com.fares.saveme.feature.account.data.local.DeviceSessionEntity
 import com.fares.saveme.feature.account.data.local.ProfileDao
 import com.fares.saveme.feature.account.data.local.ProfileEntity
+import com.fares.saveme.feature.categories.data.local.CategoryDao
+import com.fares.saveme.feature.categories.data.local.CategoryEntity
+import com.fares.saveme.feature.categories.data.local.CategoryReferenceDao
+import com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity
+import com.fares.saveme.feature.categories.data.local.PlatformCategoryDao
+import com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity
 import com.fares.saveme.feature.wallets.data.local.WalletDao
 import com.fares.saveme.feature.wallets.data.local.WalletEntity
 import com.fares.saveme.feature.wallets.data.local.WalletMemberDao
@@ -23,8 +29,9 @@ import kotlinx.coroutines.IO
     entities = [
         ProfileEntity::class, DeviceSessionEntity::class, SyncScopeEntity::class, PendingChangeEntity::class,
         WalletEntity::class, WalletMemberEntity::class,
+        CategoryEntity::class, PlatformCategoryEntity::class, CategoryReferenceEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -35,6 +42,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pendingChangeDao(): PendingChangeDao
     abstract fun walletDao(): WalletDao
     abstract fun walletMemberDao(): WalletMemberDao
+    abstract fun categoryDao(): CategoryDao
+    abstract fun platformCategoryDao(): PlatformCategoryDao
+    abstract fun categoryReferenceDao(): CategoryReferenceDao
 }
 
 @Suppress("KotlinNoActualForExpect", "NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -44,7 +54,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 fun buildAppDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
     builder
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

@@ -1,0 +1,14 @@
+# US1-S8: Given a new account with no categories of its own, When the person opens Categories, Then a note invites them to add their own and the defaults are listed.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible:
+      id: "categories.ownEmpty"
+    timeout: 15000
+- assertVisible: "Add your own categories to sort your money your way."
+- assertVisible: "Groceries"

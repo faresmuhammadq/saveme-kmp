@@ -1,0 +1,28 @@
+# e2e-between: network-off
+# Part 2: offline, the category is deleted on the phone, then another device records an expense with it; the connection returns.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- tapOn: "Books"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.delete"
+- tapOn:
+    id: "categoryEditor.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete category"
+- extendedWaitUntil:
+    visible:
+      id: "categories.ownEmpty"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Spending", OPENING: "100000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createExpense, SLOT: B, CATEGORY: "Books" }

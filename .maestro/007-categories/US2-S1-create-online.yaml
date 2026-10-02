@@ -1,0 +1,50 @@
+# US2-S1: Given a verified person on Categories, When they create "Coffee" with an icon and colour, Then it is listed at once and the server has it with that icon and colour.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- tapOn:
+    id: "categories.create"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "categoryEditor.name"
+- inputText: "Coffee"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.icon.restaurant"
+- tapOn:
+    id: "categoryEditor.icon.restaurant"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.color.5"
+- tapOn:
+    id: "categoryEditor.color.5"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.save"
+- tapOn:
+    id: "categoryEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "categories.list"
+    timeout: 15000
+- assertVisible: "Coffee"
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getCategory, SLOT: B, CATEGORY: "Coffee" }
+- assertTrue: ${output.category.icon == 'restaurant'}
+- assertTrue: ${output.category.color == '#1F7F8C'}
+- assertTrue: ${output.category.kind == 'expense'}

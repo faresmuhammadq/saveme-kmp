@@ -70,6 +70,18 @@ class SignOutWipeTest {
         db.walletMemberDao().insertAll(
             listOf(com.fares.saveme.feature.wallets.data.local.WalletMemberEntity("m1", "w1", "u1", "Sara", "owner", 1, "2026-09-28T10:00:00Z")),
         )
+        // Categories, the cached default set and partners' references are wiped too (spec 007 FR-023).
+        val stamp = "2026-09-28T10:00:00Z"
+        db.categoryDao().upsert(
+            com.fares.saveme.feature.categories.data.local.CategoryEntity("c1", "u1", "expense", "Coffee", null, null, null, false, 1, 1, stamp, stamp, stamp),
+        )
+        db.platformCategoryDao().replaceAll(
+            listOf(com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity("d1", "groceries", "expense", "بقالة", "Groceries", "cart", "#2E7D32", 1, null, stamp)),
+        )
+        db.categoryReferenceDao().replace(
+            "w1",
+            listOf(com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity("r1", "w1", "p1", "u2", "expense", "Partner", null, null, 1, 1, stamp)),
+        )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         languages.set(AppLanguage.Ar)
@@ -80,6 +92,9 @@ class SignOutWipeTest {
         assertNull(db.pendingChangeDao().get("profile", "p1"))
         assertNull(db.walletDao().get("w1"))
         assertEquals(emptyList<com.fares.saveme.feature.wallets.data.local.WalletMemberEntity>(), db.walletMemberDao().get("w1"))
+        assertNull(db.categoryDao().get("c1"))
+        assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity>(), db.platformCategoryDao().getAll())
+        assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity>(), db.categoryReferenceDao().get("w1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())
         assertNull(db.syncScopeDao().observe(SyncScopeEntity.PROFILE).first())
         assertNull(env.keyValues.values["app_language"])

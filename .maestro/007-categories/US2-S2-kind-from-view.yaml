@@ -1,0 +1,21 @@
+# US2-S2: Given the Income view, When the person starts a new category, Then the kind is preselected as Income.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- tapOn:
+    id: "categories.kind.income"
+- tapOn:
+    id: "categories.create"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.name"
+    timeout: 15000
+- assertVisible:
+    id: "categoryEditor.kind.income"
+    # SegmentedControl options are selectable with Role.RadioButton, which Compose reports to
+    # accessibility as checkable/checked (only Role.Tab maps to "selected").
+    checked: true

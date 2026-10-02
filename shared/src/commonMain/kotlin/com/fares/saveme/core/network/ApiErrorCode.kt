@@ -29,6 +29,9 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
     RESET_TOKEN_INVALID(RetryClass.AfterChange),
     VERSION_CONFLICT(RetryClass.AfterChange),
     FEATURE_NOT_ENTITLED(RetryClass.Never),
+
+    /** 409 on deleting a category something still uses; distinct from [VERSION_CONFLICT] (spec 007, FR-026). */
+    CATEGORY_IN_USE(RetryClass.Never),
     UNKNOWN(RetryClass.Never);
 
     companion object {

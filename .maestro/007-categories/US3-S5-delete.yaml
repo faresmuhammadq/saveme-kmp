@@ -1,0 +1,35 @@
+# US3-S5: Given an unused category, When the person deletes it, Then it disappears at once and the server deletes it.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Typo", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Typo"
+    timeout: 20000
+- tapOn: "Typo"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.delete"
+- tapOn:
+    id: "categoryEditor.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete category"
+- extendedWaitUntil:
+    visible:
+      id: "categories.ownEmpty"
+    timeout: 15000
+- assertNotVisible: "Typo"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listCategories, SLOT: B }
+- assertTrue: ${output.categoryCount == 0}

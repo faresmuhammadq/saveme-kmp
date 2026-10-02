@@ -1,0 +1,30 @@
+# US1-S1: Given a signed-in person, When they open Categories, Then Expense shows the 19 default categories in platform order starting with "Groceries", and Income shows the 7 defaults starting with "Salary", each marked "Default".
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listPlatformCategories, SLOT: B }
+- assertTrue: ${output.expenseDefaults == 19}
+- assertTrue: ${output.incomeDefaults == 7}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000
+- assertVisible:
+    id: "categories.default.0"
+- assertVisible: "Default"
+- tapOn:
+    id: "categories.kind.income"
+- extendedWaitUntil:
+    visible: "Salary"
+    timeout: 20000
+- assertVisible:
+    id: "categories.default.0"
+- assertTrue: ${output.firstIncomeName == 'Salary'}

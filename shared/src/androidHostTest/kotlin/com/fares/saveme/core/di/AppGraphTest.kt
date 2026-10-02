@@ -8,9 +8,15 @@ import com.fares.saveme.appFeatureModules
 import com.fares.saveme.core.config.AppConfig
 import com.fares.saveme.core.config.Environment
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.feature.categories.data.CategorySyncHandler
+import com.fares.saveme.feature.categories.domain.CategoriesService
+import com.fares.saveme.feature.categories.domain.CategoryReferencesCleanup
+import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import org.junit.After
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,5 +54,19 @@ class AppGraphTest {
         val koin = GlobalContext.get()
         assertNotNull(koin.get<SyncEngine>())
         assertNotNull(koin.get<WalletsService>())
+    }
+
+    @Test
+    fun theCategoryHandlerAndItsWalletDeletionParticipantAreRegistered() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+
+        val koin = GlobalContext.get()
+        assertNotNull(koin.get<CategoriesService>())
+        assertTrue(koin.getAll<SyncHandler>().any { it is CategorySyncHandler && it.recordType == "category" })
+        assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is CategoryReferencesCleanup })
     }
 }

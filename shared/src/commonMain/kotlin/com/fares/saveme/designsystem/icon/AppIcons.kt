@@ -39,6 +39,28 @@ object AppIcons {
     val Logout by lazy { icon("Logout", "M9 4H5v16h4M16 8l4 4-4 4M20 12H9", autoMirror = true) }
     val Language by lazy { icon("Language", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20") }
 
+    // Category icons (spec 007, research R-13). Named for what they draw, never for what they mean.
+    val Cart by lazy { icon("Cart", "M3 4h2l2.4 11h10.2l2-8H6.2M9 20h.01M17 20h.01") }
+    val Restaurant by lazy { icon("Restaurant", "M6 3v6a3 3 0 0 0 6 0V3M9 3v18M17 21V3c-2.5 1.5-3.5 4.5-3.5 8H17") }
+    val Bus by lazy { icon("Bus", "M5 4h14v13H5zM5 11h14M8.5 20v-3M15.5 20v-3M8.5 14h.01M15.5 14h.01") }
+    val Fuel by lazy { icon("Fuel", "M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M4 10h10M14 8h2.5a1.5 1.5 0 0 1 1.5 1.5V16a1.5 1.5 0 0 0 3 0V8l-3-3") }
+    val Bolt by lazy { icon("Bolt", "M13 2L4 14h7l-1 8 9-12h-7l1-8z") }
+    val Phone by lazy { icon("Phone", "M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2") }
+    val Health by lazy { icon("Health", "M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3z") }
+    val School by lazy { icon("School", "M2 9l10-5 10 5-10 5L2 9zM6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5M22 9v6") }
+    val Shirt by lazy { icon("Shirt", "M8 3L3 6l2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3a4 4 0 0 1-8 0z") }
+    val Sofa by lazy { icon("Sofa", "M5 11V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3M3 13a2 2 0 0 1 4 0v1h10v-1a2 2 0 0 1 4 0v5H3v-5zM6 18v2M18 18v2") }
+    val Sparkle by lazy { icon("Sparkle", "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16z") }
+    val Ticket by lazy { icon("Ticket", "M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4V7zM14 7v10") }
+    val Cycle by lazy { icon("Cycle", "M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3") }
+    val Plane by lazy { icon("Plane", "M21 3L3 10.5l6.5 2.5L12 19.5 21 3zM9.5 13L21 3") }
+    val Smile by lazy { icon("Smile", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM8 14s1.5 2 4 2 4-2 4-2M9 9.5h.01M15 9.5h.01") }
+    val Gift by lazy { icon("Gift", "M3 8h18v4H3zM5 12v9h14v-9M12 8v13M12 8c-2 0-4-1-4-3a2 2 0 0 1 4 0v3zM12 8c2 0 4-1 4-3a2 2 0 0 0-4 0v3z") }
+    val Heart by lazy { icon("Heart", "M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z") }
+    val Store by lazy { icon("Store", "M4 9l1.5-5h13L20 9M4 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 6 0 2.5 2.5 0 0 0 5 0M5 11.5V20h14v-8.5M10 20v-5h4v5") }
+    val Laptop by lazy { icon("Laptop", "M5 5h14v10H5zM3 19h18") }
+    val Undo by lazy { icon("Undo", "M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3") }
+
     private fun icon(name: String, path: String, autoMirror: Boolean = false): ImageVector =
         ImageVector.Builder(
             name = name,

@@ -1,0 +1,17 @@
+# US3-S6: Given a waiting deletion of a category another device then uses, When it is sent, Then the category reappears marked "Not deleted: this category is in use" with "Archive instead" and "Keep the category". Part 1: online, a category exists on the phone.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Books", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Books"
+    timeout: 20000

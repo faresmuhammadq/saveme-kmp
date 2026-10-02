@@ -1,0 +1,16 @@
+# US2-S9: Given a default category, When the person taps it, Then nothing opens: defaults have no actions.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000
+- tapOn: "Groceries"
+- assertNotVisible:
+    id: "categoryEditor.name"
+- assertVisible:
+    id: "categories.list"

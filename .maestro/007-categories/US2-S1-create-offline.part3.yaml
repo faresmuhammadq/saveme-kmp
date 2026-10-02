@@ -1,0 +1,16 @@
+# e2e-between: network-on
+# Part 3: the connection is back; the mark clears without any action and the server has the category.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 90000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getCategory, SLOT: B, CATEGORY: "Coffee offline" }
+- assertTrue: ${output.category.name == 'Coffee offline'}

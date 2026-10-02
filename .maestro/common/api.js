@@ -111,6 +111,31 @@ function putWallet(w, changes) {
     return expect(call('PUT', 'wallets/' + w.id, body, token()), 200, 'saveWallet').body.data
 }
 
+// Categories (spec 007). A category is found by ID, or by its CATEGORY name among the caller's own.
+function listAllCategories() {
+    return expect(call('GET', 'categories?limit=200', undefined, token()), 200, 'listCategories').body.data
+}
+
+function findCategory() {
+    var id = arg('ID')
+    var all = listAllCategories()
+    var name = arg('CATEGORY')
+    var matches = all.filter(function (c) { return id ? c.id === id : c.name === name })
+    if (matches.length !== 1) throw new Error('findCategory: expected one category ' + (id || '"' + name + '"') + ', found ' + matches.length)
+    return matches[0]
+}
+
+function putCategory(c, changes) {
+    var body = {
+        kind: c.kind,
+        name: changes.name !== undefined ? changes.name : c.name,
+        icon: changes.icon !== undefined ? changes.icon : c.icon,
+        color: changes.color !== undefined ? changes.color : c.color,
+        version: c.version,
+    }
+    return expect(call('PUT', 'categories/' + c.id, body, token()), 200, 'saveCategory').body.data
+}
+
 var email = arg('EMAIL', arg('E2E_EMAIL'))
 var password = arg('PASSWORD', arg('E2E_PASSWORD'))
 
@@ -219,6 +244,87 @@ switch (arg('ACTION')) {
     case 'deleteWallet':
         var toDelete = findWallet()
         expect(call('DELETE_WITH_BODY', 'wallets/' + toDelete.id, { version: toDelete.version }, token()), 200, 'deleteWallet')
+        break
+
+    // Copies the caller's own categories into output.categories and their number into output.categoryCount.
+    case 'listCategories':
+        output.categories = listAllCategories()
+        output.categoryCount = output.categories.length
+        break
+
+    // Copies one category (by ID or CATEGORY name) into output.category for assertTrue.
+    case 'getCategory':
+        output.category = findCategory()
+        break
+
+    // Creates a category from this slot: NAME, KIND (expense), ICON and COLOR (none by default).
+    // Copies it into output.category and its id into output.categoryId.
+    case 'createCategory':
+        var categoryId = uuid7()
+        var newCategory = expect(call('PUT', 'categories/' + categoryId, {
+            kind: arg('KIND', 'expense'),
+            name: arg('NAME', 'API category'),
+            icon: arg('ICON', null),
+            color: arg('COLOR', null),
+            version: 0,
+        }, token()), 201, 'createCategory').body.data
+        output.category = newCategory
+        output.categoryId = newCategory.id
+        break
+
+    // Saves a category from this slot: NEW_NAME, ICON and/or COLOR.
+    case 'saveCategory':
+        var currentCategory = findCategory()
+        var categoryChanges = {}
+        if (arg('NEW_NAME') !== undefined) categoryChanges.name = arg('NEW_NAME')
+        if (arg('ICON') !== undefined) categoryChanges.icon = arg('ICON')
+        if (arg('COLOR') !== undefined) categoryChanges.color = arg('COLOR')
+        output.category = putCategory(currentCategory, categoryChanges)
+        break
+
+    // Archives a category from this slot.
+    case 'archiveCategory':
+        var toArchiveCategory = findCategory()
+        output.category = expect(call('POST', 'categories/' + toArchiveCategory.id + '/archive', { version: toArchiveCategory.version }, token()), 200, 'archiveCategory').body.data
+        break
+
+    // Deletes a category from this slot (JSON body on DELETE, backend spec 011). EXPECT is the status (200).
+    case 'deleteCategory':
+        var toDeleteCategory = findCategory()
+        expect(call('DELETE_WITH_BODY', 'categories/' + toDeleteCategory.id, { version: toDeleteCategory.version }, token()), parseInt(arg('EXPECT', '200')), 'deleteCategory')
+        break
+
+    // Copies the default set into output.platformCategories, with per-kind counts in output.expenseDefaults / output.incomeDefaults
+    // and the first names in output.firstExpenseName / output.firstIncomeName.
+    case 'listPlatformCategories':
+        var defaults = expect(call('GET', 'platform-categories', undefined, token()), 200, 'listPlatformCategories').body.data
+        output.platformCategories = defaults
+        output.expenseDefaults = defaults.filter(function (c) { return c.kind === 'expense' && c.archived_at === null }).length
+        output.incomeDefaults = defaults.filter(function (c) { return c.kind === 'income' && c.archived_at === null }).length
+        output.firstExpenseName = defaults.filter(function (c) { return c.kind === 'expense' })[0].names.en
+        output.firstIncomeName = defaults.filter(function (c) { return c.kind === 'income' })[0].names.en
+        break
+
+    // Records an expense from this slot that uses a category, making it "in use" (backend B6):
+    // CATEGORY (name) or CATEGORY_ID, WALLET_ID (default output.walletId from a createWallet), AMOUNT in minor units (1000).
+    case 'createExpense':
+        var usedCategory = findCategory()
+        var walletId = arg('WALLET_ID', output.walletId)
+        if (!walletId) throw new Error('createExpense: no WALLET_ID and no wallet created by this script run; run createWallet first')
+        var wallet = expect(call('GET', 'wallets/' + walletId, undefined, token()), 200, 'getWallet').body.data
+        expect(call('PUT', 'wallets/' + walletId + '/transactions/' + uuid7(), {
+            kind: 'expense',
+            date: arg('DATE', '2026-10-02'),
+            amount_minor: parseInt(arg('AMOUNT', '1000')),
+            currency: wallet.currency,
+            category_id: usedCategory.id,
+            counter_wallet_id: null,
+            description: null,
+            memo: null,
+            counterparty: null,
+            cleared: true,
+            version: 0,
+        }, token()), 201, 'createExpense')
         break
 
     default:

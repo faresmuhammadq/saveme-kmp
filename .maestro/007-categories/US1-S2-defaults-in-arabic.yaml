@@ -1,0 +1,36 @@
+# US1-S2: Given the app language is Arabic, When the person opens Categories, Then the defaults are named in Arabic ("بقالة") while their own category keeps the name they gave it.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Coffee", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-account.yaml
+    env:
+      ROW: "Profile"
+- tapOn: "العربية"
+- tapOn:
+    id: "profile.save"
+- extendedWaitUntil:
+    visible: "الملف الشخصي"
+    timeout: 20000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "الرئيسية"
+    timeout: 15000
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "بقالة"
+    timeout: 20000
+- extendedWaitUntil:
+    visible: "Coffee"
+    timeout: 20000
+- assertVisible: "افتراضية"

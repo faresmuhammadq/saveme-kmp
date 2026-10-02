@@ -61,4 +61,15 @@ class ProblemDetailsTest {
         assertNull(problem.errors)
         assertNull(problem.retryAfterSeconds)
     }
+
+    @Test
+    fun aCategoryInUseProblemDecodesToItsOwnCodeAndIsNeverRetried() {
+        val problem = AppJson.decodeFromString(
+            ProblemDetails.serializer(),
+            """{"type":"t","title":"x","status":409,"detail":"d","code":"CATEGORY_IN_USE","request_id":"r"}""",
+        )
+        assertEquals(ApiErrorCode.CATEGORY_IN_USE, ApiErrorCode.from(problem.code))
+        assertEquals(RetryClass.Never, ApiErrorCode.CATEGORY_IN_USE.retryClass)
+        assertNull(problem.current)
+    }
 }

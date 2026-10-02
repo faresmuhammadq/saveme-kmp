@@ -66,4 +66,16 @@ class SyncEngineRefusalTest {
         assertEquals("Waiting", h.row("n1")!!.state)
         assertEquals(0, h.row("n1")!!.attempts)
     }
+
+    @Test
+    fun aCategoryInUseRefusalIsKeptWithItsCodeAndNotRetried() = runTest {
+        val h = EngineHarness()
+        h.save("n1", "{}")
+        h.handler.answer = { failure(ApiErrorCode.CATEGORY_IN_USE) }
+        h.engine.drain()
+        assertEquals("Refused", h.row("n1")!!.state)
+        assertEquals("CATEGORY_IN_USE", h.engine.get("note", "n1")!!.refusal!!.code)
+        h.engine.drain()
+        assertEquals(1, h.handler.sent.size)
+    }
 }

@@ -1,0 +1,37 @@
+# US3-S1: Given an active category, When the person archives it, Then it moves to "Archived" and the server has it archived.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Coffee", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Coffee"
+    timeout: 20000
+- tapOn: "Coffee"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.archive"
+- tapOn:
+    id: "categoryEditor.archive"
+- tapOn: "Archive"
+- extendedWaitUntil:
+    visible:
+      id: "categories.archivedHeader"
+    timeout: 15000
+- assertVisible:
+    id: "categories.archived.0"
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getCategory, SLOT: B, CATEGORY: "Coffee" }
+- assertTrue: ${output.category.archived_at != null}
