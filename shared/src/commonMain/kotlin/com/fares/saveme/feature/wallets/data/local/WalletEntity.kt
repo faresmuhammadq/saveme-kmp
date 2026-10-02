@@ -51,6 +51,16 @@ interface WalletDao {
     @Query("SELECT * FROM wallet")
     suspend fun getAll(): List<WalletEntity>
 
+    /**
+     * The oldest completed feed read among the wallets the server has accepted: '' when one was never
+     * read, null when there are none (the wallet list's "Updated …", spec 009 R-11).
+     */
+    @Query(
+        """SELECT MIN(COALESCE(s.feed_read_at, '')) FROM wallet w LEFT JOIN sync_scope s ON s.scope = 'wallet:' || w.id
+        WHERE w.version > 0""",
+    )
+    fun observeOldestFeedRead(): Flow<String?>
+
     @Upsert
     suspend fun upsert(entity: WalletEntity)
 

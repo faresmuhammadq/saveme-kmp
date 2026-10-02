@@ -5,6 +5,8 @@ import com.fares.saveme.core.locale.AppLanguageStore
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.network.ProblemDetails
+import com.fares.saveme.core.sync.BatchItem
+import com.fares.saveme.core.sync.BatchOp
 import com.fares.saveme.core.sync.PendingChange
 import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.account.data.dto.ProfileDto
@@ -21,9 +23,9 @@ class ProfileSyncHandler(
 
     override val recordType: String = RECORD_TYPE
 
-    override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
+    private fun writeRequest(change: PendingChange): ProfileWriteRequest {
         val draft = AppJson.decodeFromString(ProfileDraft.serializer(), change.payloadJson)
-        val request = ProfileWriteRequest(
+        return ProfileWriteRequest(
             displayName = draft.displayName,
             locale = draft.locale,
             timezone = draft.timezone,
@@ -31,6 +33,14 @@ class ProfileSyncHandler(
             budgetPeriodStartDay = draft.budgetStartDay,
             version = change.baseVersion,
         )
+    }
+
+    /** The same body `PUT /me/profile` sends; the item's id is the person's profile id (spec 009 FR-024). */
+    override suspend fun batchItem(change: PendingChange): BatchItem =
+        BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, walletId = null, data = writeRequest(change).toJson())
+
+    override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
+        val request = writeRequest(change)
         return when (val result = repository.push(request)) {
             is ApiResult.Success -> ApiResult.Success(AppJson.encodeToJsonElement(ProfileDto.serializer(), result.value))
             is ApiResult.Failure -> result

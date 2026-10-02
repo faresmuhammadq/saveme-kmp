@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: the connection is back; every mark clears without any action, and the server has every change: the edits, the new wallet created before its expenses, and all seventeen expenses.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 120000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 11}
+- assertTrue: ${output.transactions.filter(function (t) { return t.amount_minor == 1100 || t.amount_minor == 2200 }).length == 2}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Beta" }
+- assertTrue: ${output.transactionCount == 8}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Beta" }
+- assertTrue: ${output.wallet.balance_minor == 50000 - 8 * 200}

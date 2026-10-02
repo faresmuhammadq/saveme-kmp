@@ -57,4 +57,17 @@ class WalletsLayeringTest {
         val foreign = otherFeatureImports(domain).filter { (_, i) -> !i.substringAfter(base).substringAfter('.').startsWith("domain") }
         assertTrue(foreign.isEmpty(), "domain reaches another feature beyond its domain: $foreign")
     }
+
+    @Test
+    fun theSyncExtensionPointsAreImplementedInDataAndOnlyTheirCoreContractIsImported() {
+        val data = File(File(feature, "wallets"), "data")
+        val appliers = listOf("WalletFeedApplier", "WalletMemberFeedApplier", "OwnMembershipFeedApplier")
+        appliers.forEach { name ->
+            val source = data.walkTopDown().firstOrNull { it.isFile && it.extension == "kt" && "class $name" in it.readText() }
+            assertTrue(source != null, "$name is declared in wallets.data")
+            val imports = source!!.readLines().filter { it.startsWith("import ") }.map { it.removePrefix("import ").trim() }
+            assertTrue("com.fares.saveme.core.sync.FeedApplier" in imports, "$name implements the core FeedApplier")
+            assertTrue(imports.none { it.startsWith(base + "wallets.domain") || it.startsWith(base + "wallets.ui") }, "$name imports domain or ui")
+        }
+    }
 }

@@ -44,24 +44,6 @@ class TransactionApiContractTest {
     )
 
     @Test
-    fun listAsksForTwoHundredEchoesTheCursorAndSendsNoFilterSortOrSearch() = runTest {
-        val env = env(backgroundScope) {
-            jsonResponse(200, transactionPage(listOf(transactionJson(), transactionJson(id = "t2", kind = "transfer", categoryId = null, counterWalletId = "w1", walletId = "w9")), nextCursor = "c2"))
-        }
-        env.signedIn()
-        val page = assertIs<ApiResult.Success<Page<TransactionDto>>>(env.api.list("w1", "c1")).value
-        assertEquals(2, page.items.size)
-        assertEquals("c2", page.nextCursor)
-        assertEquals("w9", page.items[1].walletId)
-        val request = env.requests.single()
-        assertEquals(HttpMethod.Get, request.method)
-        assertTrue(request.url.encodedPath.endsWith("/wallets/w1/transactions"), request.url.encodedPath)
-        assertEquals("200", request.url.parameters["limit"])
-        assertEquals("c1", request.url.parameters["cursor"])
-        assertEquals(setOf("limit", "cursor"), request.url.parameters.names())
-    }
-
-    @Test
     fun putSendsExactlyTheElevenWritableMembersWithExplicitNulls() = runTest {
         val env = env(backgroundScope) { jsonResponse(201, transactionBody()) }
         env.signedIn()
@@ -180,7 +162,7 @@ class TransactionApiContractTest {
         assertEquals(30L, assertIs<ApiResult.Failure>(busy.api.put("w1", "t1", write())).retryAfterSeconds)
         val offline = env(backgroundScope) { throw kotlinx.io.IOException("offline") }
         offline.signedIn()
-        assertEquals(ApiResult.Offline, offline.api.list("w1", null))
+        assertEquals(ApiResult.Offline, offline.api.put("w1", "t1", write()))
     }
 
     @Test
@@ -190,7 +172,7 @@ class TransactionApiContractTest {
         val events = mutableListOf<ApiEvent>()
         val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler))
         env.auth.events.events.onEach { events += it }.launchIn(scope)
-        assertEquals(ApiErrorCode.UNAUTHENTICATED, assertIs<ApiResult.Failure>(env.api.list("w1", null)).code)
+        assertEquals(ApiErrorCode.UNAUTHENTICATED, assertIs<ApiResult.Failure>(env.api.put("w1", "t1", write())).code)
         assertTrue(events.any { it is ApiEvent.SessionEnded }, "$events")
         assertNull(null)
         scope.coroutineContext[Job]?.cancel()

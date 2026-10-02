@@ -1,0 +1,33 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline the phone edits the amount and records another expense; the other device edits the same transaction; then the connection returns.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn: "Taxi"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- eraseText: 10
+- inputText: "60"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "5.00", CATEGORY: "Fares" }
+- assertVisible: "Waiting to sync"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveTransaction, SLOT: B, WALLET: "Alpha", NOTE: "Taxi", NEW_AMOUNT: "9000" }

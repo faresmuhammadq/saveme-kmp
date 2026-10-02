@@ -1,0 +1,14 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline the person records five expenses.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- repeat:
+    times: 5
+    commands:
+      - runFlow:
+          file: ../common/add-expense.yaml
+          env: { AMOUNT: "3.00", CATEGORY: "Fares" }
+- assertVisible: "Waiting to sync"

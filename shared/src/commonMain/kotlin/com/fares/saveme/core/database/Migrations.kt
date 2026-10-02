@@ -133,3 +133,15 @@ internal val MIGRATION_4_5 = object : Migration(4, 5) {
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_account_id` ON `transactions` (`account_id`)")
     }
 }
+
+/**
+ * v5 → v6 (spec 009, research R-11): each sync scope keeps its change feed position and the start
+ * of its last completed read. Nothing else is touched, and every position starts empty, so the
+ * first run after the update reads every scope from the start (FR-029).
+ */
+internal val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `feed_cursor` TEXT")
+        connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `feed_read_at` TEXT")
+    }
+}

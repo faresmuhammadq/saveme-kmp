@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device
+# US1 checkpoint (brief C14): Given a waiting edit that clashes with another device's edit and another waiting change that does not, When they are sent together, Then the clash shows the choice and the other change is accepted on its own. Part 1: online, the transaction to edit shown.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "Taxi" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible: "Taxi"

@@ -3,8 +3,11 @@ package com.fares.saveme.feature.wallets.data
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.network.ProblemDetails
+import com.fares.saveme.core.sync.BatchItem
+import com.fares.saveme.core.sync.BatchOp
 import com.fares.saveme.core.sync.PendingChange
 import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.feature.wallets.data.dto.VersionOnlyRequest
 import com.fares.saveme.feature.wallets.data.dto.WalletDto
 import com.fares.saveme.feature.wallets.data.dto.WalletWriteRequest
 import com.fares.saveme.feature.wallets.domain.model.WalletDraft
@@ -19,11 +22,28 @@ import kotlinx.serialization.json.JsonElement
 class WalletSyncHandler(
     private val repository: WalletRepository,
     private val api: WalletApi,
+    private val accountId: () -> String? = { null },
 ) : SyncHandler {
 
     override val recordType: String = RECORD_TYPE
 
     override val canRestore: Boolean = false
+
+    private fun writeRequest(draft: WalletDraft, version: Long) = WalletWriteRequest(
+        type = draft.type, name = draft.name, currency = draft.currency,
+        openingBalanceMinor = draft.openingBalanceMinor, icon = draft.icon, color = draft.color,
+        version = version,
+    )
+
+    /** `PUT` / `DELETE` as an item; an archive has its own endpoint, so it goes per record (spec 009 FR-018). */
+    override suspend fun batchItem(change: PendingChange): BatchItem? {
+        if (change.isDelete) {
+            return BatchItem(RECORD_TYPE, BatchOp.Delete, change.recordId, null, AppJson.encodeToJsonElement(VersionOnlyRequest.serializer(), VersionOnlyRequest(change.baseVersion)))
+        }
+        val draft = AppJson.decodeFromString(WalletDraft.serializer(), change.payloadJson)
+        if (draft.archive) return null
+        return BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, null, writeRequest(draft, change.baseVersion).toJson())
+    }
 
     override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
         if (change.isDelete) return api.delete(change.recordId, change.baseVersion).toJson()
@@ -35,12 +55,7 @@ class WalletSyncHandler(
         var version = change.baseVersion
         var last: WalletDto? = null
         if (!skipPut) {
-            val request = WalletWriteRequest(
-                type = draft.type, name = draft.name, currency = draft.currency,
-                openingBalanceMinor = draft.openingBalanceMinor, icon = draft.icon, color = draft.color,
-                version = change.baseVersion,
-            )
-            when (val put = api.put(change.recordId, request)) {
+            when (val put = api.put(change.recordId, writeRequest(draft, change.baseVersion))) {
                 is ApiResult.Success -> {
                     last = put.value
                     version = put.value.version
@@ -58,9 +73,13 @@ class WalletSyncHandler(
         repository.storeServerCopy(AppJson.decodeFromJsonElement(WalletDto.serializer(), json))
     }
 
-    /** A wallet that never reached the server has no copy to fall back to: it disappears. */
+    /**
+     * A wallet that never reached the server has no copy to fall back to: it disappears. One the person may
+     * have lost while this change waited (no live membership) is read again from the start, which removes it.
+     */
     override suspend fun onDiscarded(recordId: String) {
         repository.removePlaceholder(recordId)
+        repository.reconsiderAfterDiscard(recordId, accountId().orEmpty())
     }
 
     override fun refusalFields(problem: ProblemDetails): Map<String, String> =

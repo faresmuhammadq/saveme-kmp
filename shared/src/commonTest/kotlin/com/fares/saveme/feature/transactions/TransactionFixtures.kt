@@ -4,6 +4,7 @@ import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.storage.StoredSession
 import com.fares.saveme.core.sync.FakeClock
 import com.fares.saveme.core.sync.FakePendingChangeDao
+import com.fares.saveme.core.sync.FakeSyncRunner
 import com.fares.saveme.core.sync.FakeSyncScheduler
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.feature.account.FakeSyncScopeDao
@@ -75,9 +76,29 @@ class FakeTransactionDao : TransactionDao {
     override fun observeCarried(): Flow<List<TransactionEntity>> = rows.map { all -> all.values.filter { it.carryConfirmedAt != null } }
     override suspend fun getCarried() = rows.value.values.filter { it.carryConfirmedAt != null }
 
-    override suspend fun clearCarryUpTo(at: String) {
+    override suspend fun clearSourceCarryCoveredBy(walletId: String, changeSeq: Long) {
         rows.value = rows.value.mapValues { (_, r) ->
-            if (r.carryConfirmedAt != null && r.carryConfirmedAt <= at) r.copy(carrySourceMinor = 0, carryCounterMinor = 0, carryConfirmedAt = null) else r
+            if (r.walletId == walletId && r.carryConfirmedAt != null && r.changeSeq > 0 && r.changeSeq <= changeSeq) r.copy(carrySourceMinor = 0) else r
+        }
+    }
+
+    override suspend fun clearSourceCarry(walletId: String, at: String) {
+        rows.value = rows.value.mapValues { (_, r) ->
+            if (r.walletId == walletId && r.carryConfirmedAt != null && r.carryConfirmedAt <= at) r.copy(carrySourceMinor = 0) else r
+        }
+    }
+
+    override suspend fun clearCounterCarry(walletId: String, at: String) {
+        rows.value = rows.value.mapValues { (_, r) ->
+            if (r.counterWalletId == walletId && r.carryConfirmedAt != null && r.carryConfirmedAt <= at) r.copy(carryCounterMinor = 0) else r
+        }
+    }
+
+    override suspend fun settleClearedCarry(walletId: String, at: String) {
+        rows.value = rows.value.mapValues { (_, r) ->
+            if ((r.walletId == walletId || r.counterWalletId == walletId) && r.carryConfirmedAt != null && r.carryConfirmedAt <= at &&
+                r.carrySourceMinor == 0L && r.carryCounterMinor == 0L
+            ) r.copy(carryConfirmedAt = null) else r
         }
     }
 
@@ -205,29 +226,32 @@ class TransactionTestEnv(
         hasQueuedChange = { id -> engine.get("wallet", id) != null },
         onWalletRemoved = { id -> cleanup.onWalletDeleted(id) },
         clock = clock,
+        onWalletCopy = { id, changeSeq -> cleanup.onWalletCopy(id, changeSeq) },
     )
     val repository: TransactionRepository = TransactionRepository(
-        api, transactionDao, scopeDao,
+        transactionDao, scopeDao,
         accountId = { "u1" },
         hasQueuedChange = { id -> engine.get(TransactionSyncHandler.RECORD_TYPE, id) != null },
         clock = clock,
+        walletChangeSeq = { id -> walletDao.get(id)?.changeSeq },
     )
-    val walletHandler = WalletSyncHandler(walletRepository, walletApi)
+    val walletHandler = WalletSyncHandler(walletRepository, walletApi, accountId = { "u1" })
     val syncHandler = TransactionSyncHandler(repository, api, walletOnPhone = { id -> walletDao.get(id) != null })
     val engine: SyncEngine = SyncEngine(
         pendingDao, scopeDao, listOf(walletHandler, syncHandler), scheduler, currentAccountId = { "u1" }, clock = clock,
     )
     val postings = TransactionPostings({ engine }, repository)
+    val runner = FakeSyncRunner(engine = engine, scope = scope)
     private var nextWalletId = 0
     val wallets = DefaultWalletsService(
         walletRepository, engine, authState, FakeEntitlements(), postings,
-        defaultCurrency = flowOf("EGP"), scope = scope, clock = clock, newId = { "w-new-${++nextWalletId}" },
+        defaultCurrency = flowOf("EGP"), runner = runner, newId = { "w-new-${++nextWalletId}" },
     )
-    val reconciler = BalanceReconciler(repository, wallets, scope, clock, debounce = Duration.ZERO)
+    val reconciler = BalanceReconciler(repository, runner, scope, clock, debounce = Duration.ZERO)
     val cleanup = TransactionsWalletCleanup(repository, { engine }, { id -> walletDao.get(id) != null }, scope)
     private var nextId = 0
     val service = DefaultTransactionsService(
-        repository, engine, wallets, categories, authState, auth.keyValues, reconciler, scope, clock,
+        repository, engine, wallets, authState, auth.keyValues, reconciler, runner, clock,
         newId = { newIds.getOrNull(nextId++) ?: "t-new-$nextId" },
     )
     val requests get() = auth.requests

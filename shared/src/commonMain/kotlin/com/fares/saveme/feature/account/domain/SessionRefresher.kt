@@ -1,25 +1,25 @@
 package com.fares.saveme.feature.account.domain
 
-import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.network.ApiErrorCode
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
+import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
-import com.fares.saveme.feature.account.data.dto.DeviceSessionDto
 import com.fares.saveme.feature.account.domain.model.ActionOutcome
 import com.fares.saveme.feature.account.domain.model.DeviceSession
 import com.fares.saveme.feature.account.domain.model.DeviceSessionList
-import com.fares.saveme.feature.account.domain.model.toActionOutcome
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlin.time.Instant
 
 /**
- * Pulls every page of active sessions into the device's copy (research R-02, R-05). No change
- * feed exists yet, so a pull is a full re-read. Screens only ever observe [sessions].
+ * Keeps the device's copy of the session list current by reading the person's change feed (spec 009
+ * R-13): only what changed since the last read comes down. Screens only ever observe [sessions].
  */
-class SessionRefresher(private val repository: DeviceSessionRepository) {
-    private val mutex = Mutex()
-
+class SessionRefresher(
+    private val repository: DeviceSessionRepository,
+    private val runner: SyncRunner,
+) {
     val sessions: Flow<DeviceSessionList> = repository.observe().map { (rows, refreshedAt) ->
         DeviceSessionList(
             items = rows.map { row ->
@@ -37,27 +37,10 @@ class SessionRefresher(private val repository: DeviceSessionRepository) {
         )
     }
 
-    suspend fun refresh(): ActionOutcome = mutex.withLock {
-        val all = mutableListOf<DeviceSessionDto>()
-        var cursor: String? = null
-        repeat(MAX_PAGES) {
-            when (val page = repository.fetchPage(cursor)) {
-                is ApiResult.Success -> {
-                    all += page.value.items
-                    cursor = page.value.nextCursor
-                    if (!page.value.hasMore || cursor == null) {
-                        repository.store(all)
-                        return@withLock ActionOutcome.Done
-                    }
-                }
-                else -> return@withLock page.toActionOutcome() // stored rows stay as they are
-            }
-        }
-        repository.store(all)
-        ActionOutcome.Done
-    }
-
-    private companion object {
-        const val MAX_PAGES = 20
+    /** A read of the person's scope, with no floor (as the whole-list read had none); stored rows stay as they are on failure. */
+    suspend fun refresh(): ActionOutcome = when (runner.refresh(ReadTarget.User, force = true)) {
+        ReadOutcome.Done -> ActionOutcome.Done
+        ReadOutcome.Offline -> ActionOutcome.Offline
+        ReadOutcome.Failed -> ActionOutcome.Error(ApiErrorCode.UNKNOWN, null)
     }
 }

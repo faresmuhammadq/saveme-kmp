@@ -32,35 +32,6 @@ class CategoryRepositoryTest {
     }
 
     @Test
-    fun refreshOwnMergesOnlyWhenEveryPageSucceeds() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { request ->
-            if (request.url.parameters["cursor"] == null) jsonResponse(200, categoryPage(listOf(categoryJson("a", name = "New A")), nextCursor = "c"))
-            else jsonResponse(503, problemBody(503, "SERVICE_UNAVAILABLE"))
-        }
-        env.signedIn()
-        env.seed(categoryJson("a", name = "Old A"))
-        env.seed(categoryJson("b"))
-        assertIs<ApiResult.Failure>(env.repository.refreshOwn())
-        assertEquals("Old A", env.categoryDao.rows.value.getValue("a").name)
-        assertNotNull(env.categoryDao.rows.value["b"])
-        assertNull(env.scopeDao.rows.value["categories"])
-    }
-
-    @Test
-    fun anUnlistedSyncedCategoryIsRemovedButQueuedAndPlaceholderRowsStay() = runTest {
-        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(listOf(categoryJson("a")))) }
-        env.signedIn()
-        env.seed(categoryJson("a"))
-        env.seed(categoryJson("gone", version = 2))
-        env.seed(categoryJson("queued", version = 2))
-        env.repository.insertPlaceholder("fresh", "u1", "expense", "New", null, null)
-        env.engine.enqueue("category", "queued", SyncScope(ScopeKind.User, "u1"), 2, "{}")
-        assertIs<ApiResult.Success<Unit>>(env.repository.refreshOwn())
-        assertEquals(setOf("a", "queued", "fresh"), env.categoryDao.rows.value.keys)
-        assertNotNull(env.scopeDao.rows.value["categories"])
-    }
-
-    @Test
     fun theDefaultSetIsReplacedOnSuccessAndRetiredEntriesAreKept() = runTest {
         var fail = false
         val env = CategoryTestEnv(backgroundScope) {

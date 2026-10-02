@@ -106,7 +106,7 @@ class TransactionPostingsTest {
         assertEquals(null, env.pendingDao.get("transaction", "t1"))
         assertEquals(setOf(-4_550L), seen.toSet(), "$seen")
         // A wallet read that included the change settles the carry and the delta is zero again.
-        env.repository.clearCarryConfirmedUpTo(kotlin.time.Instant.parse("2027-01-01T00:00:00Z"))
+        env.repository.clearCarryFor("w1", kotlin.time.Instant.parse("2027-01-01T00:00:00Z"))
         assertEquals(0, env.postings.deltaFor("w1").first())
     }
 }

@@ -1,0 +1,29 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: the connection is back and the app is killed at once; the next start finishes the upload and nothing is duplicated.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- killApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 30000
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 120000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 5}
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getWallet, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.wallet.balance_minor == 10000 - 5 * 300}

@@ -84,7 +84,7 @@ class WalletsServiceCreateTest {
         env.signedIn()
         val service = DefaultWalletsService(
             env.repository, env.engine, env.authState, env.entitlements, ZeroPendingPostings,
-            defaultCurrency = kotlinx.coroutines.flow.flowOf("EGP"), scope = backgroundScope,
+            defaultCurrency = kotlinx.coroutines.flow.flowOf("EGP"), runner = env.runner,
         )
         val id = assertIs<CreateResult.Created>(service.create(draft)).id
         assertEquals(36, id.length)

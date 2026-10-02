@@ -75,12 +75,16 @@ class CategoryResolverTest {
 
     @Test
     fun theServiceResolvesFromThePhonesCopyAndAMissAsksForThatWalletsReferencesOnce() = runTest {
-        var reads = 0
-        val env = CategoryTestEnv(backgroundScope) {
-            reads++
-            jsonResponse(200, categoryPage(listOf(referenceJson(categoryId = "p9", name = "Learned"))))
+        val env = CategoryTestEnv(backgroundScope) { jsonResponse(200, categoryPage(emptyList())) }
+        // The wallet's feed read brings the partner's category; the fake runner stores it the way the applier would.
+        env.runner.onRefresh = { _, _ ->
+            env.references.storeFeedCopy(
+                com.fares.saveme.core.network.AppJson.decodeFromString(
+                    com.fares.saveme.feature.categories.data.dto.CategoryReferenceDto.serializer(),
+                    referenceJson(categoryId = "p9", name = "Learned"),
+                ),
+            )
         }
-        // The read runs on the HTTP engine's own threads, so the test waits for its result instead of for the scheduler.
         env.signedIn()
         env.seed(categoryJson("o", name = "Mine"))
         env.seedDefaults(platformJson("d"))
@@ -92,7 +96,7 @@ class CategoryResolverTest {
         displays.resolve("other-miss")
         env.referenceDao.rows.first { it.isNotEmpty() }
         advanceUntilIdle()
-        assertEquals(1, reads)
+        assertEquals(listOf<Pair<com.fares.saveme.core.sync.ReadTarget, Boolean>>(com.fares.saveme.core.sync.ReadTarget.Wallet("w1") to false), env.runner.refreshes)
         assertEquals("Learned", env.service.observeDisplays("w1").first().resolve("p9").name)
         assertFalse(env.service.observeDisplays(null).first().resolve("p9").source == CategorySource.Partner)
     }

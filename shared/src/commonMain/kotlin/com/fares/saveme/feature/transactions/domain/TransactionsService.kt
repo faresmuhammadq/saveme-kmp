@@ -2,8 +2,11 @@ package com.fares.saveme.feature.transactions.domain
 
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.storage.KeyValueStore
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
@@ -98,18 +101,13 @@ class DefaultTransactionsService(
     private val repository: TransactionRepository,
     private val engine: SyncEngine,
     private val wallets: WalletsService,
-    private val categories: CategoriesService,
     private val authState: StateFlow<AuthState>,
     private val keyValues: KeyValueStore,
     private val reconciler: BalanceReconciler,
-    private val scope: CoroutineScope,
+    private val runner: SyncRunner,
     private val clock: Clock = Clock.System,
     private val newId: () -> String = { Uuid.generateV7().toString() },
-    private val foregroundFloor: Duration = 60.seconds,
 ) : TransactionsService {
-
-    private val refreshLock = Mutex()
-    private val lastRead = mutableMapOf<String, Instant>()
 
     private val accountId: String? get() = (authState.value as? AuthState.SignedIn)?.account?.userId
 
@@ -243,9 +241,10 @@ class DefaultTransactionsService(
     }
 
     override suspend fun useTheirs(id: String) {
+        val row = repository.get(id)
         engine.useTheirs(TransactionSyncHandler.RECORD_TYPE, id)
         // The other device's change may or may not be in the wallet's last read; only a read settles it (analysis A5).
-        reconciler.requestWalletRead()
+        reconciler.requestWalletRead(*listOfNotNull(row?.walletId, row?.counterWalletId).toTypedArray())
     }
 
     override suspend fun tryAgain(id: String) {
@@ -260,21 +259,15 @@ class DefaultTransactionsService(
 
     override suspend fun discard(id: String) = engine.discard(TransactionSyncHandler.RECORD_TYPE, id)
 
-    override suspend fun refresh(walletId: String, force: Boolean): RefreshOutcome = refreshLock.withLock {
-        val last = lastRead[walletId]
-        if (!force && last != null && clock.now() - last < foregroundFloor) return RefreshOutcome.Done
+    override suspend fun refresh(walletId: String, force: Boolean): RefreshOutcome {
         // A pull and an open also send what is waiting, so a person who got back online doesn't wait for the scheduler.
         if (force) engine.syncNow()
-        categories.refreshReferences(walletId, force = true)
-        when (val result = repository.refreshWallet(walletId)) {
-            is ApiResult.Success -> {
-                lastRead[walletId] = clock.now()
-                // The balance and the list must describe the same server state (research R-08).
-                if (result.value.changed) reconciler.requestWalletRead()
-                RefreshOutcome.Done
-            }
-            ApiResult.Offline, ApiResult.Timeout -> RefreshOutcome.Offline
-            is ApiResult.Failure -> RefreshOutcome.Failed
+        // The wallet's feed carries its transactions, its record (balance, lock) and its references; the 60 second
+        // floor for unforced reads lives in the runner (spec 009 R-10).
+        return when (runner.refresh(ReadTarget.Wallet(walletId), force)) {
+            ReadOutcome.Done -> RefreshOutcome.Done
+            ReadOutcome.Offline -> RefreshOutcome.Offline
+            ReadOutcome.Failed -> RefreshOutcome.Failed
         }
     }
 
@@ -318,9 +311,7 @@ class DefaultTransactionsService(
 
     private fun scopeOf(walletId: String) = SyncScope(ScopeKind.Wallet, walletId)
 
-    private fun drainInBackground() {
-        scope.launch { engine.drain() }
-    }
+    private fun drainInBackground() = runner.requestUpload()
 
     companion object {
         const val LAST_WALLET_KEY = "transactions.lastWallet"

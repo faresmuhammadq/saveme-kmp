@@ -1,9 +1,9 @@
 package com.fares.saveme.feature.wallets.data
 
 import com.fares.saveme.core.database.SyncScopeDao
-import com.fares.saveme.core.database.SyncScopeEntity
-import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.sync.ScopeKind
+import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.wallets.data.dto.WalletDto
 import com.fares.saveme.feature.wallets.data.dto.WalletMemberDto
 import com.fares.saveme.feature.wallets.data.local.WalletDao
@@ -13,17 +13,19 @@ import com.fares.saveme.feature.wallets.data.local.WalletMemberEntity
 import com.fares.saveme.feature.wallets.domain.model.WalletDraft
 import com.fares.saveme.feature.wallets.domain.model.WalletRole
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlin.time.Clock
 
 /**
  * API calls and the device's copy of wallets and members. No decisions here (P-10.6): reads give
- * rows, refreshes give a result, and the domain decides what to do with them.
+ * rows and the domain decides what to do with them. Rows arrive from the change feeds (spec 009).
  *
  * @param hasQueuedChange whether the sync queue still holds a change for a wallet; such a wallet
- *   is never removed by a refresh (FR-008).
- * @param onWalletRemoved called after a wallet's rows are removed because the server no longer
- *   has it (C6 drops its transactions).
+ *   is never removed by a read (FR-011).
+ * @param onWalletRemoved called after a wallet's rows are removed because the person no longer has
+ *   it (C5 drops its references, C6 its transactions).
+ * @param onWalletCopy called after a server copy of a wallet is stored, with its scope position (C6 settles the
+ *   carries that copy already counts, spec 009 FR-013).
  */
 class WalletRepository(
     private val api: WalletApi,
@@ -34,6 +36,7 @@ class WalletRepository(
     private val hasQueuedChange: suspend (String) -> Boolean,
     private val onWalletRemoved: suspend (String) -> Unit = {},
     private val clock: Clock = Clock.System,
+    private val onWalletCopy: suspend (walletId: String, changeSeq: Long) -> Unit = { _, _ -> },
 ) {
     fun observeAll(accountId: String): Flow<List<WalletEntity>> = wallets.observeAll(accountId)
 
@@ -43,8 +46,18 @@ class WalletRepository(
 
     fun observeMembers(id: String): Flow<List<WalletMemberEntity>> = members.observe(id)
 
-    /** When the whole list was last read completely; null before the first complete read. */
-    fun observeListRefreshedAt(): Flow<String?> = scopes.observe(LIST_SCOPE).map { it?.refreshedAt?.takeIf { at -> at.isNotEmpty() } }
+    /**
+     * When the wallet list was last read completely: the oldest completed feed read of the person's scope and
+     * every wallet. Until every one of them has completed once (an upgraded phone), the time of the last
+     * whole-list read stands in; null before any read.
+     */
+    fun observeListRefreshedAt(): Flow<String?> {
+        val userKey = SyncScope(ScopeKind.User, accountId().orEmpty()).key
+        return combine(scopes.observeFeedReadAt(userKey), wallets.observeOldestFeedRead(), scopes.observe(LIST_SCOPE)) { user, oldestWallet, legacy ->
+            val feed = if (user != null && oldestWallet != "") minOf(user, oldestWallet ?: user) else null
+            feed ?: legacy?.refreshedAt?.takeIf { it.isNotEmpty() }
+        }
+    }
 
     /** A wallet made on this phone: owner, balance = opening, version 0, until the server answers. */
     suspend fun insertPlaceholder(id: String, draft: WalletDraft, accountId: String) {
@@ -66,7 +79,91 @@ class WalletRepository(
             return true
         }
         wallets.upsert(dto.toEntity(accountId().orEmpty(), clock.now().toString()))
+        onWalletCopy(dto.id, dto.changeSeq)
         return false
+    }
+
+    /**
+     * Applies a wallet record from its change feed: when its version is the same or newer (the same version
+     * arrives again with a new balance, FR-004), and a deletion removes the wallet unless a change to the
+     * wallet record waits (it stays until the person settles it, FR-005). Returns true when anything changed.
+     */
+    suspend fun storeFeedCopy(dto: WalletDto): Boolean {
+        if (dto.deletedAt != null) {
+            if (hasQueuedChange(dto.id)) return false
+            remove(dto.id)
+            return true
+        }
+        val stored = wallets.get(dto.id)
+        if (stored != null && stored.version > dto.version) return false
+        wallets.upsert(dto.toEntity(accountId().orEmpty(), clock.now().toString()))
+        onWalletCopy(dto.id, dto.changeSeq)
+        return true
+    }
+
+    /** Applies a member row from a change feed; an older version is ignored. */
+    suspend fun storeMember(dto: WalletMemberDto): Boolean {
+        if (dto.deletedAt != null) {
+            members.delete(dto.id)
+            return true
+        }
+        val stored = members.getById(dto.id)
+        if (stored != null && stored.version > dto.version) return false
+        members.upsert(dto.toEntity())
+        return true
+    }
+
+    /** After a complete read of a wallet from the start: members the server did not return are gone. */
+    suspend fun sweepMembers(walletId: String, seenIds: Set<String>) {
+        members.get(walletId).filter { it.id !in seenIds }.forEach { members.delete(it.id) }
+    }
+
+    /** After a complete read of a wallet from the start that did not return the wallet record itself. */
+    suspend fun sweepWallet(walletId: String, seenWalletIds: Set<String>) {
+        val row = wallets.get(walletId) ?: return
+        if (walletId !in seenWalletIds && row.version > 0 && !hasQueuedChange(walletId)) remove(walletId)
+    }
+
+    /** The wallets the phone follows: the server has accepted them, or the person has a live own membership (spec 009 FR-002). */
+    suspend fun followedIds(userId: String): List<String> =
+        (wallets.getAll().filter { it.version > 0 }.map { it.id } + members.ownWalletIds(userId)).distinct()
+
+    /** Wallets the server has accepted. */
+    suspend fun heldIds(): List<String> = wallets.getAll().filter { it.version > 0 }.map { it.id }
+
+    suspend fun isAccepted(id: String, userId: String): Boolean =
+        (wallets.get(id)?.version ?: 0L) > 0 || id in members.ownWalletIds(userId)
+
+    /**
+     * The person's own membership ended: the member row goes, and so does the wallet with everything of it
+     * (spec 009 FR-011, [accessLost]).
+     */
+    suspend fun endOwnMembership(dto: WalletMemberDto) {
+        members.delete(dto.id)
+        accessLost(dto.walletId)
+    }
+
+    /**
+     * The person no longer has the wallet: it goes with its members and the data the participants hold, and
+     * its feed position goes. Not a wallet made on this phone that the server has not accepted, and not the
+     * wallet while a change to the wallet record itself waits: then only the position goes, and settling that
+     * change removes the wallet (research R-03).
+     */
+    suspend fun accessLost(id: String) {
+        val row = wallets.get(id)
+        if (row != null && row.version == 0L) return
+        scopes.clearFeed(SyncScope(ScopeKind.Wallet, id).key)
+        if (hasQueuedChange(id)) return
+        remove(id)
+    }
+
+    /**
+     * A change to the wallet record was dropped. If the person has no live membership of it, the wallet may be
+     * gone for good: its position is forgotten so the next read starts from the beginning and decides.
+     */
+    suspend fun reconsiderAfterDiscard(id: String, userId: String) {
+        val row = wallets.get(id) ?: return
+        if (row.version > 0 && id !in members.ownWalletIds(userId)) scopes.clearFeed(SyncScope(ScopeKind.Wallet, id).key)
     }
 
     /** Removes a wallet and its members, and tells the registered participants. */
@@ -90,79 +187,8 @@ class WalletRepository(
         wallets.deleteAll()
     }
 
-    /**
-     * Reads every page of `GET /wallets`; only when all of them succeed does it merge (R-09):
-     * listed wallets become server copies, and a synced wallet that is not listed and has no
-     * waiting change is removed.
-     */
-    suspend fun refreshAll(): ApiResult<Unit> {
-        val listed = mutableListOf<WalletDto>()
-        var cursor: String? = null
-        do {
-            when (val page = api.list(cursor)) {
-                is ApiResult.Success -> {
-                    listed += page.value.items
-                    cursor = page.value.nextCursor.takeIf { page.value.hasMore }
-                }
-                is ApiResult.Failure -> return page
-                ApiResult.Offline -> return ApiResult.Offline
-                ApiResult.Timeout -> return ApiResult.Timeout
-            }
-        } while (cursor != null)
-
-        val now = clock.now().toString()
-        val account = accountId().orEmpty()
-        val listedIds = listed.map { it.id }.toSet()
-        wallets.upsertAll(listed.filter { it.deletedAt == null }.map { it.toEntity(account, now) })
-        wallets.getAll()
-            .filter { it.id !in listedIds && it.version > 0 && !hasQueuedChange(it.id) }
-            .forEach { remove(it.id) }
-        scopes.upsert(SyncScopeEntity(LIST_SCOPE, now))
-        return ApiResult.Success(Unit)
-    }
-
-    /** Replaces the wallet's members once the whole list has been read. A 404 removes the wallet unless a change waits. */
-    suspend fun refreshMembers(id: String): ApiResult<Unit> {
-        val listed = mutableListOf<WalletMemberDto>()
-        var cursor: String? = null
-        do {
-            when (val page = api.members(id, cursor)) {
-                is ApiResult.Success -> {
-                    listed += page.value.items
-                    cursor = page.value.nextCursor.takeIf { page.value.hasMore }
-                }
-                is ApiResult.Failure -> {
-                    if (page.code == ApiErrorCode.NOT_FOUND) removeIfNothingWaits(id)
-                    return page
-                }
-                ApiResult.Offline -> return ApiResult.Offline
-                ApiResult.Timeout -> return ApiResult.Timeout
-            }
-        } while (cursor != null)
-        members.replace(id, listed.filter { it.deletedAt == null }.map { it.toEntity() })
-        return ApiResult.Success(Unit)
-    }
-
-    /** Re-reads one wallet; a 404 removes it unless a change waits. */
-    suspend fun refreshOne(id: String): ApiResult<Unit> = when (val result = api.get(id)) {
-        is ApiResult.Success -> {
-            storeServerCopy(result.value)
-            ApiResult.Success(Unit)
-        }
-        is ApiResult.Failure -> {
-            if (result.code == ApiErrorCode.NOT_FOUND) removeIfNothingWaits(id)
-            result
-        }
-        ApiResult.Offline -> ApiResult.Offline
-        ApiResult.Timeout -> ApiResult.Timeout
-    }
-
     suspend fun transferOwnership(id: String, userId: String, version: Long): ApiResult<WalletDto> =
         api.transferOwnership(id, userId, version)
-
-    private suspend fun removeIfNothingWaits(id: String) {
-        if (!hasQueuedChange(id) && wallets.get(id) != null) remove(id)
-    }
 
     companion object {
         const val LIST_SCOPE = "wallets"

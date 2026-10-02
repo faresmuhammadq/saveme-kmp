@@ -34,7 +34,7 @@ class ProfileSyncerTest {
         val env = AccountTestEnv { request ->
             if (request.method == HttpMethod.Get) jsonResponse(200, meBody()) else put(request)
         }
-        val syncer = ProfileSyncer(env.profiles, env.languages, env.engine, scope.backgroundScope as CoroutineScope)
+        val syncer = ProfileSyncer(env.profiles, env.languages, env.engine, scope.backgroundScope as CoroutineScope, env.runner)
         val sessions = SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, scope.backgroundScope)
         val refresher = AccountRefresher(env.profiles, syncer, sessions, env.languages)
         val puts get() = env.requests.filter { it.method == HttpMethod.Put }
@@ -173,7 +173,7 @@ class ProfileSyncerTest {
         h.env.auth.keyValues.values.clear()
         val env = AccountTestEnv { jsonResponse(200, meBody(profile = profileJson(locale = "ar"))) }
         env.signedIn()
-        val refresher = AccountRefresher(env.profiles, ProfileSyncer(env.profiles, env.languages, env.engine, backgroundScope), SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope), env.languages)
+        val refresher = AccountRefresher(env.profiles, ProfileSyncer(env.profiles, env.languages, env.engine, backgroundScope, env.runner), SessionManager(env.auth.repository, env.auth.entitlementsApi, env.events, backgroundScope), env.languages)
         refresher.refresh()
         assertEquals(AppLanguage.Ar, env.languages.effective())
     }

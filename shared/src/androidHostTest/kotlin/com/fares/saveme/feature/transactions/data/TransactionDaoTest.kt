@@ -39,8 +39,9 @@ class TransactionDaoTest {
         carrySource: Long = 0,
         carryCounter: Long = 0,
         confirmed: String? = null,
+        seq: Long = 1,
     ) = TransactionEntity(
-        id, account, wallet, counter, kind, date, amount, "EGP", "c1", null, null, null, false, "u1", null, null, 1, 1,
+        id, account, wallet, counter, kind, date, amount, "EGP", "c1", null, null, null, false, "u1", null, null, 1, seq,
         created, created, deletedAt, created, carrySource, carryCounter, confirmed,
     )
 
@@ -87,21 +88,58 @@ class TransactionDaoTest {
     }
 
     @Test
-    fun clearingTheCarryUpToATimeKeepsLaterOnesAndPurgesSettledDeletions() = runTest {
+    fun clearingTheCarryOfAWalletClearsOnlyThatWalletsPartUpToATimeAndPurgesSettledDeletions() = runTest {
         val dao = db.transactionDao()
         dao.upsertAll(
             listOf(
                 tx("early", carrySource = -500, confirmed = "2026-10-02T10:00:00.000Z"),
                 tx("late", carrySource = -700, confirmed = "2026-10-02T10:00:05.000Z"),
                 tx("hidden", deletedAt = "2026-10-02T10:00:00Z", carrySource = 900, confirmed = "2026-10-02T10:00:01.000Z"),
+                tx("other-wallet", wallet = "w2", carrySource = -300, confirmed = "2026-10-02T10:00:00.000Z"),
             ),
         )
-        dao.clearCarryUpTo("2026-10-02T10:00:02.000Z")
+        dao.clearCarryFor("w1", "2026-10-02T10:00:02.000Z")
         dao.purgeSettledDeletions()
-        assertEquals(0, dao.get("early")!!.carrySourceMinor)
+        assertEquals(0L, dao.get("early")!!.carrySourceMinor)
         assertNull(dao.get("early")!!.carryConfirmedAt)
-        assertEquals(-700, dao.get("late")!!.carrySourceMinor)
+        assertEquals(-700L, dao.get("late")!!.carrySourceMinor)
         assertNull(dao.get("hidden"))
+        assertEquals("another wallet's carry waits for its own read", -300L, dao.get("other-wallet")!!.carrySourceMinor)
+    }
+
+    @Test
+    fun aWalletCopyAtAPositionSettlesTheSourceCarryOfTheRowsItCountsAndNothingElse() = runTest {
+        val dao = db.transactionDao()
+        dao.upsertAll(
+            listOf(
+                tx("counted", carrySource = -500, confirmed = "2026-10-02T10:00:00.000Z", seq = 4),
+                tx("at", carrySource = -600, confirmed = "2026-10-02T10:00:00.000Z", seq = 7),
+                tx("later", carrySource = -700, confirmed = "2026-10-02T10:00:00.000Z", seq = 8),
+                tx("placeholder-seq", carrySource = -800, confirmed = "2026-10-02T10:00:00.000Z", seq = 0),
+                tx("into-w1", wallet = "w2", counter = "w1", carrySource = -900, carryCounter = 900, confirmed = "2026-10-02T10:00:00.000Z", seq = 3),
+            ),
+        )
+        dao.clearSourceCarryCoveredBy("w1", 7)
+        assertEquals(0L, dao.get("counted")!!.carrySourceMinor)
+        assertEquals(0L, dao.get("at")!!.carrySourceMinor)
+        assertEquals("still waits for its read", "2026-10-02T10:00:00.000Z", dao.get("at")!!.carryConfirmedAt)
+        assertEquals(-700L, dao.get("later")!!.carrySourceMinor)
+        assertEquals(-800L, dao.get("placeholder-seq")!!.carrySourceMinor)
+        assertEquals("a transfer's position is its source's: the destination part waits for the read", 900L, dao.get("into-w1")!!.carryCounterMinor)
+        assertEquals(-900L, dao.get("into-w1")!!.carrySourceMinor)
+    }
+
+    @Test
+    fun aTransfersCarryClearsPerWalletAndTheRowIsSettledOnlyWhenBothPartsAre() = runTest {
+        val dao = db.transactionDao()
+        dao.upsert(tx("tr", counter = "w2", carrySource = -5_000, carryCounter = 5_000, confirmed = "2026-10-02T10:00:00.000Z"))
+        dao.clearCarryFor("w1", "2026-10-02T10:00:05.000Z")
+        assertEquals(0L, dao.get("tr")!!.carrySourceMinor)
+        assertEquals(5_000L, dao.get("tr")!!.carryCounterMinor)
+        assertEquals("2026-10-02T10:00:00.000Z", dao.get("tr")!!.carryConfirmedAt)
+        dao.clearCarryFor("w2", "2026-10-02T10:00:05.000Z")
+        assertEquals(0L, dao.get("tr")!!.carryCounterMinor)
+        assertNull(dao.get("tr")!!.carryConfirmedAt)
     }
 
     @Test

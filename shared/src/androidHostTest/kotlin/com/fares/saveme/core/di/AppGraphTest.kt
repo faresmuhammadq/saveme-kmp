@@ -7,7 +7,16 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import com.fares.saveme.appFeatureModules
 import com.fares.saveme.core.config.AppConfig
 import com.fares.saveme.core.config.Environment
+import com.fares.saveme.core.sync.FeedApplier
+import com.fares.saveme.core.sync.FeedPuller
+import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncRunner
+import com.fares.saveme.core.sync.SyncSignOutCleaner
+import com.fares.saveme.core.sync.WalletScopes
+import com.fares.saveme.core.session.UserDataCleaner
+import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
+import com.fares.saveme.feature.wallets.domain.DefaultWalletScopes
 import com.fares.saveme.feature.categories.data.CategorySyncHandler
 import com.fares.saveme.feature.categories.domain.CategoriesService
 import com.fares.saveme.feature.categories.domain.CategoryReferencesCleanup
@@ -97,5 +106,34 @@ class AppGraphTest {
         assertEquals(1, koin.getAll<PendingPostings>().size)
         assertEquals(1, koin.getAll<PendingCategoryUses>().size)
         assertNotNull(koin.get<TransactionsSyncCoordinator>())
+    }
+
+    @Test
+    fun theFeedGraphHasOneApplierPerConsumedPairOneWalletScopesAndTheRunnerAndPullerResolveWithoutACycle() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+
+        val koin = GlobalContext.get()
+        assertNotNull(koin.get<SyncRunner>())
+        assertNotNull(koin.get<FeedPuller>())
+        assertNotNull(koin.get<SyncEngine>())
+        val appliers = koin.getAll<FeedApplier>()
+        val pairs = appliers.map { it.scopeKind to it.rowType }
+        assertEquals(8, appliers.size)
+        assertEquals(
+            setOf(
+                ScopeKind.User to "profile", ScopeKind.User to "device_session", ScopeKind.User to "category", ScopeKind.User to "wallet_member",
+                ScopeKind.Wallet to "wallet", ScopeKind.Wallet to "wallet_member", ScopeKind.Wallet to "category_reference", ScopeKind.Wallet to "transaction",
+            ),
+            pairs.toSet(),
+        )
+        assertEquals("one applier per (scope kind, row type)", pairs.size, pairs.toSet().size)
+        assertEquals(1, koin.getAll<WalletScopes>().size)
+        assertTrue(koin.get<WalletScopes>() is DefaultWalletScopes)
+        assertTrue(koin.getAll<UserDataCleaner>().any { it is SyncSignOutCleaner })
+        assertNotNull(koin.get<AccountSyncCoordinator>())
     }
 }

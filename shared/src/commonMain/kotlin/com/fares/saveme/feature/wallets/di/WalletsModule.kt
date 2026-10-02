@@ -2,15 +2,22 @@ package com.fares.saveme.feature.wallets.di
 
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
+import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.core.sync.WalletScopes
 import com.fares.saveme.feature.account.domain.ProfileSyncer
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.SessionManager
+import com.fares.saveme.feature.wallets.data.OwnMembershipFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletApi
+import com.fares.saveme.feature.wallets.data.WalletFeedApplier
+import com.fares.saveme.feature.wallets.data.WalletMemberFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletRepository
 import com.fares.saveme.feature.wallets.data.WalletSyncHandler
+import com.fares.saveme.feature.wallets.domain.DefaultWalletScopes
 import com.fares.saveme.feature.wallets.domain.DefaultWalletsService
+import com.fares.saveme.feature.wallets.domain.WalletCopyParticipant
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import com.fares.saveme.feature.wallets.domain.WalletsSyncCoordinator
@@ -42,9 +49,21 @@ val walletsModule = module {
             hasQueuedChange = { id -> get<SyncEngine>().get(WalletSyncHandler.RECORD_TYPE, id) != null },
             // Resolved on use, so participants registered by later features are found.
             onWalletRemoved = { id -> getAll<WalletDeletionParticipant>().forEach { it.onWalletDeleted(id) } },
+            onWalletCopy = { id, changeSeq -> getAll<WalletCopyParticipant>().forEach { it.onWalletCopy(id, changeSeq) } },
         )
     }
-    single { WalletSyncHandler(get(), get()) } bind SyncHandler::class
+    single {
+        val sessions = get<SessionManager>()
+        WalletSyncHandler(get(), get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
+    } bind SyncHandler::class
+    // Feed appliers (spec 009): the wallet and its members from a wallet's feed, the person's own memberships from theirs.
+    single { WalletFeedApplier(get()) } bind FeedApplier::class
+    single { WalletMemberFeedApplier(get()) } bind FeedApplier::class
+    single { OwnMembershipFeedApplier(get()) } bind FeedApplier::class
+    single {
+        val sessions = get<SessionManager>()
+        DefaultWalletScopes(get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
+    } bind WalletScopes::class
     single<WalletsService> {
         val sessions = get<SessionManager>()
         DefaultWalletsService(
@@ -55,7 +74,7 @@ val walletsModule = module {
             postings = get(),
             // The profile's default currency orders the totals; the device has none until the profile is read.
             defaultCurrency = get<ProfileSyncer>().view.map { it?.effective?.defaultCurrency },
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            runner = get(),
         )
     }
     single(createdAtStart = true) {

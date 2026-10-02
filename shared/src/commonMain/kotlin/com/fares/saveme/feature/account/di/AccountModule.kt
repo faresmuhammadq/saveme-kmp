@@ -4,8 +4,11 @@ import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
+import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.feature.account.data.DeviceSessionFeedApplier
+import com.fares.saveme.feature.account.data.ProfileFeedApplier
 import com.fares.saveme.feature.account.data.ProfileRepository
 import com.fares.saveme.feature.account.data.ProfileSyncHandler
 import com.fares.saveme.feature.account.domain.AccountRefresher
@@ -42,14 +45,25 @@ import org.koin.dsl.module
 
 val accountModule = module {
     single { AccountApi(get()) }
-    single { DeviceSessionRepository(get(), get<AppDatabase>().deviceSessionDao(), get<AppDatabase>().syncScopeDao()) }
-    single { SessionRefresher(get()) }
+    single {
+        val sessions = get<SessionManager>()
+        DeviceSessionRepository(
+            get(), get<AppDatabase>().deviceSessionDao(), get<AppDatabase>().syncScopeDao(),
+            accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
+        )
+    }
+    single { SessionRefresher(get(), get()) }
     single { ProfileRepository(get(), get<AppDatabase>().profileDao(), get<AppDatabase>().syncScopeDao()) }
     single { ProfileSyncHandler(get(), get()) } bind SyncHandler::class
-    single { ProfileSyncer(get(), get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    // Feed appliers of the person's scope (spec 009). The engine and the syncer are resolved on use: both are built from this module's handler.
+    single {
+        ProfileFeedApplier(get(), get()) { id -> get<SyncEngine>().get(ProfileSyncHandler.RECORD_TYPE, id) != null }
+    } bind FeedApplier::class
+    single { DeviceSessionFeedApplier(get()) } bind FeedApplier::class
+    single { ProfileSyncer(get(), get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), get()) }
     single { AccountRefresher(get(), get(), get(), get()) }
     single(createdAtStart = true) {
-        AccountSyncCoordinator(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), get()).also { it.start() }
+        AccountSyncCoordinator(get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default), get(), get()).also { it.start() }
     }
     factory { EndSessionUseCase(get(), get()) }
     factory { EndOtherSessionsUseCase(get(), get()) }

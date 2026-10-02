@@ -1,18 +1,15 @@
 package com.fares.saveme.feature.transactions.data
 
 import com.fares.saveme.core.database.SyncScopeDao
-import com.fares.saveme.core.database.SyncScopeEntity
-import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.sync.ScopeKind
+import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlin.time.Clock
 import kotlin.time.Instant
-
-/** What a complete read of one wallet's transactions came to. */
-data class WalletRead(val changed: Boolean)
 
 /** A transaction recorded on this phone, before the server has answered (research R-03). */
 data class NewTransaction(
@@ -33,19 +30,21 @@ data class NewTransaction(
 )
 
 /**
- * API calls and the device's copy of transactions. No decisions here (P-10.6): reads give rows,
- * refreshes give a result, and the domain decides what to do with them.
+ * The device's copy of transactions, kept current from the wallets' change feeds (spec 009). No
+ * decisions here (P-10.6): the domain decides what to do with the rows.
  *
  * @param hasQueuedChange whether the sync queue still holds a change for a transaction; such a
- *   transaction is never removed by a refresh (FR-018).
+ *   transaction is never removed by a read (FR-018).
+ * @param walletChangeSeq the scope position of the phone's copy of a wallet (`change_seq`), null when absent: a
+ *   copy at or past an accepted change's position already counts it, so that change carries nothing for it.
  */
 class TransactionRepository(
-    private val api: TransactionApi,
     private val transactions: TransactionDao,
     private val scopes: SyncScopeDao,
     private val accountId: () -> String?,
     private val hasQueuedChange: suspend (String) -> Boolean,
     private val clock: Clock = Clock.System,
+    private val walletChangeSeq: suspend (String) -> Long? = { null },
 ) {
     fun observeForWallet(accountId: String, walletId: String): Flow<List<TransactionEntity>> =
         transactions.observeForWallet(accountId, walletId)
@@ -60,9 +59,14 @@ class TransactionRepository(
 
     fun observeCarried(): Flow<List<TransactionEntity>> = transactions.observeCarried()
 
-    /** When the wallet's list was last read completely; null before the first complete read. */
-    fun observeRefreshedAt(walletId: String): Flow<String?> =
-        scopes.observe(scopeKey(walletId)).map { it?.refreshedAt?.takeIf { at -> at.isNotEmpty() } }
+    /**
+     * When the wallet's feed was last read completely; null before the first complete read. An upgraded phone keeps
+     * the time of its last whole-list read until its first feed read ends.
+     */
+    fun observeRefreshedAt(walletId: String): Flow<String?> = combine(
+        scopes.observeFeedReadAt(SyncScope(ScopeKind.Wallet, walletId).key),
+        scopes.observe(scopeKey(walletId)),
+    ) { feed, legacy -> feed ?: legacy?.refreshedAt?.takeIf { at -> at.isNotEmpty() } }
 
     /** A transaction made on this phone: version 0 until the server answers. */
     suspend fun insertPlaceholder(new: NewTransaction) {
@@ -98,6 +102,9 @@ class TransactionRepository(
         if (own) {
             carrySource += effect(dto, dto.walletId) - effectOf(old, dto.walletId)
             carryCounter += dto.counterWalletId?.let { effect(dto, it) - effectOf(old, it) } ?: 0
+            // The source wallet's copy may already include this change (a replayed upload, or a wallet saved after it in
+            // the same upload): its balance counts it, so no carry for it (spec 009 FR-013, qa-report.md §4).
+            if (dto.changeSeq > 0 && (walletChangeSeq(dto.walletId) ?: 0L) >= dto.changeSeq) carrySource = 0
             confirmedAt = now.fixedStamp()
         }
         transactions.upsert(
@@ -108,6 +115,11 @@ class TransactionRepository(
             ),
         )
         return false
+    }
+
+    /** A copy of [walletId] at scope position [changeSeq] was stored: what it already counts carries nothing more. */
+    suspend fun clearSourceCarryCoveredBy(walletId: String, changeSeq: Long) {
+        if (changeSeq > 0) transactions.clearSourceCarryCoveredBy(walletId, changeSeq)
     }
 
     suspend fun remove(id: String) = transactions.delete(id)
@@ -127,58 +139,57 @@ class TransactionRepository(
 
     suspend fun clear() = transactions.deleteAll()
 
-    /** Rows whose carry was confirmed at or before [at] are settled: the carry goes, hidden deletions with it. */
-    suspend fun clearCarryConfirmedUpTo(at: Instant) {
-        transactions.clearCarryUpTo(at.fixedStamp())
+    /**
+     * A read of [walletId]'s feed that started at [startedAt] has completed: the effect of every change the
+     * server confirmed at or before it on that wallet is in the balance it brought, so that wallet's part of the
+     * carry goes, and hidden deletions with no part left go with it (spec 009 R-09).
+     */
+    suspend fun clearCarryFor(walletId: String, startedAt: Instant) {
+        transactions.clearCarryFor(walletId, startedAt.fixedStamp())
         transactions.purgeSettledDeletions()
     }
 
     suspend fun hasCarry(): Boolean = transactions.getCarried().isNotEmpty()
 
-    /**
-     * Reads every page of the wallet's list, storing each page as it arrives so rows show
-     * progressively. Only when all pages succeeded does it remove a row that touches the wallet,
-     * reached the server, has no waiting change and was not listed (research R-08). A row that still
-     * carries a confirmed effect is kept until the carry settles.
-     */
-    suspend fun refreshWallet(walletId: String): ApiResult<WalletRead> {
-        val known = transactions.getTouching(walletId).associateBy { it.id }.toMutableMap()
-        val listedIds = mutableSetOf<String>()
-        var changed = false
-        var cursor: String? = null
-        val account = accountId().orEmpty()
-        do {
-            val page = when (val result = api.list(walletId, cursor)) {
-                is ApiResult.Success -> result.value
-                is ApiResult.Failure -> return result
-                ApiResult.Offline -> return ApiResult.Offline
-                ApiResult.Timeout -> return ApiResult.Timeout
-            }
-            val now = clock.now().toString()
-            val live = page.items.filter { it.deletedAt == null }
-            page.items.forEach { listedIds += it.id }
-            val entities = live.map { dto ->
-                val old = known[dto.id] ?: transactions.get(dto.id)
-                if (old == null || old.version != dto.version || old.deletedAt != null) changed = true
-                dto.toEntity(account, now).copy(
-                    carrySourceMinor = old?.carrySourceMinor ?: 0,
-                    carryCounterMinor = old?.carryCounterMinor ?: 0,
-                    carryConfirmedAt = old?.carryConfirmedAt,
-                )
-            }
-            transactions.upsertAll(entities)
-            entities.forEach { known[it.id] = it }
-            cursor = page.nextCursor.takeIf { page.hasMore }
-        } while (cursor != null)
+    /** The wallets whose next completed read settles a carry: every wallet a carried row touches. */
+    suspend fun carriedWalletIds(): List<String> =
+        transactions.getCarried().flatMap { listOfNotNull(it.walletId, it.counterWalletId) }.distinct()
 
-        known.values
-            .filter { it.id !in listedIds && it.version > 0 && it.carryConfirmedAt == null && !hasQueuedChange(it.id) }
-            .forEach {
-                transactions.delete(it.id)
-                changed = true
+    /**
+     * Applies a transaction from a wallet's change feed (spec 009 FR-004, FR-005, FR-012): when its version is the
+     * same or newer; it never adds a balance carry. A deletion removes the row, except while a change to it waits
+     * (it stays until settled) and while the row still carries an unsettled balance effect (kept hidden, so the
+     * balance does not jump). Returns true when anything changed.
+     */
+    suspend fun storeFeedCopy(dto: TransactionDto): Boolean {
+        val old = transactions.get(dto.id)
+        if (old != null && old.version > dto.version) return false
+        if (dto.deletedAt != null) {
+            if (hasQueuedChange(dto.id)) return false
+            if (old == null) return false
+            if (old.carryConfirmedAt == null) {
+                transactions.delete(dto.id)
+                return true
             }
-        scopes.upsert(SyncScopeEntity(scopeKey(walletId), clock.now().toString()))
-        return ApiResult.Success(WalletRead(changed))
+        }
+        transactions.upsert(
+            dto.toEntity(accountId().orEmpty(), clock.now().toString()).copy(
+                carrySourceMinor = old?.carrySourceMinor ?: 0,
+                carryCounterMinor = old?.carryCounterMinor ?: 0,
+                carryConfirmedAt = old?.carryConfirmedAt,
+            ),
+        )
+        return true
+    }
+
+    /**
+     * After a complete read of [walletId] from the start: a row touching the wallet that reached the server, has no
+     * waiting change, carries nothing and was not returned is removed (FR-007).
+     */
+    suspend fun sweepWallet(walletId: String, seenIds: Set<String>) {
+        transactions.getTouching(walletId)
+            .filter { it.id !in seenIds && it.version > 0 && it.carryConfirmedAt == null && !hasQueuedChange(it.id) }
+            .forEach { transactions.delete(it.id) }
     }
 
     private fun effect(dto: TransactionDto, forWallet: String) =

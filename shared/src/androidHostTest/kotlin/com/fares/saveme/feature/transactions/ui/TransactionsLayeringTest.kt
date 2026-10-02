@@ -76,4 +76,17 @@ class TransactionsLayeringTest {
         val offenders = imports(File(main, "designsystem")).filter { (_, i) -> i.startsWith(base) }
         assertTrue(offenders.isEmpty(), "designsystem imports a feature: $offenders")
     }
+
+    @Test
+    fun theSyncExtensionPointsAreImplementedInDataAndOnlyTheirCoreContractIsImported() {
+        val data = File(File(feature, "transactions"), "data")
+        val appliers = listOf("TransactionFeedApplier")
+        appliers.forEach { name ->
+            val source = data.walkTopDown().firstOrNull { it.isFile && it.extension == "kt" && "class $name" in it.readText() }
+            assertTrue(source != null, "$name is declared in transactions.data")
+            val imports = source!!.readLines().filter { it.startsWith("import ") }.map { it.removePrefix("import ").trim() }
+            assertTrue("com.fares.saveme.core.sync.FeedApplier" in imports, "$name implements the core FeedApplier")
+            assertTrue(imports.none { it.startsWith(base + "transactions.domain") || it.startsWith(base + "transactions.ui") }, "$name imports domain or ui")
+        }
+    }
 }

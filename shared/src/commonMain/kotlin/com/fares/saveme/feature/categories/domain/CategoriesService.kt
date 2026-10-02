@@ -2,8 +2,11 @@ package com.fares.saveme.feature.categories.domain
 
 import com.fares.saveme.core.locale.AppLanguage
 import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
@@ -86,7 +89,7 @@ interface CategoriesService {
     /** Reads own categories and the default set; without [force] a read within the last 60 seconds is skipped. */
     suspend fun refresh(force: Boolean = false): RefreshOutcome
 
-    /** Reads one wallet's partner categories; without [force] a read within the last 60 seconds is skipped. */
+    /** Reads one wallet (its feed carries its partner categories); without [force] a read within the last 60 seconds is skipped. */
     suspend fun refreshReferences(walletId: String, force: Boolean = false): RefreshOutcome
 }
 
@@ -98,13 +101,14 @@ class DefaultCategoriesService(
     private val pendingUses: PendingCategoryUses,
     private val language: Flow<AppLanguage>,
     private val scope: CoroutineScope,
+    private val runner: SyncRunner,
     private val clock: Clock = Clock.System,
     private val newId: () -> String = { Uuid.generateV7().toString() },
     private val foregroundFloor: Duration = 60.seconds,
 ) : CategoriesService {
 
     private val refreshLock = Mutex()
-    private var lastRefresh: Instant? = null
+    private var lastDefaultsRead: Instant? = null
     private val referenceLock = Mutex()
     private val lastReferenceRead = mutableMapOf<String, Instant>()
 
@@ -235,16 +239,19 @@ class DefaultCategoriesService(
     override suspend fun discard(id: String) = engine.discard(CategorySyncHandler.RECORD_TYPE, id)
 
     override suspend fun refresh(force: Boolean): RefreshOutcome = refreshLock.withLock {
-        val last = lastRefresh
-        if (!force && last != null && clock.now() - last < foregroundFloor) return RefreshOutcome.Done
         // A pull, an open and a sign-in also send what is waiting, so a person who got back online
         // doesn't have to wait for the scheduler (the foreground trigger does the same).
         if (force) engine.syncNow()
-        val own = repository.refreshOwn()
-        val defaults = repository.refreshDefaults()
-        val outcome = combineOutcomes(own.toOutcome(), defaults.toOutcome())
-        if (outcome == RefreshOutcome.Done) lastRefresh = clock.now()
-        outcome
+        // The person's categories come from their change feed (floor in the runner); the default set is
+        // the one list no feed carries, so it is still read here, with the same 60 second floor (FR-016).
+        val own = runner.refresh(ReadTarget.User, force).toOutcome()
+        val last = lastDefaultsRead
+        val defaults = if (!force && last != null && clock.now() - last < foregroundFloor) {
+            RefreshOutcome.Done
+        } else {
+            repository.refreshDefaults().toOutcome().also { if (it == RefreshOutcome.Done) lastDefaultsRead = clock.now() }
+        }
+        combineOutcomes(own, defaults)
     }
 
     override suspend fun refreshReferences(walletId: String, force: Boolean): RefreshOutcome {
@@ -254,7 +261,8 @@ class DefaultCategoriesService(
             // The attempt counts even when it fails, so a screen full of misses asks once a minute, not once a row.
             lastReferenceRead[walletId] = clock.now()
         }
-        return references.refresh(walletId).toOutcome()
+        // The wallet's references arrive with its feed (spec 009 FR-001); the runner keeps its own floor.
+        return runner.refresh(ReadTarget.Wallet(walletId), force).toOutcome()
     }
 
     /** Name length is counted in code points, as the server counts it (FR-006). */
@@ -268,9 +276,7 @@ class DefaultCategoriesService(
 
     private fun scopeOf(account: String) = SyncScope(ScopeKind.User, account)
 
-    private fun drainInBackground() {
-        scope.launch { engine.drain() }
-    }
+    private fun drainInBackground() = runner.requestUpload()
 
     private fun combineOutcomes(a: RefreshOutcome, b: RefreshOutcome) = when {
         a == RefreshOutcome.Offline || b == RefreshOutcome.Offline -> RefreshOutcome.Offline
@@ -282,6 +288,12 @@ class DefaultCategoriesService(
         is ApiResult.Success -> RefreshOutcome.Done
         ApiResult.Offline, ApiResult.Timeout -> RefreshOutcome.Offline
         is ApiResult.Failure -> RefreshOutcome.Failed
+    }
+
+    private fun ReadOutcome.toOutcome(): RefreshOutcome = when (this) {
+        ReadOutcome.Done -> RefreshOutcome.Done
+        ReadOutcome.Offline -> RefreshOutcome.Offline
+        ReadOutcome.Failed -> RefreshOutcome.Failed
     }
 
     companion object {

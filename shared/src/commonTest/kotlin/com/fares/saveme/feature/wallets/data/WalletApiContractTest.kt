@@ -33,50 +33,6 @@ class WalletApiContractTest {
         WalletTestEnv(scope, handler = handler).also { it.signedIn() }
 
     @Test
-    fun listPagesWithTheCursorPassedBackVerbatim() = runTest {
-        val env = env(backgroundScope) { request ->
-            if (request.url.parameters["cursor"] == null) {
-                jsonResponse(200, pageOf(listOf(walletJson("a"), walletJson("b", type = "gold_bar")), nextCursor = "c1=="))
-            } else {
-                jsonResponse(200, pageOf(listOf(walletJson("c"))))
-            }
-        }
-        val first = assertIs<ApiResult.Success<*>>(env.api.list(null)).value as com.fares.saveme.core.network.Page<*>
-        assertEquals(2, first.items.size)
-        assertTrue(first.hasMore)
-        assertEquals("c1==", first.nextCursor)
-        assertEquals("gold_bar", (first.items[1] as WalletDto).type)
-        env.api.list(first.nextCursor)
-        assertEquals("c1==", env.requests.last().url.parameters["cursor"])
-        assertEquals("50", env.requests.first().url.parameters["limit"])
-        assertTrue(env.requests.first().url.encodedPath.endsWith("/api/v1/wallets"))
-    }
-
-    @Test
-    fun anEmptyListIsNotAnError() = runTest {
-        val env = env(backgroundScope) { jsonResponse(200, pageOf(emptyList())) }
-        val page = (assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<WalletDto>>>(env.api.list(null))).value
-        assertEquals(emptyList(), page.items)
-    }
-
-    @Test
-    fun getDecodesALiveWalletATombstoneAndA404() = runTest {
-        var answer = 0
-        val env = env(backgroundScope) {
-            when (answer++) {
-                0 -> jsonResponse(200, walletBody(walletJson(icon = "bank")))
-                1 -> jsonResponse(200, walletBody(walletJson(deletedAt = "2026-10-01T00:00:00Z")))
-                else -> jsonResponse(404, problemBody(404, "NOT_FOUND"))
-            }
-        }
-        val live = assertIs<ApiResult.Success<WalletDto>>(env.api.get("w1")).value
-        assertEquals("bank", live.icon)
-        assertEquals(HttpMethod.Get, env.requests.single().method)
-        assertNotNull(assertIs<ApiResult.Success<WalletDto>>(env.api.get("w1")).value.deletedAt)
-        assertEquals(ApiErrorCode.NOT_FOUND, assertIs<ApiResult.Failure>(env.api.get("w1")).code)
-    }
-
-    @Test
     fun putSendsExactlyTheWritableMembersWithExplicitNulls() = runTest {
         val env = env(backgroundScope) { jsonResponse(201, walletBody(walletJson(version = 1))) }
         val created = assertIs<ApiResult.Success<WalletDto>>(env.api.put("w1", write)).value
@@ -161,7 +117,7 @@ class WalletApiContractTest {
         val env = env(backgroundScope) { jsonResponse(401, problemBody(401, "UNAUTHENTICATED")) }
         val events = mutableListOf<ApiEvent>()
         val job = collectEvents(env, events)
-        env.api.get("w1")
+        env.api.put("w1", write)
         job.cancel()
         assertEquals(listOf<ApiEvent>(ApiEvent.SessionEnded), events)
     }
@@ -169,7 +125,7 @@ class WalletApiContractTest {
     @Test
     fun offlineIsOffline() = runTest {
         val env = env(backgroundScope) { throw kotlinx.io.IOException("no route") }
-        assertEquals(ApiResult.Offline, env.api.get("w1"))
+        assertEquals(ApiResult.Offline, env.api.put("w1", write))
     }
 
     @Test
@@ -193,28 +149,6 @@ class WalletApiContractTest {
         assertEquals(HttpMethod.Delete, request.method)
         assertEquals("4", request.jsonBody()["version"].toString())
         assertTrue((request.body as OutgoingContent).contentType.toString().startsWith("application/json"))
-    }
-
-    @Test
-    fun membersDecodeANullDisplayNameAndPage() = runTest {
-        val env = env(backgroundScope) { request ->
-            if (request.url.parameters["cursor"] == null) {
-                jsonResponse(200, pageOf(listOf(memberJson("m1", "u1", null)), nextCursor = "x"))
-            } else {
-                jsonResponse(200, pageOf(listOf(memberJson("m2", "u2", "Omar", role = "editor"))))
-            }
-        }
-        val page = assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<com.fares.saveme.feature.wallets.data.dto.WalletMemberDto>>>(env.api.members("w1", null)).value
-        assertEquals(null, page.items.single().displayName)
-        assertTrue(env.requests.single().url.encodedPath.endsWith("/api/v1/wallets/w1/members"))
-        val second = assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<com.fares.saveme.feature.wallets.data.dto.WalletMemberDto>>>(env.api.members("w1", page.nextCursor)).value
-        assertEquals("Omar", second.items.single().displayName)
-    }
-
-    @Test
-    fun aMissingWalletOnMembersIs404() = runTest {
-        val env = env(backgroundScope) { jsonResponse(404, problemBody(404, "NOT_FOUND")) }
-        assertEquals(ApiErrorCode.NOT_FOUND, assertIs<ApiResult.Failure>(env.api.members("w1", null)).code)
     }
 
     @Test

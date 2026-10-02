@@ -189,7 +189,7 @@ class TransactionsServiceEditDeleteTest {
     }
 
     @Test
-    fun useTheirsAsksForOneWalletRead() = runTest {
+    fun useTheirsAsksTheRunnerForTheWalletsItTouches() = runTest {
         val env = TransactionTestEnv(backgroundScope) { throw kotlinx.io.IOException("offline") }
         env.signedIn()
         env.seedWallet(walletJson(id = "w1"))
@@ -197,8 +197,8 @@ class TransactionsServiceEditDeleteTest {
         env.service.save("t1", draft(), 2)
         env.pendingDao.rows.value = env.pendingDao.rows.value.mapValues { it.value.copy(state = ChangeState.Clash.name, clashJson = transactionJson(version = 3)) }
         env.service.useTheirs("t1")
-        com.fares.saveme.feature.transactions.awaitReal { env.requests.any { it.url.encodedPath.endsWith("/wallets") } }
-        assert(env.requests.any { it.url.encodedPath.endsWith("/wallets") })
+        com.fares.saveme.feature.transactions.awaitReal { env.runner.refreshes.isNotEmpty() }
+        assertEquals(listOf<Pair<com.fares.saveme.core.sync.ReadTarget, Boolean>>(com.fares.saveme.core.sync.ReadTarget.Wallet("w1") to true), env.runner.refreshes)
     }
 }
 

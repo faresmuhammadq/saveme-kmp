@@ -2,6 +2,8 @@ package com.fares.saveme.feature.categories.data
 
 import com.fares.saveme.core.database.SyncScopeDao
 import com.fares.saveme.core.database.SyncScopeEntity
+import com.fares.saveme.core.sync.ScopeKind
+import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.feature.categories.data.dto.CategoryDto
 import com.fares.saveme.feature.categories.data.dto.PlatformCategoryDto
@@ -10,6 +12,7 @@ import com.fares.saveme.feature.categories.data.local.CategoryEntity
 import com.fares.saveme.feature.categories.data.local.PlatformCategoryDao
 import com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
 
@@ -37,8 +40,12 @@ class CategoryRepository(
 
     fun observeDefaults(): Flow<List<PlatformCategoryEntity>> = platform.observeAll()
 
-    /** When the own list was last read completely; null before the first complete read. */
-    fun observeOwnRefreshedAt(): Flow<String?> = observeStamp(OWN_SCOPE)
+    /**
+     * When the person's scope was last read completely; null before the first complete read. An upgraded phone keeps
+     * the time of its last whole-list read until its first feed read ends.
+     */
+    fun observeOwnRefreshedAt(): Flow<String?> =
+        combine(scopes.observeFeedReadAt(SyncScope(ScopeKind.User, accountId().orEmpty()).key), observeStamp(OWN_SCOPE)) { feed, legacy -> feed ?: legacy }
 
     fun observeDefaultsRefreshedAt(): Flow<String?> = observeStamp(DEFAULTS_SCOPE)
 
@@ -82,34 +89,30 @@ class CategoryRepository(
     }
 
     /**
-     * Reads every page of `GET /categories`; only when all of them succeed does it merge (R-08):
-     * listed categories become server copies, and a synced one that is not listed and has no
-     * waiting change is removed. A never-synced placeholder is always kept.
+     * Applies an own category from the person's change feed: when its version is the same or newer; a deletion
+     * removes it unless a change to it waits (it stays until the person settles that change, FR-005). Returns
+     * true when anything changed.
      */
-    suspend fun refreshOwn(): ApiResult<Unit> {
-        val listed = mutableListOf<CategoryDto>()
-        var cursor: String? = null
-        do {
-            when (val page = api.list(cursor)) {
-                is ApiResult.Success -> {
-                    listed += page.value.items
-                    cursor = page.value.nextCursor.takeIf { page.value.hasMore }
-                }
-                is ApiResult.Failure -> return page
-                ApiResult.Offline -> return ApiResult.Offline
-                ApiResult.Timeout -> return ApiResult.Timeout
-            }
-        } while (cursor != null)
+    suspend fun storeFeedCopy(dto: CategoryDto): Boolean {
+        if (dto.deletedAt != null) {
+            if (hasQueuedChange(dto.id)) return false
+            categories.delete(dto.id)
+            return true
+        }
+        val stored = categories.get(dto.id)
+        if (stored != null && stored.version > dto.version) return false
+        categories.upsert(dto.toEntity(accountId().orEmpty(), clock.now().toString()))
+        return true
+    }
 
-        val now = clock.now().toString()
-        val account = accountId().orEmpty()
-        val listedIds = listed.map { it.id }.toSet()
-        categories.upsertAll(listed.filter { it.deletedAt == null }.map { it.toEntity(account, now) })
+    /**
+     * After a complete read of the person's scope from the start: a synced category the server did not return and
+     * that has no waiting change is removed. A never-synced placeholder is always kept (FR-007).
+     */
+    suspend fun sweepOwn(seenIds: Set<String>) {
         categories.getAll()
-            .filter { it.id !in listedIds && it.version > 0 && !hasQueuedChange(it.id) }
+            .filter { it.id !in seenIds && it.version > 0 && !hasQueuedChange(it.id) }
             .forEach { categories.delete(it.id) }
-        scopes.upsert(SyncScopeEntity(OWN_SCOPE, now))
-        return ApiResult.Success(Unit)
     }
 
     /** Replaces the cached default set (retired entries included) on a successful read. */

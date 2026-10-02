@@ -22,28 +22,6 @@ import kotlin.test.assertTrue
 class SessionsContractTest {
 
     @Test
-    fun listSessionsAsksForActiveSessionsPageByPage() = runTest {
-        val env = AccountTestEnv { jsonResponse(200, pageBody(listOf(sessionJson("a", current = true)), nextCursor = "c2")) }
-        env.signedIn()
-
-        val first = assertIs<ApiResult.Success<*>>(env.api.listSessions(cursor = null))
-        env.api.listSessions(cursor = "c2")
-
-        val (one, two) = env.requests
-        assertEquals(HttpMethod.Get, one.method)
-        assertTrue(one.url.encodedPath.endsWith("/api/v1/auth/sessions"))
-        assertEquals("active", one.url.parameters["filter[state]"])
-        assertEquals("50", one.url.parameters["limit"])
-        assertNull(one.url.parameters["cursor"])
-        assertEquals("c2", two.url.parameters["cursor"])
-        assertTrue(one.headers["Authorization"]!!.startsWith("Bearer "))
-        val page = assertIs<ApiResult.Success<com.fares.saveme.core.network.Page<com.fares.saveme.feature.account.data.dto.DeviceSessionDto>>>(first).value
-        assertEquals("a", page.items.single().id)
-        assertEquals(true, page.items.single().current)
-        assertEquals("c2", page.nextCursor)
-    }
-
-    @Test
     fun endOneAndEndOthers() = runTest {
         val env = AccountTestEnv { respond("", HttpStatusCode.NoContent) }
         env.signedIn()
@@ -68,7 +46,7 @@ class SessionsContractTest {
         val env = AccountTestEnv { jsonResponse(401, problemBody(401, "UNAUTHENTICATED")) }
         env.signedIn()
         env.events.events.test {
-            env.api.listSessions(null)
+            env.api.endSession("x")
             assertEquals(ApiEvent.SessionEnded, awaitItem())
         }
     }

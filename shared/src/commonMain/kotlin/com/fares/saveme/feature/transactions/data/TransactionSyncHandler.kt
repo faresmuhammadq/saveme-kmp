@@ -3,15 +3,17 @@ package com.fares.saveme.feature.transactions.data
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.network.ProblemDetails
+import com.fares.saveme.core.sync.BatchItem
+import com.fares.saveme.core.sync.BatchOp
 import com.fares.saveme.core.sync.PendingChange
+import com.fares.saveme.core.sync.RecordKey
 import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
 import com.fares.saveme.feature.transactions.data.dto.TransactionFields
 import com.fares.saveme.feature.transactions.data.dto.TransactionPayload
 import com.fares.saveme.feature.transactions.data.dto.TransactionWriteRequest
+import com.fares.saveme.feature.transactions.data.dto.VersionOnlyRequest
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonElement
 
 /**
@@ -33,22 +35,49 @@ class TransactionSyncHandler(
 
     override val canRestore: Boolean = true
 
-    /** Ids whose send succeeded and whose answer the engine applies next: the carry belongs to those (R-04). */
-    private val ownAnswers = mutableSetOf<String>()
-    private val ownLock = Mutex()
+    /** The wallet a write is addressed to: the source unless it is gone from the phone, then the destination (ADR-0015 rule 5). */
+    private suspend fun pathWallet(change: PendingChange, stored: TransactionEntity?): String {
+        val source = change.scope.id
+        return if (walletOnPhone(source)) source else stored?.counterWalletId ?: source
+    }
+
+    /**
+     * `PUT` / `DELETE` as an item, with the wallet it is addressed to (spec 009 FR-017, FR-024). "Restore with my
+     * change" is a `PATCH` then a `PUT`, so it goes per record (FR-018).
+     */
+    override suspend fun batchItem(change: PendingChange): BatchItem? {
+        if (change.restore && !change.isDelete) return null
+        val stored = repository.get(change.recordId)
+        val wallet = pathWallet(change, stored)
+        return if (change.isDelete) {
+            BatchItem(RECORD_TYPE, BatchOp.Delete, change.recordId, wallet, AppJson.encodeToJsonElement(VersionOnlyRequest.serializer(), VersionOnlyRequest(change.baseVersion)))
+        } else {
+            BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, wallet, writeRequest(change, stored, change.baseVersion).toJson())
+        }
+    }
+
+    /** The source wallet, a transfer's destination and the category must exist on the server first (spec 009 FR-022). */
+    override suspend fun prerequisites(change: PendingChange): List<RecordKey> {
+        if (change.isDelete) return emptyList()
+        val payload = decode(change)
+        val stored = repository.get(change.recordId)?.takeIf { it.version > 0 }
+        return listOfNotNull(
+            RecordKey(WALLET_TYPE, change.scope.id),
+            (if (stored != null) stored.counterWalletId else payload?.counterWalletId)?.let { RecordKey(WALLET_TYPE, it) },
+            payload?.categoryId?.let { RecordKey(CATEGORY_TYPE, it) },
+        )
+    }
 
     override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
         val id = change.recordId
         val stored = repository.get(id)
-        val source = change.scope.id
-        val pathWallet = if (walletOnPhone(source)) source else stored?.counterWalletId ?: source
+        val pathWallet = pathWallet(change, stored)
 
         val result: ApiResult<TransactionDto> = when {
             change.isDelete -> api.delete(pathWallet, id, change.baseVersion)
             change.restore -> restoreThenSave(change, pathWallet)
             else -> api.put(pathWallet, id, writeRequest(change, stored, change.baseVersion))
         }
-        if (result is ApiResult.Success) ownLock.withLock { ownAnswers += id }
         return result.toJson()
     }
 
@@ -95,10 +124,14 @@ class TransactionSyncHandler(
         )
     }
 
+    /** A copy that is not this phone's own answer: no carry, and a deletion removes the row at once (analysis A4). */
     override suspend fun applyServerCopy(json: JsonElement) {
-        val dto = AppJson.decodeFromJsonElement(TransactionDto.serializer(), json)
-        val own = ownLock.withLock { ownAnswers.remove(dto.id) }
-        repository.storeServerCopy(dto, own)
+        repository.storeServerCopy(AppJson.decodeFromJsonElement(TransactionDto.serializer(), json), own = false)
+    }
+
+    /** This phone's own answer, per record or as a batch item: its effect joins the row's carry until a wallet read confirms it (R-04, R-09). */
+    override suspend fun applySentAnswer(json: JsonElement) {
+        repository.storeServerCopy(AppJson.decodeFromJsonElement(TransactionDto.serializer(), json), own = true)
     }
 
     /** A transaction that never reached the server has no copy to fall back to: it disappears. */
@@ -128,5 +161,9 @@ class TransactionSyncHandler(
 
     companion object {
         const val RECORD_TYPE = "transaction"
+
+        /** The record types of the wallet and category handlers; `data` imports no other feature (P-10.6). */
+        private const val WALLET_TYPE = "wallet"
+        private const val CATEGORY_TYPE = "category"
     }
 }

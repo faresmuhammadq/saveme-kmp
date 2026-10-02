@@ -7,6 +7,7 @@ import com.fares.saveme.core.sync.ChangeState
 import com.fares.saveme.core.sync.PendingChange
 import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.account.data.ProfileRepository
 import com.fares.saveme.feature.account.data.ProfileSyncHandler
@@ -38,6 +39,7 @@ class ProfileSyncer(
     private val languages: AppLanguageStore,
     private val engine: SyncEngine,
     private val scope: CoroutineScope,
+    private val runner: SyncRunner,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     val view: Flow<ProfileView?> = repository.observe().flatMapLatest { row ->
@@ -59,7 +61,7 @@ class ProfileSyncer(
             payloadJson = AppJson.encodeToString(ProfileDraft.serializer(), draft),
         )
         AppLanguage.fromTag(draft.locale)?.let { languages.set(it) }
-        return scope.launch { engine.drain() }
+        return scope.launch { runner.upload() }
     }
 
     /** True while an edit of the profile is still only on this phone (waiting, clashing or refused). */
@@ -77,7 +79,7 @@ class ProfileSyncer(
             ChangeState.Refused -> return SyncOutcome.Rejected
             else -> Unit
         }
-        engine.drain()
+        runner.upload()
         val after = engine.get(RECORD_TYPE, row.id) ?: return SyncOutcome.Synced
         return when (after.state) {
             ChangeState.Clash -> SyncOutcome.Conflict

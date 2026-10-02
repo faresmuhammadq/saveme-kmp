@@ -9,7 +9,7 @@ import com.fares.saveme.feature.account.domain.model.toActionOutcome
 import com.fares.saveme.feature.auth.domain.SessionManager
 
 /**
- * Pulls `/me` into the device: the profile's server copy, the cached account (deletion state)
+ * Pulls `/me` into the device: the profile's server copy (when it is not older than the stored one), the cached account (deletion state)
  * and the app language — unless an edit is waiting, whose language already applies — then pushes
  * any waiting edit (spec FR-011, FR-016, FR-021).
  */
@@ -23,7 +23,8 @@ class AccountRefresher(
         val result = repository.fetchMe()
         if (result !is ApiResult.Success) return result.toActionOutcome()
         val me = result.value
-        repository.storeServerCopy(me.profile)
+        // The profile can also reach the phone through its change feed; the newer version wins (spec 009 R-13).
+        repository.storeFeedCopy(me.profile)
         sessions.updateAccount(me.account)
         if (!syncer.hasPendingEdit()) {
             AppLanguage.fromTag(me.profile.locale)?.let { languages.set(it) }

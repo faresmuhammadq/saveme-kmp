@@ -4,8 +4,11 @@ import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.sync.ChangeState
+import com.fares.saveme.core.sync.ReadOutcome
+import com.fares.saveme.core.sync.ReadTarget
 import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncEngine
+import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
@@ -24,7 +27,6 @@ import com.fares.saveme.feature.wallets.domain.model.WalletFieldProblem
 import com.fares.saveme.feature.wallets.domain.model.WalletList
 import com.fares.saveme.feature.wallets.domain.model.WalletRole
 import com.fares.saveme.feature.wallets.domain.model.WalletView
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,12 +36,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlin.time.Clock
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -91,14 +87,9 @@ class DefaultWalletsService(
     private val entitlements: Entitlements,
     private val postings: PendingPostings,
     private val defaultCurrency: Flow<String?>,
-    private val scope: CoroutineScope,
-    private val clock: Clock = Clock.System,
+    private val runner: SyncRunner,
     private val newId: () -> String = { Uuid.generateV7().toString() },
-    private val foregroundFloor: Duration = 60.seconds,
 ) : WalletsService {
-
-    private val refreshLock = Mutex()
-    private var lastRefresh: Instant? = null
 
     private val accountId: String? get() = (authState.value as? AuthState.SignedIn)?.account?.userId
 
@@ -217,18 +208,15 @@ class DefaultWalletsService(
 
     override suspend fun discard(id: String) = engine.discard(WalletSyncHandler.RECORD_TYPE, id)
 
-    override suspend fun refresh(force: Boolean): RefreshOutcome = refreshLock.withLock {
-        val last = lastRefresh
-        if (!force && last != null && clock.now() - last < foregroundFloor) return RefreshOutcome.Done
+    override suspend fun refresh(force: Boolean): RefreshOutcome {
         // A pull, an open and a sign-in also send what is waiting, so a person who got back online
         // doesn't have to wait for the scheduler (the foreground trigger does the same).
         if (force) engine.syncNow()
-        val outcome = repository.refreshAll().toOutcome()
-        if (outcome == RefreshOutcome.Done) lastRefresh = clock.now()
-        outcome
+        // The 60 second floor for unforced reads lives in the runner (spec 009 R-10).
+        return runner.refresh(ReadTarget.Everything, force).toOutcome()
     }
 
-    override suspend fun refreshMembers(id: String): RefreshOutcome = repository.refreshMembers(id).toOutcome()
+    override suspend fun refreshMembers(id: String): RefreshOutcome = runner.refresh(ReadTarget.Wallet(id), force = true).toOutcome()
 
     override suspend fun transferOwnership(id: String, toUserId: String): TransferResult {
         val row = repository.get(id) ?: return TransferResult.Changed
@@ -236,7 +224,7 @@ class DefaultWalletsService(
         return when (val result = repository.transferOwnership(id, toUserId, row.version)) {
             is ApiResult.Success -> {
                 repository.storeServerCopy(result.value)
-                repository.refreshMembers(id)
+                runner.refresh(ReadTarget.Wallet(id), force = true)
                 TransferResult.Done
             }
             ApiResult.Offline, ApiResult.Timeout -> TransferResult.Offline
@@ -247,10 +235,7 @@ class DefaultWalletsService(
                     result.code == ApiErrorCode.VERSION_CONFLICT || result.code == ApiErrorCode.NOT_FOUND -> TransferResult.Changed
                     else -> return TransferResult.Failed(result.problem.requestId)
                 }
-                if (outcome != TransferResult.NotOwner) {
-                    repository.refreshOne(id)
-                    repository.refreshMembers(id)
-                }
+                if (outcome != TransferResult.NotOwner) runner.refresh(ReadTarget.Wallet(id), force = true)
                 outcome
             }
         }
@@ -262,14 +247,12 @@ class DefaultWalletsService(
         else -> null
     }
 
-    private fun drainInBackground() {
-        scope.launch { engine.drain() }
-    }
+    private fun drainInBackground() = runner.requestUpload()
 
-    private fun ApiResult<Unit>.toOutcome(): RefreshOutcome = when (this) {
-        is ApiResult.Success -> RefreshOutcome.Done
-        ApiResult.Offline, ApiResult.Timeout -> RefreshOutcome.Offline
-        is ApiResult.Failure -> RefreshOutcome.Failed
+    private fun ReadOutcome.toOutcome(): RefreshOutcome = when (this) {
+        ReadOutcome.Done -> RefreshOutcome.Done
+        ReadOutcome.Offline -> RefreshOutcome.Offline
+        ReadOutcome.Failed -> RefreshOutcome.Failed
     }
 
     companion object {
