@@ -63,6 +63,14 @@ import com.fares.saveme.designsystem.component.SyncBannerState
 import com.fares.saveme.designsystem.component.TransactionRow
 import com.fares.saveme.designsystem.component.ChoiceGrid
 import com.fares.saveme.designsystem.component.ChoiceItem
+import com.fares.saveme.designsystem.component.CategoryChoiceGroup
+import com.fares.saveme.designsystem.component.CategoryChoiceItem
+import com.fares.saveme.designsystem.component.CategoryChoiceList
+import com.fares.saveme.designsystem.component.CategoryRow
+import com.fares.saveme.designsystem.component.CategoryRowStatus
+import com.fares.saveme.designsystem.component.CategoryRowStatusKind
+import com.fares.saveme.designsystem.component.CategoryTile
+import com.fares.saveme.designsystem.icon.CategoryIcons
 import com.fares.saveme.designsystem.component.WalletCard
 import com.fares.saveme.designsystem.component.WalletCardStatus
 import com.fares.saveme.designsystem.component.WalletCardStatusKind
@@ -92,6 +100,7 @@ fun CatalogSections() {
         CardsSection()
         PlansSection()
         WalletsSection()
+        CategoriesSection()
         ListsSection()
         BudgetsSection()
         MembersSection()
@@ -240,6 +249,80 @@ fun WalletsSection() = CatalogSection(Res.string.catalog_section_wallets) {
         selectedKey = WalletAccents.all[1].key,
         onSelect = {},
     )
+}
+
+/** Category tile, rows in each state and the choice list (spec 007, research R-13). */
+@Composable
+fun CategoriesSection() = CatalogSection(Res.string.catalog_section_categories) {
+    Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
+        CategoryTile("cart", "#2E7D32")
+        CategoryTile("bolt", "#F9A825")
+        CategoryTile("child", "#F06292")
+        CategoryTile("unknown-key", "red")
+        CategoryTile(null, null)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
+        CategoryIcons.keys.take(8).forEach { CategoryTile(it, "#4C6FD6") }
+    }
+    Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
+        CategoryRow(
+            stringResource(Res.string.catalog_category_coffee), "restaurant", "#1F7F8C",
+            status = CategoryRowStatus(CategoryRowStatusKind.Waiting, stringResource(Res.string.category_status_waiting)),
+            onClick = {},
+        )
+        CategoryRow(
+            stringResource(Res.string.catalog_category_groceries), "cart", "#2E7D32",
+            caption = stringResource(Res.string.category_default),
+        )
+        CategoryRow(
+            stringResource(Res.string.catalog_category_gym), "health", "#C62828",
+            status = CategoryRowStatus(CategoryRowStatusKind.Changed, stringResource(Res.string.category_status_clash)),
+            onClick = {},
+        )
+        CategoryRow(
+            stringResource(Res.string.catalog_category_coffee), "unknown-key", "#123456",
+            status = CategoryRowStatus(CategoryRowStatusKind.NotSaved, stringResource(Res.string.category_status_in_use)),
+            onClick = {},
+        )
+        CategoryRow(
+            stringResource(Res.string.catalog_category_gym), "laptop", "#4527A0",
+            caption = stringResource(Res.string.category_archived), onClick = {},
+        )
+        CategoryRow(stringResource(Res.string.category_unavailable), null, null)
+    }
+    Text(stringResource(Res.string.category_choice_title), style = AppTheme.type.label, color = AppTheme.colors.ink2)
+    Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
+        CategoryChoiceList(
+            groups = listOf(
+                CategoryChoiceGroup(
+                    stringResource(Res.string.category_choice_current),
+                    listOf(
+                        CategoryChoiceItem(
+                            "gym", stringResource(Res.string.catalog_category_gym), "health", "#C62828",
+                            caption = stringResource(Res.string.category_archived),
+                        ),
+                    ),
+                    "categoryChoice.current", indexed = false,
+                ),
+                CategoryChoiceGroup(
+                    stringResource(Res.string.category_choice_own),
+                    listOf(CategoryChoiceItem("coffee", stringResource(Res.string.catalog_category_coffee), "restaurant", "#1F7F8C")),
+                    "categoryChoice.own",
+                ),
+                CategoryChoiceGroup(
+                    stringResource(Res.string.category_choice_defaults),
+                    listOf(CategoryChoiceItem("groceries", stringResource(Res.string.catalog_category_groceries), "cart", "#2E7D32")),
+                    "categoryChoice.default",
+                ),
+            ),
+            selectedId = "gym",
+            onSelect = {},
+            emptyMessage = stringResource(Res.string.category_choice_empty),
+        )
+    }
+    Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card).padding(AppTheme.spacing.m)) {
+        CategoryChoiceList(emptyList(), null, {}, stringResource(Res.string.category_choice_empty))
+    }
 }
 
 @Composable

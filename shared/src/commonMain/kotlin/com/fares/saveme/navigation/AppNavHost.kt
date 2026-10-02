@@ -39,6 +39,10 @@ import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanEffect
+import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
+import com.fares.saveme.feature.categories.ui.editor.CategoryEditorRoute
+import com.fares.saveme.feature.categories.ui.list.CategoriesEffect
+import com.fares.saveme.feature.categories.ui.list.CategoriesRoute
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailEffect
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailRoute
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorEffect
@@ -212,6 +216,7 @@ fun AppNavHost(
                     when (effect) {
                         HomeEffect.NavigateAccount -> appStack.add(AccountKey)
                         HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
+                        HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
                 })
@@ -304,6 +309,31 @@ fun AppNavHost(
                         when (effect) {
                             is WalletEditorEffect.Saved, WalletEditorEffect.NavigateBack, WalletEditorEffect.NotEntitled -> appStack.pop()
                             WalletEditorEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<CategoriesKey> {
+                CategoriesRoute(
+                    onEffect = { effect ->
+                        when (effect) {
+                            is CategoriesEffect.OpenEditor -> appStack.add(CategoryEditorKey(effect.id, effect.kind.wire))
+                            CategoriesEffect.NavigateBack -> appStack.pop()
+                            CategoriesEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<CategoryEditorKey> { key ->
+                CategoryEditorRoute(
+                    categoryId = key.categoryId,
+                    kind = key.kind,
+                    onEffect = { effect ->
+                        when (effect) {
+                            CategoryEditorEffect.Saved, CategoryEditorEffect.NavigateBack -> appStack.pop()
+                            is CategoryEditorEffect.ShowMessage, CategoryEditorEffect.RequireVerification -> Unit // shown by the route
                         }
                     },
                     onRequireVerification = { emailNotVerifiedVisible = true },

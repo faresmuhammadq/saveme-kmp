@@ -1,0 +1,11 @@
+# US3-S5 (never sent): Given a category created and deleted offline before it ever synced, Then nothing about it reaches the server. Part 1: online, on the categories screen.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000

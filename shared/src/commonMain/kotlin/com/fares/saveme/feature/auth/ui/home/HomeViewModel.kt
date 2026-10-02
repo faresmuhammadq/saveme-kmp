@@ -35,6 +35,7 @@ class HomeViewModel(
             HomeIntent.DismissDeletionNotice -> setState { reduce(it, HomeChange.DeletionNoticeDismissed) }
             HomeIntent.AccountClicked -> sendEffect(HomeEffect.NavigateAccount)
             HomeIntent.WalletsClicked -> sendEffect(HomeEffect.NavigateWallets)
+            HomeIntent.CategoriesClicked -> sendEffect(HomeEffect.NavigateCategories)
             HomeIntent.CancelDeletion -> cancel()
             HomeIntent.SignOutClicked -> setState { reduce(it, HomeChange.SignOutConfirmVisible(true)) }
             HomeIntent.SignOutDismissed -> setState { reduce(it, HomeChange.SignOutConfirmVisible(false)) }

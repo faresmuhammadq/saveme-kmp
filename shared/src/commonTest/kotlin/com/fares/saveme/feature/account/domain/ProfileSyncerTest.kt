@@ -16,6 +16,7 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.http.HttpMethod
 import io.ktor.utils.io.errors.IOException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
@@ -43,12 +44,19 @@ class ProfileSyncerTest {
 
     @Test
     fun aLocalSaveIsStoredAtOnceAndPushedWithTheServerVersion() = runTest {
-        val h = Harness(this) { jsonResponse(200, """{"data":${profileJson(version = 4, displayName = "Sara M")},"meta":{}}""") }
+        // The PUT is held until the local copy has been checked: the send runs on Ktor's own
+        // thread, and without the gate it could finish (and clear the edit) before the check.
+        val sent = CompletableDeferred<Unit>()
+        val h = Harness(this) {
+            sent.await()
+            jsonResponse(200, """{"data":${profileJson(version = 4, displayName = "Sara M")},"meta":{}}""")
+        }
         h.env.signedIn()
         h.refresher.refresh()
 
         val push = h.syncer.saveLocally(edit)
         assertEquals(edit, h.syncer.view.first()!!.pending, "saved on the device before any request")
+        sent.complete(Unit)
         push!!.join()
 
         assertEquals("3", h.puts.single().jsonBody()["version"].toString())

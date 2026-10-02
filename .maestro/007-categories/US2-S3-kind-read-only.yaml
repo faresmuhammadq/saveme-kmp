@@ -1,0 +1,25 @@
+# US2-S3: Given an existing category, When the person edits it, Then the kind is shown but cannot be changed.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Coffee", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Coffee"
+    timeout: 20000
+- tapOn: "Coffee"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.kind"
+    timeout: 15000
+- assertVisible: "This can’t change after the category is created."
+- assertNotVisible:
+    id: "categoryEditor.kind.income"

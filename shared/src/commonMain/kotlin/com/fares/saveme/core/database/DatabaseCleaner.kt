@@ -12,6 +12,9 @@ class DatabaseCleaner(private val database: AppDatabase) : UserDataCleaner {
         database.deviceSessionDao().deleteAll()
         database.walletMemberDao().deleteAll()
         database.walletDao().deleteAll()
+        database.categoryReferenceDao().deleteAll()
+        database.platformCategoryDao().deleteAll()
+        database.categoryDao().deleteAll()
         database.syncScopeDao().deleteAll()
         // Waiting changes go with the account: they can never be sent under another one (FR-018).
         database.pendingChangeDao().deleteAll()

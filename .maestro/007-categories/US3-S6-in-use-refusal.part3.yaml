@@ -1,0 +1,38 @@
+# e2e-between: network-on
+# Part 3: the connection is back; the refusal is shown and "Archive instead" archives it.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- extendedWaitUntil:
+    visible: "Not deleted: this category is in use."
+    timeout: 90000
+- tapOn: "Books"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.archiveInstead"
+    timeout: 15000
+- assertVisible:
+    id: "categoryEditor.keepCategory"
+- tapOn:
+    id: "categoryEditor.archiveInstead"
+# Clash and refusal choices keep the editor open (it is also the category's detail); go back to the list.
+- extendedWaitUntil:
+    notVisible:
+      id: "categoryEditor.archiveInstead"
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible:
+      id: "categories.archivedHeader"
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getCategory, SLOT: B, CATEGORY: "Books" }
+- assertTrue: ${output.category.archived_at != null}

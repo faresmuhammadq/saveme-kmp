@@ -1,0 +1,29 @@
+# US3-S4: Given the delete confirmation, When it is shown, Then it names the category and says deleting is final.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Typo", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Typo"
+    timeout: 20000
+- tapOn: "Typo"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.delete"
+- tapOn:
+    id: "categoryEditor.delete"
+- assertVisible: "Delete Typo?"
+- assertVisible: "Deleting is final."
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Cancel"
+- assertNotVisible: "Delete Typo?"

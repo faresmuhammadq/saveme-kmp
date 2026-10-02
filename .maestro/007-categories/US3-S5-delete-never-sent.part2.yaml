@@ -1,0 +1,24 @@
+# e2e-between: network-off
+# Part 2: offline, a category is created and deleted before it ever synced.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow:
+    file: ../common/create-category.yaml
+    env:
+      NAME: "Temp"
+- tapOn: "Temp"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.delete"
+- tapOn:
+    id: "categoryEditor.delete"
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Delete category"
+- extendedWaitUntil:
+    visible:
+      id: "categories.ownEmpty"
+    timeout: 15000
+- assertNotVisible: "Temp"

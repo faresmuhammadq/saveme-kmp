@@ -1,0 +1,26 @@
+# US1-S4: Given a category archived through the API, When the person opens Categories, Then it is listed under "Archived" and not among their active categories.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Old hobby", KIND: "expense" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: archiveCategory, SLOT: B, CATEGORY: "Old hobby" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible:
+      id: "categories.archivedHeader"
+    timeout: 15000
+- assertVisible:
+    id: "categories.archived.0"
+- assertVisible: "Old hobby"
+- assertNotVisible:
+    id: "categories.own.0"

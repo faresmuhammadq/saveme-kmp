@@ -46,6 +46,13 @@ data class WalletDetailKey(val walletId: String) : NavKey
 data class WalletEditorKey(val walletId: String? = null) : NavKey
 
 @Serializable
+data object CategoriesKey : NavKey
+
+/** A null [categoryId] creates a category of [kind] (the wire value: `expense` or `income`); otherwise it is edited. */
+@Serializable
+data class CategoryEditorKey(val categoryId: String? = null, val kind: String = "expense") : NavKey
+
+@Serializable
 data object ChangePasswordKey : NavKey
 
 @Serializable

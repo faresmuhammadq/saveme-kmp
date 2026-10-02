@@ -1,0 +1,11 @@
+# US2-S1 (offline): Given no connection, When the person creates a category, Then it is saved on the phone, listed marked "Waiting to sync", and sent once a connection returns without any action. Part 1: online, on the categories screen.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000

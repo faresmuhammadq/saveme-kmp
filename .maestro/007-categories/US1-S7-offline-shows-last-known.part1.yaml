@@ -1,0 +1,20 @@
+# US1-S7: Given a connection that goes away, When the person opens or pulls the categories screen, Then the last known categories stay and the screen says when they were updated. Part 1: online, categories loaded.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Alpha", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 20000

@@ -1,0 +1,23 @@
+# From the categories screen: creates a category named ${NAME} (of the selected kind) and waits until the list shows its name.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "categories.create"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "categoryEditor.name"
+- inputText: ${NAME}
+- hideKeyboard
+- tapOn:
+    id: "categoryEditor.save"
+# The editor shows the typed name too, so wait for the list itself before looking for the new row.
+- extendedWaitUntil:
+    visible:
+      id: "categories.list"
+    timeout: 15000
+- assertVisible: ${NAME}

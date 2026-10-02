@@ -1,0 +1,12 @@
+# e2e-between: network-off
+# Part 2: the phone's route to the backend is cut; the category is saved on the phone only.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow:
+    file: ../common/create-category.yaml
+    env:
+      NAME: "Coffee offline"
+- assertVisible: "Coffee offline"
+- assertVisible: "Waiting to sync"

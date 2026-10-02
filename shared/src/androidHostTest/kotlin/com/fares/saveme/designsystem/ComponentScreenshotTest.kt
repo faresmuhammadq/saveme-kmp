@@ -15,6 +15,7 @@ import com.fares.saveme.designsystem.catalog.BarsSection
 import com.fares.saveme.designsystem.catalog.BudgetsSection
 import com.fares.saveme.designsystem.catalog.ButtonsSection
 import com.fares.saveme.designsystem.catalog.CardsSection
+import com.fares.saveme.designsystem.catalog.CategoriesSection
 import com.fares.saveme.designsystem.catalog.DialogsSection
 import com.fares.saveme.designsystem.catalog.RowsSection
 import com.fares.saveme.designsystem.catalog.EmptySection
@@ -89,6 +90,7 @@ class ComponentScreenshotTest(
             arrayOf("cards", @Composable { CardsSection() }),
             arrayOf("plans", @Composable { PlansSection() }),
             arrayOf("wallets", @Composable { WalletsSection() }),
+            arrayOf("categories", @Composable { CategoriesSection() }),
             arrayOf("lists", @Composable { ListsSection() }),
             arrayOf("budgets", @Composable { BudgetsSection() }),
             arrayOf("members", @Composable { MembersSection() }),

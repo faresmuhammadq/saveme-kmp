@@ -35,6 +35,8 @@ fun <T> SegmentedControl(
     selected: T,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    /** Extra modifier per option, for example a test tag. */
+    optionModifier: (T) -> Modifier = { Modifier },
 ) {
     Row(
         modifier = modifier
@@ -54,7 +56,8 @@ fun <T> SegmentedControl(
                     .fillMaxHeight()
                     .then(if (isSelected) Modifier.shadow(1.dp, AppTheme.shapes.control) else Modifier)
                     .background(if (isSelected) AppTheme.colors.surface else AppTheme.colors.sunken, AppTheme.shapes.control)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(option) }),
+                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(option) })
+                    .then(optionModifier(option)),
             ) {
                 Text(
                     label(option),

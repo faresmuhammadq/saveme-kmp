@@ -73,3 +73,39 @@ internal val MIGRATION_2_3 = object : Migration(2, 3) {
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_wallet_member_wallet_id` ON `wallet_member` (`wallet_id`)")
     }
 }
+
+/**
+ * v3 → v4 (spec 007, research R-02): the category tables (own categories, the cached default set,
+ * partners' references). Nothing else is touched, so every existing row, including waiting
+ * changes in `pending_change`, survives the update.
+ */
+internal val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `category` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `kind` TEXT NOT NULL,
+            `name` TEXT NOT NULL, `icon` TEXT, `color` TEXT, `archived_at` TEXT, `in_use` INTEGER NOT NULL,
+            `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL,
+            `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_category_account_id_kind_archived_at` ON `category` (`account_id`, `kind`, `archived_at`)",
+        )
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `platform_category` (`id` TEXT NOT NULL, `system_key` TEXT NOT NULL,
+            `kind` TEXT NOT NULL, `name_ar` TEXT NOT NULL, `name_en` TEXT NOT NULL, `icon` TEXT NOT NULL,
+            `color` TEXT NOT NULL, `position` INTEGER NOT NULL, `archived_at` TEXT, `updated_at` TEXT NOT NULL,
+            PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_platform_category_kind_position` ON `platform_category` (`kind`, `position`)")
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `category_reference` (`id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL,
+            `category_id` TEXT NOT NULL, `owner_user_id` TEXT NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL,
+            `icon` TEXT, `color` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL,
+            `updated_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_category_reference_wallet_id` ON `category_reference` (`wallet_id`)")
+        connection.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_category_reference_wallet_id_category_id` ON `category_reference` (`wallet_id`, `category_id`)",
+        )
+    }
+}

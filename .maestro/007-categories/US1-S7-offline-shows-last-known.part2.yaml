@@ -1,0 +1,14 @@
+# e2e-between: network-off
+# Part 2: offline, a pull finds no connection; the rows stay and the screen says when it was updated.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- extendedWaitUntil:
+    visible: "Updated .+"
+    timeout: 20000
+- assertVisible: "Alpha"
+- assertVisible: "Groceries"

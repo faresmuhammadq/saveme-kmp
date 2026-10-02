@@ -1,0 +1,50 @@
+# US2-S6: Given a category changed on another device while the person edits it, When the phone saves, Then the category is marked "Changed on another device" with both versions, and "Keep mine" sends the phone's edit again so it wins.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Alpha", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Alpha"
+    timeout: 20000
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.name"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveCategory, SLOT: B, CATEGORY: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "categoryEditor.name"
+- eraseText: 30
+- inputText: "Phone name"
+- hideKeyboard
+- tapOn:
+    id: "categoryEditor.save"
+- extendedWaitUntil:
+    visible: "Changed on another device."
+    timeout: 30000
+- tapOn: "Phone name"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.keepMine"
+    timeout: 15000
+- assertVisible: ".*Web name.*"
+- tapOn:
+    id: "categoryEditor.keepMine"
+- extendedWaitUntil:
+    notVisible: "Changed on another device."
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getCategory, SLOT: B, CATEGORY: "Phone name" }
+- assertTrue: ${output.category.name == 'Phone name'}

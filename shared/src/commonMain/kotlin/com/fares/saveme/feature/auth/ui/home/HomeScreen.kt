@@ -31,6 +31,7 @@ import saveme.shared.generated.resources.home_deletion_cancelled
 import saveme.shared.generated.resources.home_deletion_pending
 import saveme.shared.generated.resources.home_signed_in_as
 import saveme.shared.generated.resources.home_title
+import saveme.shared.generated.resources.home_categories
 import saveme.shared.generated.resources.home_wallets
 import saveme.shared.generated.resources.sign_out_action
 import kotlin.time.Instant
@@ -83,6 +84,12 @@ fun HomeScreen(
             modifier = Modifier.testTag("home.wallets"),
             trailing = ListTrailing.Chevron,
             onClick = { onIntent(HomeIntent.WalletsClicked) },
+        )
+        AppListItem(
+            headline = stringResource(Res.string.home_categories),
+            modifier = Modifier.testTag("home.categories"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(HomeIntent.CategoriesClicked) },
         )
         Text(stringResource(Res.string.home_signed_in_as, state.email), style = AppTheme.type.body, color = AppTheme.colors.ink)
         DestructiveButton(stringResource(Res.string.sign_out_action), { onIntent(HomeIntent.SignOutClicked) })

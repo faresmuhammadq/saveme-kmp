@@ -1,0 +1,16 @@
+# e2e-between: network-on
+# Part 3: the connection is back; the server never heard of "Temp".
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 30000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listCategories, SLOT: B }
+- assertTrue: ${output.categoryCount == 0}

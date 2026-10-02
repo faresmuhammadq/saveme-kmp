@@ -1,0 +1,29 @@
+# US3-S2: Given the archive confirmation, When it is shown, Then it says archived categories stay on existing transactions and that this can't be undone.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Coffee", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- extendedWaitUntil:
+    visible: "Coffee"
+    timeout: 20000
+- tapOn: "Coffee"
+- scrollUntilVisible:
+    element:
+      id: "categoryEditor.archive"
+- tapOn:
+    id: "categoryEditor.archive"
+- assertVisible: "Archive Coffee?"
+- assertVisible: "Archived categories stay on your existing transactions and stay editable, but you can’t pick them for new ones. This can’t be undone."
+# The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
+# testTagsAsResourceId on its own window only), so its buttons are found by their text.
+- tapOn: "Cancel"
+- assertNotVisible: "Archive Coffee?"

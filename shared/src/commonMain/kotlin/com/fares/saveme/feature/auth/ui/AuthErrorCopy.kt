@@ -27,7 +27,7 @@ fun ApiErrorCode.message(): StringResource = when (this) {
     ApiErrorCode.SERVICE_UNAVAILABLE, ApiErrorCode.INTERNAL_ERROR -> Res.string.error_service_unavailable
     ApiErrorCode.CLIENT_VERSION_REQUIRED, ApiErrorCode.CLIENT_VERSION_INVALID, ApiErrorCode.MALFORMED_JSON,
     ApiErrorCode.NOT_ACCEPTABLE, ApiErrorCode.UNSUPPORTED_MEDIA_TYPE, ApiErrorCode.FORBIDDEN,
-    ApiErrorCode.NOT_FOUND, ApiErrorCode.UNKNOWN -> Res.string.error_generic_reference
+    ApiErrorCode.NOT_FOUND, ApiErrorCode.CATEGORY_IN_USE, ApiErrorCode.UNKNOWN -> Res.string.error_generic_reference
 }
 
 fun FieldError.message(): StringResource = when (this) {

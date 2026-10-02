@@ -1,0 +1,28 @@
+# US2-S4: Given the editor, When the name is blank or longer than 50 characters, Then the matching message is shown next to the name and nothing is saved.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-categories.yaml
+- tapOn:
+    id: "categories.create"
+- extendedWaitUntil:
+    visible:
+      id: "categoryEditor.name"
+    timeout: 15000
+- tapOn:
+    id: "categoryEditor.name"
+- inputText: "x"
+- eraseText: 5
+- extendedWaitUntil:
+    visible: "Enter a name."
+    timeout: 10000
+- inputText: "012345678901234567890123456789012345678901234567890"
+- extendedWaitUntil:
+    visible: "Use at most 50 characters."
+    timeout: 10000
+- hideKeyboard
+- assertVisible:
+    id: "categoryEditor.name"
