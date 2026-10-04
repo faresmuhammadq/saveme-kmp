@@ -1,6 +1,7 @@
 package com.fares.saveme.core.sync
 
 import co.touchlab.kermit.Logger
+import com.fares.saveme.core.database.FeedPlace
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +19,11 @@ import kotlin.time.Instant
 
 /** What a caller wants read (spec 009 research R-10). */
 sealed interface ReadTarget {
-    /** The person's scope and every followed wallet: sign-in, foreground, the wallet list. */
+    /**
+     * The person's scope and every followed wallet: sign-in, foreground, the wallet list. The wallets' heads are read
+     * once after the person's scope and only the wallets that moved are read (spec 011); a wallet an upload wrote to, an
+     * unconfirmed one, one without a stored position or one also named by a [Wallet] request is read whatever the heads say.
+     */
     data object Everything : ReadTarget
 
     /** Only the person's scope: the categories, account and sessions screens. */
@@ -34,7 +39,8 @@ enum class ReadOutcome { Done, Offline, Failed }
 /**
  * Serializes sync runs: upload first, then reads (spec 009 FR-026). Triggers that arrive during a
  * run are merged into the next one, not lost; every caller gets the outcome of the run that served
- * it. Floors, outcomes and the order of work live here, so the features' services keep their
+ * it. An Everything run asks the server where the followed wallets stand before reading them (spec 011). Floors,
+ * outcomes and the order of work live here, so the features' services keep their
  * signatures and screens do not change (SC-008).
  */
 interface SyncRunner {
@@ -159,13 +165,15 @@ class DefaultSyncRunner(
         val results = linkedMapOf<String, ScopeResult>()
         val readRun = ReadRun(account)
 
-        // The scopes to read and whether each is forced: what an upload wrote to is always read.
-        val walletForce = linkedMapOf<String, Boolean>()
-        fun want(id: String, force: Boolean) {
-            walletForce[id] = (walletForce[id] ?: false) || force
+        // The scopes to read: whether each is forced, and whether it is read whatever the heads say (direct).
+        val walletWant = linkedMapOf<String, WalletWant>()
+        fun want(id: String, force: Boolean, direct: Boolean) {
+            val earlier = walletWant[id]
+            walletWant[id] = WalletWant((earlier?.force ?: false) || force, (earlier?.direct ?: false) || direct)
         }
-        reads.forEach { request -> (request.target as? ReadTarget.Wallet)?.let { want(it.id, request.force) } }
-        report.written.filter { it.kind == ScopeKind.Wallet }.forEach { want(it.id, true) }
+        // A named wallet is read whatever the heads say; so is every wallet an upload wrote to (FR-004, FR-007).
+        reads.forEach { request -> (request.target as? ReadTarget.Wallet)?.let { want(it.id, request.force, direct = true) } }
+        report.written.filter { it.kind == ScopeKind.Wallet }.forEach { want(it.id, force = true, direct = true) }
 
         var stopped = false
         if (readUser) {
@@ -175,15 +183,40 @@ class DefaultSyncRunner(
             stopped = read.result == ScopeResult.Offline
             val completed = read.read as? ScopeRead.Done
             // Wallets held whose own membership a complete read did not return: their own feeds decide (FR-011).
-            completed?.seenWalletIds?.let { seen -> walletScopes()?.unconfirmed(seen)?.forEach { want(it, true) } }
+            completed?.seenWalletIds?.let { seen -> walletScopes()?.unconfirmed(seen)?.forEach { want(it, force = true, direct = true) } }
         }
         if (wantsEverything && !stopped) {
             val everythingForced = reads.any { it.target == ReadTarget.Everything && it.force }
-            walletScopes()?.followed()?.forEach { want(it, everythingForced) }
+            walletScopes()?.followed()?.forEach { want(it, everythingForced, direct = false) }
         }
+
+        // One heads read decides which of the wallets that came only from "everything" need reading at all (spec 011).
+        var heads: HeadsRead? = null
+        val places = mutableMapOf<String, FeedPlace>()
+        if (wantsEverything && !stopped) {
+            val candidates = mutableListOf<String>()
+            for ((id, wanted) in walletWant) {
+                if (wanted.direct) continue
+                val wallets = walletScopes()
+                if (wallets != null && !wallets.isAccepted(id)) continue
+                val walletScope = SyncScope(ScopeKind.Wallet, id)
+                if (withinFloor(walletScope, wanted.force)) continue
+                val place = puller.place(walletScope)
+                if (place?.cursor == null || place.position == null) continue
+                places[id] = place
+                candidates += id
+            }
+            if (candidates.isNotEmpty()) {
+                heads = puller.heads(readRun)
+                if (heads == HeadsRead.Offline) stopped = true
+            }
+        }
+
+        val tally = Tally()
         val readWallets = linkedSetOf<String>()
-        for ((id, force) in walletForce) {
-            val key = SyncScope(ScopeKind.Wallet, id).key
+        for ((id, wanted) in walletWant) {
+            val walletScope = SyncScope(ScopeKind.Wallet, id)
+            val key = walletScope.key
             if (stopped) {
                 results[key] = ScopeResult.Offline
                 continue
@@ -194,13 +227,32 @@ class DefaultSyncRunner(
                 results[key] = ScopeResult.Done
                 continue
             }
-            val read = readScope(SyncScope(ScopeKind.Wallet, id), force, readRun)
+            val listed = heads as? HeadsRead.Listed
+            val plan = if (listed != null && id in places) HeadsDecision.decide(places[id], listed.heads[id]) else WalletReadPlan.Read
+            if (wanted.direct) tally.direct++
+            val read = when (plan) {
+                WalletReadPlan.Skip -> {
+                    puller.markUnchanged(walletScope, listed!!.startedAt)
+                    lastRead[key] = clock.now()
+                    tally.skipped++
+                    Read(ScopeResult.Done, null)
+                }
+                WalletReadPlan.ReadFromStart -> {
+                    puller.forget(walletScope)
+                    tally.fromStart++
+                    readScope(walletScope, true, readRun)
+                }
+                WalletReadPlan.Read -> readScope(walletScope, wanted.force, readRun).also { if (it.read != null) tally.read++ }
+            }
             results[key] = read.result
             readWallets += id
             if (read.result == ScopeResult.Offline) stopped = true
         }
+        if (wantsEverything) {
+            log.i { "wallets: ${walletWant.size} followed, ${tally.skipped} unchanged, ${tally.read} read, ${tally.fromStart} from the start (purge horizon), ${tally.direct} direct" }
+        }
 
-        val followedForEverything = if (wantsEverything) walletForce.keys else emptySet()
+        val followedForEverything = if (wantsEverything) walletWant.keys else emptySet()
         batch.forEach { request ->
             val outcome = when (val target = request.target) {
                 null -> ReadOutcome.Done
@@ -216,11 +268,15 @@ class DefaultSyncRunner(
 
     private enum class ScopeResult { Done, Offline, Failed }
 
+    /** [direct]: read whatever the heads say (a named wallet, a wallet the upload wrote to, an unconfirmed one). */
+    private data class WalletWant(val force: Boolean, val direct: Boolean)
+
+    private class Tally(var skipped: Int = 0, var read: Int = 0, var fromStart: Int = 0, var direct: Int = 0)
+
     private class Read(val result: ScopeResult, val read: ScopeRead?)
 
     private suspend fun readScope(scope: SyncScope, force: Boolean, readRun: ReadRun): Read {
-        val last = lastRead[scope.key]
-        if (!force && last != null && clock.now() - last < floor) return Read(ScopeResult.Done, null)
+        if (withinFloor(scope, force)) return Read(ScopeResult.Done, null)
         return when (val read = puller.read(scope, readRun)) {
             is ScopeRead.Done -> {
                 lastRead[scope.key] = clock.now()
@@ -229,6 +285,11 @@ class DefaultSyncRunner(
             ScopeRead.Offline -> Read(ScopeResult.Offline, read)
             ScopeRead.Failed -> Read(ScopeResult.Failed, read)
         }
+    }
+
+    private fun withinFloor(scope: SyncScope, force: Boolean): Boolean {
+        val last = lastRead[scope.key]
+        return !force && last != null && clock.now() - last < floor
     }
 
     private fun ScopeResult?.toOutcome(): ReadOutcome = when (this) {

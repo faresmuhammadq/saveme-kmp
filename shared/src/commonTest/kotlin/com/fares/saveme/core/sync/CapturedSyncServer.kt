@@ -26,7 +26,11 @@ class CapturedSyncServer {
     /** The batch upload: the answer to the n-th upload (0-based) with these items; throw an IOException for "no answer". */
     var batch: (n: Int, items: JsonElement) -> CapturedSyncResponses.Answer = { n, _ -> error("no batch answer scripted for upload $n") }
 
+    /** The heads: the answer to a read of the wallet heads from [cursor] (spec 011). */
+    var heads: (cursor: String?) -> CapturedSyncResponses.Answer = { error("no heads answer scripted for $it") }
+
     val uploads = mutableListOf<JsonElement>()
+    val requests = mutableListOf<String>()
     val feedReads = mutableListOf<String>()
 
     val auth = AuthTestEnv { request -> answer(request).let { jsonResponse(it.status, it.body) } }
@@ -37,7 +41,9 @@ class CapturedSyncServer {
     private fun answer(request: HttpRequestData): CapturedSyncResponses.Answer {
         val path = request.url.encodedPath
         val cursor = request.url.parameters["cursor"]
+        requests += path.substringAfter("/api/v1/") + (cursor?.let { "?cursor" } ?: "")
         return when {
+            path.endsWith("/sync/wallets/heads") -> heads(cursor)
             path.endsWith("/sync/batch") -> {
                 val items = request.jsonBody().jsonObject.getValue("items")
                 uploads += items

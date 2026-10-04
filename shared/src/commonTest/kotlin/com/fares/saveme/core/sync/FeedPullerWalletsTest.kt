@@ -87,7 +87,7 @@ class FeedPullerWalletsTest {
     @Test
     fun theUnconfirmedCheckHappensOnlyAfterACompleteReadFromTheStart() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { ApiResult.Success(page(emptyList(), sync = "u1")) }
         h.runner.refresh(ReadTarget.User, force = true)
         assertEquals(emptyList(), h.wallets.unconfirmedCalls, "a read with a position proves nothing about missing wallets")
@@ -96,7 +96,7 @@ class FeedPullerWalletsTest {
     @Test
     fun aMemberTombstoneOnAWalletFeedGoesToTheWalletMemberApplierOnly() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("wallet:w1", "c0")
+        h.scopes.storeFeedPage("wallet:w1", "c0", null)
         h.api.wallet = { _, _ -> ApiResult.Success(page(listOf(row("wallet_member", "m2", version = 2, extra = mapOf("deleted_at" to JsonPrimitive("2026-10-02T00:00:00Z")))), sync = "c1")) }
         assertIs<ScopeRead.Done>(h.puller.read(SyncScope(ScopeKind.Wallet, "w1")))
         assertEquals(1, h.walletMembers.applied.size)

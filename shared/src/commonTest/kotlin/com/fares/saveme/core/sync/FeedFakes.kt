@@ -2,6 +2,7 @@ package com.fares.saveme.core.sync
 
 import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.network.CollectionMeta
 import com.fares.saveme.core.network.ProblemDetails
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -13,9 +14,11 @@ class FakeSyncApi : SyncApi {
     val userCalls = mutableListOf<String?>()
     val walletCalls = mutableListOf<Pair<String, String?>>()
     val batches = mutableListOf<List<BatchItemDto>>()
+    val headsCalls = mutableListOf<String?>()
 
     var user: suspend (cursor: String?) -> ApiResult<FeedPageDto> = { ApiResult.Success(emptyPage("u-end")) }
     var wallet: suspend (walletId: String, cursor: String?) -> ApiResult<FeedPageDto> = { _, _ -> ApiResult.Success(emptyPage("w-end")) }
+    var heads: suspend (cursor: String?) -> ApiResult<HeadsPageDto> = { ApiResult.Success(HeadsPageDto()) }
     var batchAnswer: suspend (List<BatchItemDto>) -> ApiResult<List<BatchItemResultDto>> = { items -> ApiResult.Success(items.map { appliedResult(it) }) }
 
     override suspend fun userChanges(cursor: String?, limit: Int): ApiResult<FeedPageDto> {
@@ -28,13 +31,18 @@ class FakeSyncApi : SyncApi {
         return wallet(walletId, cursor)
     }
 
+    override suspend fun walletHeads(cursor: String?, limit: Int): ApiResult<HeadsPageDto> {
+        headsCalls += cursor
+        return heads(cursor)
+    }
+
     override suspend fun batch(items: List<BatchItemDto>): ApiResult<List<BatchItemResultDto>> {
         batches += items
         return batchAnswer(items)
     }
 
     companion object {
-        fun emptyPage(sync: String) = FeedPageDto(emptyList(), FeedMetaDto(null, false, 200, sync))
+        fun emptyPage(sync: String, position: Long? = null) = FeedPageDto(emptyList(), FeedMetaDto(null, false, 200, sync, position))
 
         fun row(type: String, id: String, version: Long = 1, extra: Map<String, JsonElement> = emptyMap()) =
             ChangeRowDto(type, record(id, version, extra))
@@ -44,8 +52,14 @@ class FakeSyncApi : SyncApi {
         )
 
         /** A page: [next] set means more pages follow (`has_more`), and the position after it is [sync]. */
-        fun page(rows: List<ChangeRowDto>, sync: String, next: String? = null) =
-            FeedPageDto(rows, FeedMetaDto(next, next != null, 200, sync))
+        fun page(rows: List<ChangeRowDto>, sync: String, next: String? = null, position: Long? = null) =
+            FeedPageDto(rows, FeedMetaDto(next, next != null, 200, sync, position))
+
+        fun head(walletId: String, changeSeq: Long, purgedChangeSeq: Long = 0) = WalletHeadDto(walletId, changeSeq, purgedChangeSeq)
+
+        /** A heads page: [next] set means more pages follow. */
+        fun headsPage(vararg heads: WalletHeadDto, next: String? = null) =
+            HeadsPageDto(heads.toList(), CollectionMeta(next, next != null, 200))
 
         fun appliedResult(item: BatchItemDto, version: Long = 1) = BatchItemResultDto(
             item.type, item.id, "applied", 200, record(item.id, version, mapOf("wallet_id" to (item.walletId?.let { JsonPrimitive(it) } ?: JsonNull))), null,

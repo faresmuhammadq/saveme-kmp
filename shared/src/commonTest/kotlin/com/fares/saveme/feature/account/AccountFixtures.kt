@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.account
 
+import com.fares.saveme.core.database.FeedPlace
 import com.fares.saveme.core.database.SyncScopeDao
 import com.fares.saveme.core.database.SyncScopeEntity
 import com.fares.saveme.core.storage.StoredSession
@@ -52,16 +53,17 @@ class FakeSyncScopeDao : SyncScopeDao {
     }
     override fun observeLastPushed(): Flow<String?> = rows.map { r -> r.values.mapNotNull { it.lastPushedAt }.maxOrNull() }
     override suspend fun feedCursor(scope: String): String? = rows.value[scope]?.feedCursor
-    override suspend fun storeFeedPage(scope: String, cursor: String) {
+    override suspend fun feedPlace(scope: String): FeedPlace? = rows.value[scope]?.let { FeedPlace(it.feedCursor, it.feedPosition) }
+    override suspend fun storeFeedPage(scope: String, cursor: String, position: Long?) {
         val current = rows.value[scope] ?: SyncScopeEntity(scope, "")
-        rows.value = rows.value + (scope to current.copy(feedCursor = cursor))
+        rows.value = rows.value + (scope to current.copy(feedCursor = cursor, feedPosition = position))
     }
     override suspend fun markFeedRead(scope: String, startedAt: String) {
         val current = rows.value[scope] ?: SyncScopeEntity(scope, "")
         rows.value = rows.value + (scope to current.copy(feedReadAt = startedAt))
     }
     override suspend fun clearFeed(scope: String) {
-        rows.value[scope]?.let { rows.value = rows.value + (scope to it.copy(feedCursor = null, feedReadAt = null)) }
+        rows.value[scope]?.let { rows.value = rows.value + (scope to it.copy(feedCursor = null, feedPosition = null, feedReadAt = null)) }
     }
     override fun observeFeedReadAt(scope: String): Flow<String?> = rows.map { it[scope]?.feedReadAt }
 }

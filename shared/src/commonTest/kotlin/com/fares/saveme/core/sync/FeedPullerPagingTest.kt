@@ -32,7 +32,7 @@ class FeedPullerPagingTest {
     @Test
     fun rowsReachTheirAppliersInFeedOrderWithConsecutiveRowsOfOneTypeTogether() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = {
             ApiResult.Success(
                 page(listOf(row("category", "a"), row("category", "b"), row("wallet_member", "m1"), row("category", "c")), sync = "c1"),
@@ -47,7 +47,7 @@ class FeedPullerPagingTest {
     @Test
     fun unknownKindsAreSkippedAndThePositionStillAdvances() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { ApiResult.Success(page(listOf(row("budget", "b1"), row("invitation", "i1"), row("recurring_rule", "r1"), row("category", "a")), sync = "c1")) }
         assertIs<ScopeRead.Done>(h.puller.read(h.user))
         assertEquals(listOf("category x1"), h.log)
@@ -57,7 +57,7 @@ class FeedPullerPagingTest {
     @Test
     fun pagesAreReadWhileMoreRemainAndEachPageIsSentTheServersNextCursor() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { cursor ->
             ApiResult.Success(
                 when (cursor) {
@@ -76,7 +76,7 @@ class FeedPullerPagingTest {
     @Test
     fun anEmptyLastPageStoresThePositionTheServerGaveBack() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { ApiResult.Success(FakeSyncApi.emptyPage("c0-again")) }
         assertIs<ScopeRead.Done>(h.puller.read(h.user))
         assertEquals("c0-again", h.scopes.feedCursor("user:u1"))
@@ -85,7 +85,7 @@ class FeedPullerPagingTest {
     @Test
     fun thePositionIsStoredOnlyAfterAPagesRowsAreApplied() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.categories.failOnApply = { calls -> calls == 1 } // the second page's rows crash
         h.api.user = { cursor ->
             ApiResult.Success(
@@ -106,7 +106,7 @@ class FeedPullerPagingTest {
     @Test
     fun theReadStampIsTheStartOfTheReadAndOnlyAfterTheLastPage() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.clock.now = kotlin.time.Instant.parse("2026-10-02T10:00:00Z")
         h.api.user = { cursor ->
             h.clock.now = h.clock.now + kotlin.time.Duration.parse("5s")
@@ -120,7 +120,7 @@ class FeedPullerPagingTest {
     @Test
     fun noConnectionHalfwayLeavesThePositionOfTheLastAppliedPage() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { cursor -> if (cursor == "c0") ApiResult.Success(page(listOf(row("category", "a")), sync = "p1", next = "p1")) else ApiResult.Offline }
         assertEquals(ScopeRead.Offline, h.puller.read(h.user))
         assertEquals("p1", h.scopes.feedCursor("user:u1"))
@@ -160,7 +160,7 @@ class FeedPullerPagingTest {
     @Test
     fun aReadWithAPositionNeverSweeps() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { ApiResult.Success(page(listOf(row("category", "a")), sync = "c1")) }
         h.puller.read(h.user)
         assertTrue(h.categories.swept.isEmpty())
@@ -169,7 +169,7 @@ class FeedPullerPagingTest {
     @Test
     fun nothingIsAppliedOrStoredAfterTheAccountChangesMidRead() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = {
             h.signedIn = null // signed out while the answer was on its way
             ApiResult.Success(page(listOf(row("category", "a")), sync = "c1"))
@@ -182,7 +182,7 @@ class FeedPullerPagingTest {
     @Test
     fun aPageWithoutAPositionIsNotTrusted() = runTest {
         val h = Harness()
-        h.scopes.storeFeedPage("user:u1", "c0")
+        h.scopes.storeFeedPage("user:u1", "c0", null)
         h.api.user = { ApiResult.Success(page(listOf(row("category", "a")), sync = "")) }
         assertEquals(ScopeRead.Failed, h.puller.read(h.user))
         assertTrue(h.categories.applied.isEmpty())

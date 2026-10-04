@@ -4,6 +4,7 @@ import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.network.ProblemDetails
 import com.fares.saveme.core.network.ProblemError
+import com.fares.saveme.core.sync.BatchOp
 import com.fares.saveme.core.sync.ChangeState
 import com.fares.saveme.core.sync.PendingChange
 import com.fares.saveme.core.sync.ScopeKind
@@ -146,6 +147,87 @@ class TransactionSyncHandlerTest {
         val failure = assertIs<ApiResult.Failure>(env.syncHandler.send(change(base = 6, restore = true)))
         assertEquals("VERSION_CONFLICT", failure.problem.code)
         assertEquals(2, env.requests.size)
+    }
+
+    // ---- Spec 011: "Restore with my change" as a pair of batch items ----
+
+    @Test
+    fun aRestoreIsARestoreItemThenAnUpsertItemOfTheNextVersionForTheStoredKindCurrencyAndCounterWallet() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        // The phone still holds its own copy (version 5); the other device's deletion is version 6, the base of the restore.
+        env.seed(transactionJson(version = 5, kind = "transfer", categoryId = null, counterWalletId = "w2", currency = "EGP"))
+        // The payload says expense and names another destination; the stored ones are sent (spec 008 FR-012).
+        val tampered = payload.copy(kind = "expense", currency = "USD", counterWalletId = "w3", categoryId = null)
+
+        val (restore, upsert) = assertNotNull(env.syncHandler.batchItems(change(base = 6, payload = tampered, restore = true)))
+
+        assertEquals(BatchOp.Restore, restore.op)
+        assertEquals(BatchOp.Upsert, upsert.op)
+        assertEquals(listOf("transaction", "transaction"), listOf(restore.type, upsert.type))
+        assertEquals(listOf("t1", "t1"), listOf(restore.id, upsert.id))
+        assertEquals(listOf("w1", "w1"), listOf(restore.walletId, upsert.walletId))
+        val restoreBody = restore.data.jsonObject
+        assertEquals("null", restoreBody["deleted_at"].toString())
+        assertEquals("6", restoreBody["version"].toString())
+        assertEquals(setOf("deleted_at", "version"), restoreBody.keys)
+        val upsertBody = upsert.data.jsonObject
+        assertEquals("7", upsertBody["version"].toString())
+        assertEquals("\"transfer\"", upsertBody["kind"].toString())
+        assertEquals("\"EGP\"", upsertBody["currency"].toString())
+        assertEquals("\"w2\"", upsertBody["counter_wallet_id"].toString())
+        assertEquals("6000", upsertBody["amount_minor"].toString())
+    }
+
+    @Test
+    fun theRestorePairIsAddressedToTheDestinationWhenTheSourceIsNotOnThePhone() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w2"))
+        env.seed(transactionJson(walletId = "w9", kind = "transfer", categoryId = null, counterWalletId = "w2", version = 4))
+        val items = assertNotNull(env.syncHandler.batchItems(change(base = 5, restore = true, source = "w9")))
+        assertEquals(listOf("w2", "w2"), items.map { it.walletId })
+    }
+
+    @Test
+    fun aRestoreWhoseContentCannotBeReadSendsTheRestoreAlone() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        val unreadable = change(base = 6, restore = true).copy(payloadJson = "{ not json")
+        val items = assertNotNull(env.syncHandler.batchItems(unreadable))
+        assertEquals(listOf(BatchOp.Restore), items.map { it.op })
+    }
+
+    @Test
+    fun theSingleItemFormOfARestoreIsStillNullSoTheFallbackIsUnchanged() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        assertNull(env.syncHandler.batchItem(change(base = 6, restore = true)))
+    }
+
+    @Test
+    fun aSaveAndADeleteKeepASingleItem() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        env.seed(transactionJson(version = 3))
+        assertEquals(listOf(BatchOp.Upsert), assertNotNull(env.syncHandler.batchItems(change(base = 3))).map { it.op })
+        assertEquals(listOf(BatchOp.Delete), assertNotNull(env.syncHandler.batchItems(change(base = 3, delete = true))).map { it.op })
+    }
+
+    @Test
+    fun aRestoreStillSendsThePatchThenThePutPerRecord() = runTest {
+        val env = TransactionTestEnv(backgroundScope) { request ->
+            if (request.method == HttpMethod.Patch) jsonResponse(200, transactionBody(transactionJson(version = 7, amount = 4_550)))
+            else jsonResponse(200, transactionBody(transactionJson(version = 8, amount = 6_000)))
+        }
+        env.signedIn()
+        env.seedWallet(walletJson(id = "w1"))
+        env.syncHandler.send(change(base = 6, restore = true))
+        assertEquals(listOf(HttpMethod.Patch, HttpMethod.Put), env.requests.map { it.method })
     }
 
     @Test

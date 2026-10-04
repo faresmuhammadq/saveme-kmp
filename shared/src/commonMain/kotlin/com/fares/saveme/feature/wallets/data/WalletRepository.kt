@@ -101,7 +101,11 @@ class WalletRepository(
         return true
     }
 
-    /** Applies a member row from a change feed; an older version is ignored. */
+    /**
+     * Applies a member row from a change feed; an older version is ignored. An EQUAL version is applied on purpose: the
+     * backend re-stamps a member's row when their name changes and keeps the version (ADR-0021), so the guard must stay
+     * `>` and not become `>=` (spec 011 R-08).
+     */
     suspend fun storeMember(dto: WalletMemberDto): Boolean {
         if (dto.deletedAt != null) {
             members.delete(dto.id)

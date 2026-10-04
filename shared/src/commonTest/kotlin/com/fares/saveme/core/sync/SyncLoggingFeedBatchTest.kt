@@ -96,10 +96,51 @@ class SyncLoggingFeedBatchTest {
     fun aRefusedPositionLogsTheRequestIdNotTheValue() = runTest {
         val api = FakeSyncApi()
         val scopes = FakeSyncScopeDao()
-        scopes.storeFeedPage("user:u1", "CURSOR-SECRET-abc")
+        scopes.storeFeedPage("user:u1", "CURSOR-SECRET-abc", null)
         api.user = { cursor -> if (cursor != null) FakeSyncApi.failure(ApiErrorCode.INVALID_CURSOR, 400) else ApiResult.Success(FakeSyncApi.emptyPage("NEXT-CURSOR-SECRET-xyz")) }
         FeedPuller(api, scopes, { emptyList() }, { null }, SyncLock(), { "u1" }).read(SyncScope(ScopeKind.User, "u1"))
         assertTrue(lines.any { "refused" in it && "request req-1" in it })
         secrets.forEach { secret -> assertFalse(lines.any { secret in it }, lines.joinToString("\n")) }
+    }
+
+    @Test
+    fun aHeadsRefreshLogsCountsAndRequestIdsNeverAPositionHeadHorizonOrCursor() = runTest {
+        val api = FakeSyncApi()
+        val scopes = FakeSyncScopeDao()
+        val clock = FakeClock()
+        val lock = SyncLock()
+        val wallets = FakeWalletScopes(followed = listOf("quiet", "moved", "old"))
+        scopes.storeFeedPage("user:u1", "CURSOR-SECRET-abc", 98765432101)
+        scopes.storeFeedPage("wallet:quiet", "CURSOR-SECRET-abc", 98765432102)
+        scopes.storeFeedPage("wallet:moved", "CURSOR-SECRET-abc", 98765432103)
+        scopes.storeFeedPage("wallet:old", "CURSOR-SECRET-abc", 98765432104)
+        api.heads = {
+            ApiResult.Success(
+                FakeSyncApi.headsPage(
+                    FakeSyncApi.head("quiet", 98765432102), FakeSyncApi.head("moved", 98765439999), FakeSyncApi.head("old", 98765439998, purgedChangeSeq = 98765439000),
+                ),
+            )
+        }
+        api.user = { ApiResult.Success(FakeSyncApi.emptyPage("NEXT-CURSOR-SECRET-xyz", 98765432101)) }
+        api.wallet = { _, _ -> ApiResult.Success(FakeSyncApi.emptyPage("NEXT-CURSOR-SECRET-xyz", 98765439999)) }
+        val engine = SyncEngine(FakePendingChangeDao(), scopes, emptyList(), FakeSyncScheduler(), currentAccountId = { "u1" }, clock = clock, syncApi = api, lock = lock)
+        val puller = FeedPuller(api, scopes, { emptyList() }, { wallets }, lock, { "u1" }, clock)
+        val runner = DefaultSyncRunner(engine, puller, { wallets }, { "u1" }, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)), clock)
+
+        runner.refresh(ReadTarget.Everything, force = false)
+
+        assertTrue(lines.any { it.startsWith("sync") && "heads: 3 wallets in 1 pages" in it }, lines.joinToString("\n"))
+        assertTrue(lines.any { "wallets: 3 followed, 1 unchanged, 1 read, 1 from the start (purge horizon), 0 direct" in it }, lines.joinToString("\n"))
+        listOf("98765432101", "98765432102", "98765439999", "98765439998", "98765439000", "CURSOR-SECRET-abc", "NEXT-CURSOR-SECRET-xyz")
+            .forEach { secret -> assertFalse(lines.any { secret in it }, "$secret leaked:\n" + lines.joinToString("\n")) }
+    }
+
+    @Test
+    fun aRefusedHeadsReadLogsTheCodeAndRequestId() = runTest {
+        val api = FakeSyncApi()
+        api.heads = { FakeSyncApi.failure(ApiErrorCode.INTERNAL_ERROR, 500) }
+        val result = FeedPuller(api, FakeSyncScopeDao(), { emptyList() }, { null }, SyncLock(), { "u1" }).heads(ReadRun("u1"))
+        assertTrue(result == HeadsRead.Failed)
+        assertTrue(lines.any { "heads refused" in it && "INTERNAL_ERROR" in it && "req-1" in it }, lines.joinToString("\n"))
     }
 }

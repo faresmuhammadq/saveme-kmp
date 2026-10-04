@@ -278,4 +278,119 @@ class SyncApiContractTest {
         assertEquals("""{"type":"category","op":"upsert","id":"c1","data":{"version":0}}""", json)
         assertTrue(JsonObject(emptyMap()).isEmpty())
     }
+
+    // ---- Spec 011: heads, positions and the restore pair (contracts/sync-heads-client.md) ----
+
+    @Test
+    fun theHeadsAskForTwoHundredAndNothingElseOnTheFirstPage() = runTest {
+        val env = Env { jsonResponse(200, OpenApiSyncExamples.HEADS_TWO_WALLETS) }
+        env.signedIn()
+        env.api.walletHeads(null)
+        env.api.walletHeads("c2")
+
+        val (first, second) = env.requests
+        assertEquals(HttpMethod.Get, first.method)
+        assertTrue(first.url.encodedPath.endsWith("/api/v1/sync/wallets/heads"), first.url.encodedPath)
+        assertEquals(setOf("limit"), first.url.parameters.names(), "no cursor, filter or sort on the first page")
+        assertEquals("200", first.url.parameters["limit"])
+        assertEquals(setOf("limit", "cursor"), second.url.parameters.names())
+        assertEquals("c2", second.url.parameters["cursor"])
+        assertTrue(first.headers["Authorization"]!!.startsWith("Bearer "))
+        listOf("X-Client-Platform", "X-Client-Version", "Accept-Language", "X-Correlation-Id").forEach { assertNotNull(first.headers[it], it) }
+    }
+
+    @Test
+    fun theTwoWalletsExampleDecodesAndAnUnknownMemberIsIgnored() = runTest {
+        val env = Env { jsonResponse(200, OpenApiSyncExamples.HEADS_TWO_WALLETS) }
+        env.signedIn()
+        val page = assertIs<ApiResult.Success<HeadsPageDto>>(env.api.walletHeads(null)).value
+        assertEquals(listOf(812L, 133L), page.data.map { it.changeSeq })
+        assertEquals(listOf(140L, 0L), page.data.map { it.purgedChangeSeq })
+        assertEquals("0192f79e-0000-7000-8000-000000000001", page.data[0].walletId)
+        assertFalse(page.meta.hasMore)
+        assertNull(page.meta.nextCursor)
+    }
+
+    @Test
+    fun aCallerInNoWalletGetsAnEmptyPage() = runTest {
+        val env = Env { jsonResponse(200, """{"data":[],"meta":{"next_cursor":null,"has_more":false,"limit":200}}""") }
+        env.signedIn()
+        assertTrue(assertIs<ApiResult.Success<HeadsPageDto>>(env.api.walletHeads(null)).value.data.isEmpty())
+    }
+
+    @Test
+    fun everyHeadsRefusalDecodesToItsCode() = runTest {
+        val cases = listOf(
+            Triple(400, "INVALID_CURSOR", ApiErrorCode.INVALID_CURSOR),
+            Triple(400, "INVALID_QUERY_PARAMETER", ApiErrorCode.UNKNOWN),
+            Triple(400, "FILTER_FIELD_NOT_SUPPORTED", ApiErrorCode.UNKNOWN),
+            Triple(400, "SORT_FIELD_NOT_SUPPORTED", ApiErrorCode.UNKNOWN),
+            Triple(401, "UNAUTHENTICATED", ApiErrorCode.UNAUTHENTICATED),
+            Triple(406, "NOT_ACCEPTABLE", ApiErrorCode.NOT_ACCEPTABLE),
+            Triple(426, "CLIENT_VERSION_UNSUPPORTED", ApiErrorCode.CLIENT_VERSION_UNSUPPORTED),
+            Triple(429, "RATE_LIMITED", ApiErrorCode.RATE_LIMITED),
+            Triple(500, "INTERNAL_ERROR", ApiErrorCode.INTERNAL_ERROR),
+        )
+        for ((status, code, expected) in cases) {
+            val env = Env { jsonResponse(status, problemBody(status, code, if (status == 426) ""","minimum_version":"2.0.0"""" else ""), *(if (status == 429) arrayOf("Retry-After" to "7") else emptyArray())) }
+            env.signedIn()
+            val failure = assertIs<ApiResult.Failure>(env.api.walletHeads(null), "$status $code")
+            assertEquals(expected, failure.code, "$status $code")
+            assertEquals(code, failure.problem.code)
+            if (status == 429) assertEquals(7L, failure.retryAfterSeconds)
+        }
+    }
+
+    @Test
+    fun offlineAndUnreadableHeadsAreTold() = runTest {
+        val offline = Env { throw kotlinx.io.IOException("no route") }
+        offline.signedIn()
+        assertEquals(ApiResult.Offline, offline.api.walletHeads(null))
+        val unreadable = Env { jsonResponse(200, """{"data":"nope","meta":{}}""") }
+        unreadable.signedIn()
+        assertEquals(HttpSyncApi.UNREADABLE, assertIs<ApiResult.Failure>(unreadable.api.walletHeads(null)).problem.code)
+    }
+
+    @Test
+    fun feedPagesDecodeTheirIntegerPositionAndAPageWithoutOneDecodesToNull() = runTest {
+        val user = Env { jsonResponse(200, OpenApiSyncExamples.USER_FEED_PAGE) }
+        user.signedIn()
+        assertEquals(59L, assertIs<ApiResult.Success<FeedPageDto>>(user.api.userChanges(null)).value.meta.syncPosition)
+        val wallet = Env { jsonResponse(200, OpenApiSyncExamples.WALLET_FEED_PAGE) }
+        wallet.signedIn()
+        assertEquals(133L, assertIs<ApiResult.Success<FeedPageDto>>(wallet.api.walletChanges("w1", null)).value.meta.syncPosition)
+        val older = Env { jsonResponse(200, """{"data":[],"meta":{"next_cursor":null,"has_more":false,"limit":200,"sync_cursor":"c"}}""") }
+        older.signedIn()
+        assertNull(assertIs<ApiResult.Success<FeedPageDto>>(older.api.userChanges(null)).value.meta.syncPosition)
+    }
+
+    @Test
+    fun noFeedOrHeadsRequestEverCarriesAPosition() = runTest {
+        val env = Env { request ->
+            jsonResponse(200, if (request.url.encodedPath.endsWith("heads")) OpenApiSyncExamples.HEADS_TWO_WALLETS else OpenApiSyncExamples.USER_FEED_PAGE)
+        }
+        env.signedIn()
+        env.api.userChanges("c")
+        env.api.walletChanges("w1", "c")
+        env.api.walletHeads("c")
+        env.requests.forEach { request ->
+            assertTrue(request.url.parameters.names().all { it in setOf("limit", "cursor") }, request.url.toString())
+        }
+    }
+
+    @Test
+    fun aBatchBodyCarryingARestorePairHasRestoreThenUpsertWithTheirVersions() = runTest {
+        val env = Env { jsonResponse(200, OpenApiSyncExamples.VALIDATION_REFUSAL) }
+        env.signedIn()
+        val restore = BatchItemDto("transaction", BatchOp.Restore.wire, "t1", "w1", buildJsonObject { put("deleted_at", JsonNull); put("version", JsonPrimitive(4)) })
+        val upsert = BatchItemDto("transaction", BatchOp.Upsert.wire, "t1", "w1", buildJsonObject { put("amount_minor", JsonPrimitive(900)); put("version", JsonPrimitive(5)) })
+        env.api.batch(listOf(restore, upsert))
+
+        val items = (env.requests.single().jsonBody()["items"] as kotlinx.serialization.json.JsonArray).map { it.jsonObject }
+        assertEquals(listOf("restore", "upsert"), items.map { it["op"]!!.jsonPrimitive.content })
+        assertEquals(listOf("w1", "w1"), items.map { it["wallet_id"]!!.jsonPrimitive.content })
+        assertEquals(JsonNull, items[0]["data"]!!.jsonObject["deleted_at"])
+        assertEquals(JsonPrimitive(4), items[0]["data"]!!.jsonObject["version"])
+        assertEquals(JsonPrimitive(5), items[1]["data"]!!.jsonObject["version"])
+    }
 }

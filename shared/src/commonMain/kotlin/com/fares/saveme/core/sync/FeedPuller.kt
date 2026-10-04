@@ -1,6 +1,7 @@
 package com.fares.saveme.core.sync
 
 import co.touchlab.kermit.Logger
+import com.fares.saveme.core.database.FeedPlace
 import com.fares.saveme.core.database.SyncScopeDao
 import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiResult
@@ -30,6 +31,18 @@ sealed interface ScopeRead {
     data object Failed : ScopeRead
 }
 
+/** How the read of the followed wallets' heads ended (spec 011 R-05). */
+sealed interface HeadsRead {
+    /** Every page arrived; [startedAt] is when the read began. A followed wallet missing from [heads] is "not listed", not "unchanged". */
+    data class Listed(val heads: Map<String, WalletHeadDto>, val startedAt: Instant) : HeadsRead
+
+    /** No answer: the run stops reading. */
+    data object Offline : HeadsRead
+
+    /** Refused, unreadable or interrupted: the run reads every wallet as it would without heads. */
+    data object Failed : HeadsRead
+}
+
 /** What one sync run knows across its scope reads: the account it started for, and which scopes had an invalid position (FR-009). */
 class ReadRun(val accountId: String?) {
     internal val invalidCursors = mutableSetOf<String>()
@@ -45,6 +58,10 @@ class ReadRun(val accountId: String?) {
  * re-reads the page and the appliers' version guard makes that harmless). A read that began
  * without a position stores it only after its last page: its sweep needs the ids of every page, so
  * an interrupted one starts again from the beginning (research R-04).
+ *
+ * Each page's integer `sync_position` is stored with its cursor in one statement and forgotten with it (spec 011
+ * FR-001, FR-002). [heads] reads where the followed wallets stand so a refresh can skip the quiet ones; [markUnchanged]
+ * and [forget] record that decision. The cursor is never parsed and the position is never sent (P-02).
  */
 class FeedPuller(
     private val api: SyncApi,
@@ -57,6 +74,59 @@ class FeedPuller(
 ) {
     suspend fun read(scope: SyncScope, run: ReadRun = ReadRun(currentAccountId())): ScopeRead =
         lock.withLock { readWithRestart(scope, run) }
+
+    /** The stored place (cursor and integer position) of [scope], or null when the scope has never been read. */
+    suspend fun place(scope: SyncScope): FeedPlace? = scopes.feedPlace(scope.key)
+
+    /**
+     * Reads the heads of every followed wallet, all pages or nothing (spec 011 FR-006, FR-009). Under the sync lock,
+     * so no upload or feed read interleaves; a change of account between pages drops the result.
+     */
+    suspend fun heads(run: ReadRun): HeadsRead = lock.withLock { readHeads(run) }
+
+    private suspend fun readHeads(run: ReadRun): HeadsRead {
+        val startedAt = clock.now()
+        val heads = mutableMapOf<String, WalletHeadDto>()
+        var pages = 0
+        var cursor: String? = null
+        while (true) {
+            val answer = api.walletHeads(cursor)
+            if (!stillSignedIn(run)) {
+                log.i { "heads read dropped: the account changed" }
+                return HeadsRead.Failed
+            }
+            when (answer) {
+                ApiResult.Offline, ApiResult.Timeout -> {
+                    log.i { "heads: no answer after $pages pages" }
+                    return HeadsRead.Offline
+                }
+                is ApiResult.Failure -> {
+                    log.w { "heads refused (request ${answer.problem.requestId}): ${answer.problem.code.ifEmpty { "status ${answer.problem.status}" }}" }
+                    return HeadsRead.Failed
+                }
+                is ApiResult.Success -> {
+                    val page = answer.value
+                    pages++
+                    page.data.forEach { heads[it.walletId] = it }
+                    if (!page.meta.hasMore) break
+                    cursor = page.meta.nextCursor
+                    if (cursor == null) {
+                        log.w { "heads: a page claims more but gives no next cursor" }
+                        return HeadsRead.Failed
+                    }
+                }
+            }
+        }
+        log.i { "heads: ${heads.size} wallets in $pages pages" }
+        return HeadsRead.Listed(heads, startedAt)
+    }
+
+    /** The heads found [scope] unchanged: records that as a completed read at [startedAt]; cursor and position stay (spec 011 R-06). */
+    suspend fun markUnchanged(scope: SyncScope, startedAt: Instant) =
+        lock.withLock { scopes.markFeedRead(scope.key, startedAt.syncStamp()) }
+
+    /** Forgets the scope's cursor, position and read stamp: the next read starts from the beginning (spec 011 R-07). */
+    suspend fun forget(scope: SyncScope) = lock.withLock { scopes.clearFeed(scope.key) }
 
     private suspend fun readWithRestart(scope: SyncScope, run: ReadRun): ScopeRead {
         var restarts = 0
@@ -125,7 +195,7 @@ class FeedPuller(
                     pageCount++
                     rowCount += page.data.size
                     if (page.meta.hasMore) {
-                        if (!fromStart) scopes.storeFeedPage(key, page.meta.syncCursor)
+                        if (!fromStart) scopes.storeFeedPage(key, page.meta.syncCursor, page.meta.syncPosition)
                         sentPosition = page.meta.nextCursor ?: page.meta.syncCursor
                         continue
                     }
@@ -141,7 +211,7 @@ class FeedPuller(
                         return finished(ScopeRead.Failed)
                     }
                     if (!stillSignedIn(run)) return finished(ScopeRead.Failed)
-                    scopes.storeFeedPage(key, page.meta.syncCursor)
+                    scopes.storeFeedPage(key, page.meta.syncCursor, page.meta.syncPosition)
                     scopes.markFeedRead(key, startedAt.syncStamp())
                     log.i {
                         "read of ${scope.kind.wire} scope: $pageCount pages, $rowCount rows" +
@@ -158,8 +228,9 @@ class FeedPuller(
         val where = "${scope.kind.wire} scope (request ${answer.problem.requestId})"
         return when {
             answer.code == ApiErrorCode.SYNC_CURSOR_EXPIRED && hadPosition && fromStart -> {
-                // The position came from this very read: starting again would meet the same answer at the same page
-                // (the live backend expires a from-the-start read's own next page behind its purge horizon, qa-report.md).
+                // Since backend spec 017 a read from no cursor pages past the purge horizon, so a 410 on its own next page
+                // means a purge landed during the read (or the server predates v1.10). Starting again would meet the same
+                // answer, so the scope fails for this run and starts again from the start on the next one (spec 011 R-11).
                 log.w { "position of $where expired in the middle of a read from the start" }
                 finished(ScopeRead.Failed)
             }

@@ -11,6 +11,7 @@ import com.fares.saveme.core.sync.SyncHandler
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
 import com.fares.saveme.feature.transactions.data.dto.TransactionFields
 import com.fares.saveme.feature.transactions.data.dto.TransactionPayload
+import com.fares.saveme.feature.transactions.data.dto.TransactionRestoreRequest
 import com.fares.saveme.feature.transactions.data.dto.TransactionWriteRequest
 import com.fares.saveme.feature.transactions.data.dto.VersionOnlyRequest
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
@@ -43,7 +44,8 @@ class TransactionSyncHandler(
 
     /**
      * `PUT` / `DELETE` as an item, with the wallet it is addressed to (spec 009 FR-017, FR-024). "Restore with my
-     * change" is a `PATCH` then a `PUT`, so it goes per record (FR-018).
+     * change" has no single item: [batchItems] sends it as a pair, and the per-record `PATCH` then `PUT` stays the
+     * fallback.
      */
     override suspend fun batchItem(change: PendingChange): BatchItem? {
         if (change.restore && !change.isDelete) return null
@@ -54,6 +56,24 @@ class TransactionSyncHandler(
         } else {
             BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, wallet, writeRequest(change, stored, change.baseVersion).toJson())
         }
+    }
+
+    /**
+     * A restore with the person's change is `restore` (version n) then `upsert` (version n + 1), both addressed to the
+     * per-record path wallet and settled as one answer (spec 011 FR-014, R-09). The upsert carries the stored kind,
+     * currency and counter wallet (spec 008 FR-012); a change whose content cannot be read sends the restore alone.
+     */
+    override suspend fun batchItems(change: PendingChange): List<BatchItem>? {
+        if (!change.restore || change.isDelete) return batchItem(change)?.let(::listOf)
+        val stored = repository.get(change.recordId)
+        val wallet = pathWallet(change, stored)
+        val restore = BatchItem(
+            RECORD_TYPE, BatchOp.Restore, change.recordId, wallet,
+            TransactionRestoreRequest(change.baseVersion).toJson(),
+        )
+        if (decode(change) == null) return listOf(restore)
+        val upsert = BatchItem(RECORD_TYPE, BatchOp.Upsert, change.recordId, wallet, writeRequest(change, stored, change.baseVersion + 1).toJson())
+        return listOf(restore, upsert)
     }
 
     /** The source wallet, a transfer's destination and the category must exist on the server first (spec 009 FR-022). */

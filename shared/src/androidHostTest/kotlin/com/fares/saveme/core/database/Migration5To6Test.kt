@@ -115,7 +115,7 @@ class Migration5To6Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+        .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
         .build()
 
     @Test
@@ -142,7 +142,7 @@ class Migration5To6Test {
     @Test
     fun theNewColumnsWorkAndTheExportedSchemaNamesThem() = runTest {
         val db = open(v5Database())
-        db.syncScopeDao().storeFeedPage("user:u1", "c-1")
+        db.syncScopeDao().storeFeedPage("user:u1", "c-1", null)
         db.syncScopeDao().markFeedRead("user:u1", "2026-10-02T10:00:00.000Z")
         val row = db.syncScopeDao().observe("user:u1").first()!!
         assertEquals("c-1", row.feedCursor)

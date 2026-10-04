@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device
+# US3 (spec 011): Given a transaction deleted on another device while the phone edits it, When the person chooses "Restore with my change", Then the restore and the edit leave in one request and the transaction is back with the phone's values and no second clash. Part 1: online, the list loaded.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "1000", NOTE: "Taxi" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- assertVisible: "Taxi"

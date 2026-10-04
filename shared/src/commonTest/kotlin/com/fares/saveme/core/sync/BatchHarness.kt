@@ -19,6 +19,9 @@ class BatchHandler(
     val log: MutableList<String> = mutableListOf(),
 ) : SyncHandler {
     val perRecordOnly = mutableSetOf<String>()
+
+    /** Ids whose change travels as a restore + upsert pair (spec 011): restore at version n, upsert at n + 1. */
+    val pairs = mutableSetOf<String>()
     val prerequisitesOf = mutableMapOf<String, List<RecordKey>>()
     val sent = mutableListOf<PendingChange>()
     val applied = mutableListOf<JsonElement>()
@@ -33,6 +36,21 @@ class BatchHandler(
         return BatchItem(
             recordType, if (change.isDelete) BatchOp.Delete else BatchOp.Upsert, change.recordId,
             walletId = if (recordType == "transaction") change.scope.id else null, data = data,
+        )
+    }
+
+    override suspend fun batchItems(change: PendingChange): List<BatchItem>? {
+        if (change.recordId !in pairs) return super.batchItems(change)
+        val wallet = if (recordType == "transaction") change.scope.id else null
+        return listOf(
+            BatchItem(
+                recordType, BatchOp.Restore, change.recordId, wallet,
+                JsonObject(mapOf("deleted_at" to JsonNull, "version" to JsonPrimitive(change.baseVersion))),
+            ),
+            BatchItem(
+                recordType, BatchOp.Upsert, change.recordId, wallet,
+                JsonObject(mapOf("payload" to JsonPrimitive(change.payloadJson), "version" to JsonPrimitive(change.baseVersion + 1))),
+            ),
         )
     }
 
@@ -75,6 +93,13 @@ class BatchHarness(vararg types: String = arrayOf("note")) {
 
     suspend fun save(id: String, payload: String = "{}", base: Long = 1, type: String = "note", scope: SyncScope = user) =
         engine.enqueue(type, id, scope, base, payload)
+
+    /** Queues a change for [id] and marks it as "Restore with my change" (spec 011): the handler sends it as a pair. */
+    suspend fun saveRestore(id: String, base: Long = 4, payload: String = "{}", type: String = "note", scope: SyncScope = user) {
+        save(id, payload, base, type, scope)
+        dao.upsert(row(id, type)!!.copy(restore = true))
+        handlers.first { it.recordType == type }.pairs += id
+    }
 
     fun row(id: String, type: String = "note") = dao.rows.value[type to id]
 

@@ -10,7 +10,7 @@ object OpenApiSyncExamples {
  {"type":"category","record":{"id":"0192f7a1-0000-7000-8000-0000000000c1","user_id":"0192f700-0000-7000-8000-000000000001","version":3,"change_seq":58,
    "created_at":"2026-09-20T10:00:00.000000Z","updated_at":"2026-10-04T09:05:00.000000Z","deleted_at":null,"kind":"expense","name":"Groceries",
    "icon":"cart","color":"#2E7D32","archived_at":null,"in_use":true}}],
- "meta":{"next_cursor":null,"has_more":false,"limit":50,"sync_cursor":"eyJ2IjoxLCJmIjoidSIsInMiOiIwMTkyZjcwMCIsInAiOjU5fQ.c2lnbmF0dXJlMTZi","an_unknown_member":1}}
+ "meta":{"next_cursor":null,"has_more":false,"limit":50,"sync_cursor":"eyJ2IjoxLCJmIjoidSIsInMiOiIwMTkyZjcwMCIsInAiOjU5fQ.c2lnbmF0dXJlMTZi","sync_position":59,"an_unknown_member":1}}
 """
 
     const val WALLET_FEED_PAGE = """
@@ -24,7 +24,15 @@ object OpenApiSyncExamples {
    "amount_minor":25000,"currency":"EGP","category_id":"0192f7a1-0000-7000-8000-0000000000c1","counter_wallet_id":null,"description":"Carrefour",
    "memo":null,"counterparty":null,"cleared":false,"created_by":"0192f700-0000-7000-8000-000000000003"}}],
  "meta":{"next_cursor":"eyJ2IjoxLCJmIjoidyIsInMiOiIwMTkyZjc5ZSIsInAiOjEzM30.c2lnbmF0dXJlMTZi","has_more":true,"limit":2,
-         "sync_cursor":"eyJ2IjoxLCJmIjoidyIsInMiOiIwMTkyZjc5ZSIsInAiOjEzM30.c2lnbmF0dXJlMTZi"}}
+         "sync_cursor":"eyJ2IjoxLCJmIjoidyIsInMiOiIwMTkyZjc5ZSIsInAiOjEzM30.c2lnbmF0dXJlMTZi","sync_position":133}}
+"""
+
+    /** `listWalletHeads` 200 `twoWallets` (sync.yaml v1.10): the first wallet has a purged horizon. */
+    const val HEADS_TWO_WALLETS = """
+{"data":[
+ {"wallet_id":"0192f79e-0000-7000-8000-000000000001","change_seq":812,"purged_change_seq":140},
+ {"wallet_id":"0192f79e-0000-7000-8000-000000000002","change_seq":133,"purged_change_seq":0,"an_unknown_member":true}],
+ "meta":{"next_cursor":null,"has_more":false,"limit":50}}
 """
 
     /** Two applied, one clash (the record was deleted on another device), one refused (not found). */

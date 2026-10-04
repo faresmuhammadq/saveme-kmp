@@ -35,6 +35,13 @@ interface SyncHandler {
     suspend fun batchItem(change: PendingChange): BatchItem? = null
 
     /**
+     * The batch items of one change, in the order they must reach the server. Items of one change travel
+     * consecutively in one request and are settled as one answer (spec 011 R-09): a transaction restore is a
+     * restore item followed by the person's upsert. The default wraps [batchItem]; null or empty = per record.
+     */
+    suspend fun batchItems(change: PendingChange): List<BatchItem>? = batchItem(change)?.let(::listOf)
+
+    /**
      * Records that must exist on the server before this change can be accepted (a transaction's
      * wallets and category). A create of one still waiting holds this change back (FR-022).
      */

@@ -42,7 +42,7 @@ class SyncResumeTest {
                 applier.apply(scope, records)
             }
         }
-        scopes.storeFeedPage("user:u1", "p0")
+        scopes.storeFeedPage("user:u1", "p0", null)
         var killAfterPage = 2
         api.user = { cursor ->
             when (cursor) {

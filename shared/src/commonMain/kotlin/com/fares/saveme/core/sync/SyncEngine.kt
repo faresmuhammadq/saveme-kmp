@@ -153,22 +153,24 @@ class SyncEngine(
             }
             val change = row.toDomain()
             val prerequisites = handler.prerequisites(change)
-            val item = if (syncApi != null) handler.batchItem(change) else null
-            if (item == null) {
+            val items = if (syncApi != null) handler.batchItems(change).orEmpty() else emptyList()
+            if (items.isEmpty()) {
                 if (flush(run)) return@withLock run.report()
                 if (isHeld(prerequisites, emptySet())) {
                     run.held = true
                     continue
                 }
-                if (sendOne(run, Entry(row, handler, null, prerequisites))) return@withLock run.report()
+                if (sendOne(run, Entry(row, handler, emptyList(), prerequisites))) return@withLock run.report()
             } else {
+                // The items of one change travel together: never split across two requests (spec 011 FR-014).
+                if (run.itemCount + items.size > MAX_BATCH && flush(run)) return@withLock run.report()
                 if (isHeld(prerequisites, run.keys)) {
                     run.held = true
                     continue
                 }
-                run.entries += Entry(row, handler, item, prerequisites)
-                run.keys += item.key
-                if (run.entries.size >= MAX_BATCH && flush(run)) return@withLock run.report()
+                run.entries += Entry(row, handler, items, prerequisites)
+                run.keys += items.first().key
+                if (run.itemCount >= MAX_BATCH && flush(run)) return@withLock run.report()
             }
         }
         if (flush(run)) return@withLock run.report()
@@ -193,14 +195,20 @@ class SyncEngine(
         var held = false
         var offline = false
 
+        /** Items waiting to be sent: a restore pair counts two (spec 011). */
+        val itemCount: Int get() = entries.sumOf { it.items.size }
+
         fun report() = DrainReport(written, appliedAny, offline)
     }
 
-    /** A due row with its handler, its batch item (null = per record) and what it needs first. */
+    /**
+     * A due row with its handler, its batch items (empty = per record; a transaction restore has two, settled as one
+     * answer, spec 011 R-09) and what it needs first.
+     */
     private class Entry(
         val row: PendingChangeEntity,
         val handler: SyncHandler,
-        val item: BatchItem?,
+        val items: List<BatchItem>,
         val prerequisites: List<RecordKey>,
     )
 
@@ -225,16 +233,17 @@ class SyncEngine(
         if (entries.isEmpty()) return false
         val api = checkNotNull(syncApi) { "batch entries without a batch client" }
         rows.withLock { entries.forEach { dao.upsert(it.row.copy(state = ChangeState.Sending.name)) } }
-        val answer = api.batch(entries.map { it.item!!.toDto() })
+        val itemCount = entries.sumOf { it.items.size }
+        val answer = api.batch(entries.flatMap { it.items }.map { it.toDto() })
         // Signed out while the request was in flight: sign-out emptied the queue and the tables, so nothing is applied (FR-028).
         if (currentAccountId() != run.account) return true
         return when {
             answer is ApiResult.Success && answerMatches(entries, answer.value) -> {
-                log.i { "batch of ${entries.size} items answered" }
+                log.i { "batch of $itemCount items answered" }
                 settleItems(run, entries, answer.value)
             }
             answer is ApiResult.Success -> {
-                log.w { "batch answer does not match its ${entries.size} items; sending per record" }
+                log.w { "batch answer does not match its $itemCount items; sending per record" }
                 sendEach(run, entries)
             }
             answer is ApiResult.Failure && answer.isShapeOrEndpointRefusal() -> {
@@ -245,7 +254,7 @@ class SyncEngine(
                 // A request-level answer is every item's answer, as a single write would have had it (FR-020).
                 val failure = answer as ApiResult<Nothing>
                 log.i {
-                    "batch of ${entries.size} items not answered: " +
+                    "batch of $itemCount items not answered: " +
                         (if (answer is ApiResult.Failure) "${answer.problem.code} (request ${answer.problem.requestId})" else answer::class.simpleName)
                 }
                 if (answer is ApiResult.Offline || answer is ApiResult.Timeout) run.offline = true
@@ -260,25 +269,32 @@ class SyncEngine(
     private suspend fun settleItems(run: DrainRun, entries: List<Entry>, results: List<BatchItemResultDto>): Boolean {
         val notAccepted = mutableSetOf<RecordKey>()
         var stop = false
-        for ((entry, result) in entries.zip(results)) {
-            val key = entry.item!!.key
+        var next = 0
+        for (entry in entries) {
+            val slice = results.subList(next, next + entry.items.size)
+            next += entry.items.size
+            val key = entry.items.first().key
             if (entry.prerequisites.any { it in notAccepted }) {
                 returnToWaiting(entry.row)
                 notAccepted += key
                 continue
             }
-            val answer = result.toApiResult()
+            val answer = reduce(slice.map { it.toApiResult() })
             stop = settleOne(run, entry, answer) || stop
             if (answer !is ApiResult.Success) notAccepted += key
         }
         return stop
     }
 
+    /** The answers of one change's items as one: the first that was not accepted, else the last (spec 011 R-09). */
+    private fun reduce(answers: List<ApiResult<JsonElement>>): ApiResult<JsonElement> =
+        answers.firstOrNull { it !is ApiResult.Success } ?: answers.last()
+
     /** The per-record fallback for a batch (FR-021): the same rows, in the same order, one request each. */
     private suspend fun sendEach(run: DrainRun, entries: List<Entry>): Boolean {
         val notAccepted = mutableSetOf<RecordKey>()
         for (entry in entries) {
-            val key = entry.item?.key ?: RecordKey(entry.row.recordType, entry.row.recordId)
+            val key = entry.items.firstOrNull()?.key ?: RecordKey(entry.row.recordType, entry.row.recordId)
             if (entry.prerequisites.any { it in notAccepted }) {
                 returnToWaiting(entry.row)
                 notAccepted += key
@@ -322,8 +338,7 @@ class SyncEngine(
     }
 
     private fun answerMatches(entries: List<Entry>, results: List<BatchItemResultDto>): Boolean =
-        results.size == entries.size && entries.zip(results).all { (entry, result) ->
-            val item = entry.item!!
+        results.size == entries.sumOf { it.items.size } && entries.flatMap { it.items }.zip(results).all { (item, result) ->
             result.id == item.id && result.type == item.type && when (result.outcome) {
                 OUTCOME_APPLIED -> result.record != null
                 OUTCOME_CONFLICT, OUTCOME_REJECTED -> result.problem != null
