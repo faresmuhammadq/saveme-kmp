@@ -9,7 +9,7 @@ tags:
 - tapOn: "Dev tools"
 - tapOn: "Components"
 - scrollUntilVisible:
-    element: "Money"
+    element: "(?i)money"
     direction: DOWN
 # Formats as in MoneyFormatterTest: sign before the currency code, U+2212 for negatives.
 # EGP balance -32_000 minor units -> "−EGP 320.00" (two fraction digits).

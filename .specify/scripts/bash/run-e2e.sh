@@ -105,6 +105,49 @@ adb -s "$serial" shell wm dismiss-keyguard >/dev/null 2>&1 || true
 # and swallows inputText.
 adb -s "$serial" shell settings put secure stylus_handwriting_enabled 0 >/dev/null 2>&1 || true
 
+# A phone carries its owner's settings, which the run changes and puts back on exit:
+# - an autofill service (a password manager) answers every sign-in with a "Save password?" sheet
+#   over the app, so it is switched off for the run;
+# - animations are switched off so taps don't land mid-transition.
+# The screen's stay-awake setting goes back to off.
+setting() { adb -s "$serial" shell settings get "$1" "$2" 2>/dev/null | tr -d '\r'; }
+orig_autofill=$(setting secure autofill_service)
+orig_hide_errors=$(setting global hide_error_dialogs)
+orig_anim=()
+for key in window_animation_scale transition_animation_scale animator_duration_scale; do
+    orig_anim+=("$key=$(setting global "$key")")
+done
+restore_device() {
+    adb -s "$serial" reverse "tcp:$PORT" "tcp:$PORT" >/dev/null 2>&1 || true
+    if [[ -n "$orig_autofill" && "$orig_autofill" != null ]]; then
+        adb -s "$serial" shell settings put secure autofill_service "$orig_autofill" >/dev/null 2>&1 || true
+    fi
+    for pair in "${orig_anim[@]}"; do
+        value="${pair#*=}"; [[ -z "$value" || "$value" == null ]] && value=1.0
+        adb -s "$serial" shell settings put global "${pair%%=*}" "$value" >/dev/null 2>&1 || true
+    done
+    adb -s "$serial" shell settings put global hide_error_dialogs "${orig_hide_errors/null/0}" >/dev/null 2>&1 || true
+    adb -s "$serial" shell svc power stayon false >/dev/null 2>&1 || true
+}
+trap restore_device EXIT
+adb -s "$serial" shell settings put secure autofill_service null >/dev/null 2>&1 || true
+# A slow emulator can raise "<system app> isn't responding" over the app under test; hide those.
+adb -s "$serial" shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
+for key in window_animation_scale transition_animation_scale animator_duration_scale; do
+    adb -s "$serial" shell settings put global "$key" 0 >/dev/null 2>&1 || true
+done
+
+# Maestro reinstalls its on-device driver when it thinks it is stale. Phones that confirm every USB
+# install on screen (Xiaomi HyperOS "Install via USB") refuse that unattended
+# (INSTALL_FAILED_USER_RESTRICTED), so once both driver packages are on the device, keep them.
+# Set E2E_REINSTALL_DRIVER=1 to let Maestro reinstall them (after a Maestro upgrade).
+driver_args=()
+if [[ "${E2E_REINSTALL_DRIVER:-0}" != 1 ]] \
+    && adb -s "$serial" shell pm list packages dev.mobile.maestro | grep -q 'dev.mobile.maestro$' \
+    && adb -s "$serial" shell pm list packages dev.mobile.maestro.test | grep -q 'dev.mobile.maestro.test$'; then
+    driver_args=(--no-reinstall-driver)
+fi
+
 # --- Build and install ------------------------------------------------------------------------
 # Every device reaches the backend through adb reverse on localhost. An emulator could use
 # 10.0.2.2, but Android 17 (API 37) blocks apps from private-network addresses unless they hold
@@ -165,7 +208,7 @@ grant_plus() {
 # Runs one Maestro file with the current env_args; <label> names its report and log.
 run_maestro() {
     local file="$1" label="$2"
-    maestro --device "$serial" test "$file" "${env_args[@]}" \
+    maestro --device "$serial" test "${driver_args[@]}" "$file" "${env_args[@]}" \
         --format junit --output "$out_dir/$label.xml" \
         --debug-output "$out_dir/debug/$label" > "$out_dir/$label.log" 2>&1
 }
