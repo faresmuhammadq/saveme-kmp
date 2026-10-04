@@ -50,6 +50,8 @@ data class TransactionEntity(
     @ColumnInfo(name = "carry_source_minor") val carrySourceMinor: Long = 0,
     @ColumnInfo(name = "carry_counter_minor") val carryCounterMinor: Long = 0,
     @ColumnInfo(name = "carry_confirmed_at") val carryConfirmedAt: String? = null,
+    /** Phone-only row showing a recurring confirmation the server has not answered yet (spec 010 R-07). */
+    @ColumnInfo(name = "pending_confirmation", defaultValue = "0") val pendingConfirmation: Boolean = false,
 ) {
     /** Amounts, notes and people are the person's own; they are never printed (P-09.2). */
     override fun toString() = "TransactionEntity($id, version=$version)"
@@ -71,8 +73,16 @@ interface TransactionDao {
     suspend fun get(id: String): TransactionEntity?
 
     /** The rows of the given ids and every row whose carry still waits for a wallet read, in one snapshot (research R-09). */
-    @Query("SELECT * FROM transactions WHERE id IN (:ids) OR carry_confirmed_at IS NOT NULL")
+    @Query("SELECT * FROM transactions WHERE id IN (:ids) OR carry_confirmed_at IS NOT NULL OR pending_confirmation = 1")
     fun observeRelevant(ids: List<String>): Flow<List<TransactionEntity>>
+
+    /** [observeRelevant] with no ids: rows carrying a balance effect the wallets' copies lack, and phone-only confirmations. */
+    @Query("SELECT * FROM transactions WHERE carry_confirmed_at IS NOT NULL OR pending_confirmation = 1")
+    fun observeCarriedOrPending(): Flow<List<TransactionEntity>>
+
+    /** The phone-only confirmation row of an occurrence, if the server has not replaced it (spec 010 R-07). */
+    @Query("SELECT * FROM transactions WHERE occurrence_id = :occurrenceId AND pending_confirmation = 1 AND version = 0")
+    suspend fun getPendingForOccurrence(occurrenceId: String): List<TransactionEntity>
 
     /** Every row (live or kept for its carry) where the wallet is the source or the destination. */
     @Query("SELECT * FROM transactions WHERE wallet_id = :walletId OR counter_wallet_id = :walletId")

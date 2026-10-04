@@ -1,0 +1,45 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; the editor previews month-end dates, the saved rule says its dates appear after sync.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn:
+    id: "recurring.add"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.amount"
+- inputText: "4500"
+- hideKeyboard
+- tapOn:
+    id: "ruleEditor.category"
+- extendedWaitUntil:
+    visible: "Rent"
+    timeout: 15000
+- tapOn: "Rent"
+- tapOn:
+    id: "ruleEditor.day"
+- eraseText: 3
+- inputText: "31"
+- hideKeyboard
+- assertVisible:
+    id: "ruleEditor.preview"
+- assertVisible: "Preview"
+- tapOn:
+    id: "ruleEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 15000
+- assertVisible: "Waiting to sync"
+- tapOn:
+    id: "recurring.rule.0"
+- extendedWaitUntil:
+    visible:
+      id: "rule.preview"
+    timeout: 15000
+- assertVisible: "Dates appear after sync"

@@ -23,6 +23,9 @@ class BatchHandler(
     val sent = mutableListOf<PendingChange>()
     val applied = mutableListOf<JsonElement>()
     val discarded = mutableListOf<String>()
+    var accepts: (PendingChange, JsonElement) -> Boolean = { _, _ -> false }
+
+    override suspend fun acceptsClash(change: PendingChange, current: JsonElement): Boolean = accepts(change, current)
 
     override suspend fun batchItem(change: PendingChange): BatchItem? {
         if (change.recordId in perRecordOnly) return null

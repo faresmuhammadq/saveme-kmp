@@ -38,7 +38,7 @@ class TransactionPostings(
     }
 
     override fun deltaFor(walletId: String): Flow<Long> =
-        snapshot().map { snap -> snap.queue.sumOf { it.deltaFor(walletId) } + snap.carryFor(walletId) }
+        snapshot().map { snap -> snap.queue.sumOf { it.deltaFor(walletId) } + snap.carryFor(walletId) + snap.pendingConfirmationsFor(walletId) }
 
     /**
      * True while a change touching the wallet waits, and also after it synced until a wallet read has
@@ -46,12 +46,21 @@ class TransactionPostings(
      * `currency_locked` may still read false and the editor must keep the currency locked (US1-S10).
      */
     override fun hasPending(walletId: String): Flow<Boolean> = snapshot().map { snap ->
-        snap.queue.any { walletId in it.touched } || snap.carriedTouch(walletId)
+        snap.queue.any { walletId in it.touched } || snap.carriedTouch(walletId) || snap.pendingTouch(walletId)
     }
 
     private class Snapshot(val queue: List<QueuedEffect>, val rows: List<TransactionEntity>) {
         fun carriedTouch(walletId: String): Boolean =
             rows.any { it.carryConfirmedAt != null && (it.walletId == walletId || it.counterWalletId == walletId) }
+
+        private fun pendingRows() = rows.filter { it.pendingConfirmation && it.version == 0L }
+
+        fun pendingTouch(walletId: String): Boolean = pendingRows().any { it.walletId == walletId || it.counterWalletId == walletId }
+
+        /** The full effect of the phone-only confirmation rows on [walletId] (both wallets of a transfer; spec 010 R-07). */
+        fun pendingConfirmationsFor(walletId: String): Long = pendingRows().sumOf {
+            BalanceEffect.of(it.kind, it.amountMinor, it.walletId, it.counterWalletId, it.deletedAt != null, walletId)
+        }
 
         /** The effect the server confirmed on [walletId] that no wallet read has included yet. */
         fun carryFor(walletId: String): Long = rows.sumOf { row ->

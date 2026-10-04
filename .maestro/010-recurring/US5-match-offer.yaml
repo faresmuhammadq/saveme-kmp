@@ -1,0 +1,61 @@
+# deferred: E2E on owner's device
+# US5: Given "Rent 4,500.00" due today, When the person starts recording an expense with the rent category, Then the editor offers "Confirm ... instead"; accepting records one linked transaction.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "transactions.due.0"
+    timeout: 60000
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- inputText: "4500"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: "Rent"
+    timeout: 15000
+- tapOn: "Rent"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.match.0"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.match.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.waiting"
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- assertTrue: ${output.transactions[0].occurrence_id != null}

@@ -387,5 +387,8 @@ internal fun buildView(row: TransactionEntity, change: com.fares.saveme.core.syn
         canEdit = canEdit,
         canDelete = canDelete,
         walletCurrency = context.wallets[row.walletId]?.shown?.currency ?: shown.currency,
+        occurrenceId = row.occurrenceId,
+        recurringRuleId = row.recurringRuleId,
+        pendingConfirmation = row.pendingConfirmation && row.version == 0L,
     )
 }

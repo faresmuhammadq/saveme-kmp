@@ -659,4 +659,273 @@
     <string name="tx_cd_money_out">مبلغ صادر</string>
     <string name="tx_cd_clear_search">مسح البحث</string>
     <string name="tx_cd_remove_filter">إزالة التصفية %1$s</string>
+
+    <!-- Recurring (spec 010) -->
+    <!-- Screens and lists -->
+    <string name="recurring_title">متكررة</string>
+    <string name="recurring_rule_title">قاعدة متكررة</string>
+    <string name="recurring_new_title">قاعدة متكررة جديدة</string>
+    <string name="recurring_edit_title">تعديل القاعدة المتكررة</string>
+    <string name="recurring_change_from_title">التغيير من تاريخ</string>
+    <string name="recurring_occurrence_title">دفعة</string>
+    <string name="recurring_add">إضافة متكررة</string>
+    <string name="recurring_open">متكررة</string>
+    <string name="recurring_open_subtitle">القواعد والمستحقة والقادمة</string>
+    <string name="recurring_empty">لا توجد قواعد متكررة بعد.</string>
+    <string name="recurring_empty_hint">أنشئ الإيجار أو الراتب أو القسط مرة واحدة، ثم أكّد كل موعد عند حلوله.</string>
+    <string name="recurring_empty_viewer">لا توجد قواعد متكررة في هذه المحفظة.</string>
+    <string name="recurring_section_due">مستحقة</string>
+    <string name="recurring_section_upcoming">القادمة</string>
+    <string name="recurring_section_rules">القواعد</string>
+    <string name="recurring_section_active">نشطة</string>
+    <string name="recurring_section_paused">متوقفة مؤقتًا</string>
+    <string name="recurring_section_ended">منتهية</string>
+    <string name="recurring_section_history">السابقة</string>
+    <string name="recurring_see_all">عرض الكل (%1$d)</string>
+    <string name="recurring_no_upcoming">لا شيء قادم.</string>
+    <string name="recurring_all_wallets">كل المحافظ</string>
+    <string name="recurring_refresh_failed">تعذّر التحديث. نعرض ما على هذا الهاتف.</string>
+    <string name="recurring_field_wallet">المحفظة</string>
+    <string name="recurring_occurrences_title">المواعيد</string>
+    <string name="recurring_occurrences_empty">لا مواعيد بعد.</string>
+    <string name="recurring_make_recurring">اجعلها متكررة</string>
+
+    <!-- States -->
+    <string name="recurring_state_upcoming">قادمة</string>
+    <string name="recurring_state_due">مستحقة</string>
+    <string name="recurring_state_missed">فائتة</string>
+    <string name="recurring_state_confirmed">مؤكدة</string>
+    <string name="recurring_state_skipped">متخطاة</string>
+    <string name="recurring_state_unknown">أخرى</string>
+    <string name="recurring_payout">القبض</string>
+    <string name="recurring_round_number">الدفعة %1$d</string>
+    <string name="recurring_edited">معدّلة</string>
+    <string name="recurring_originally">الموعد الأصلي %1$s</string>
+    <string name="recurring_status_active">نشطة</string>
+    <string name="recurring_status_paused">متوقفة مؤقتًا</string>
+    <string name="recurring_status_ended">منتهية</string>
+    <string name="recurring_status_unknown">أخرى</string>
+    <string name="recurring_status_waiting">في انتظار المزامنة</string>
+    <string name="recurring_status_clash">تغيّرت على جهاز آخر.</string>
+    <string name="recurring_status_deleted">حُذفت على جهاز آخر.</string>
+    <string name="recurring_status_not_saved">لم تُحفظ.</string>
+    <string name="recurring_confirmation_waiting">التأكيد في انتظار المزامنة</string>
+    <string name="recurring_clash_body">اختر أيهما تحتفظ به.</string>
+    <string name="recurring_clash_delete_body">حذفت هذه القاعدة هنا، لكنها تغيّرت على جهاز آخر.</string>
+    <string name="recurring_deleted_body">حُذف هذا على جهاز آخر. اقبل الحذف لإزالته من هنا.</string>
+    <string name="recurring_held">في انتظار التغيير على %1$s</string>
+    <string name="recurring_cancelled_with">أُلغي هذا التغيير مع التغيير على %1$s</string>
+    <string name="recurring_update_after_sync">تتحدّث الدفعات القادمة بعد المزامنة</string>
+    <string name="recurring_dates_after_sync">تظهر المواعيد بعد المزامنة</string>
+    <string name="recurring_unsynced_hint">حُفظت على هذا الهاتف. تظهر المواعيد بعد المزامنة.</string>
+    <string name="recurring_readonly_unknown">تستخدم هذه القاعدة إعدادات لا يعرفها التطبيق بعد. حدّث التطبيق لتغييرها.</string>
+    <string name="recurring_readonly_ended">انتهت هذه القاعدة. يمكنك حذفها فقط.</string>
+    <string name="recurring_readonly_viewer">يمكنك الاطلاع على هذه القاعدة دون تغييرها.</string>
+
+    <!-- Cadence and amounts -->
+    <plurals name="recurring_cadence_daily">
+        <item quantity="zero">كل %1$d يوم</item>
+        <item quantity="one">كل يوم</item>
+        <item quantity="two">كل يومين</item>
+        <item quantity="few">كل %1$d أيام</item>
+        <item quantity="many">كل %1$d يومًا</item>
+        <item quantity="other">كل %1$d يوم</item>
+    </plurals>
+    <plurals name="recurring_cadence_weekly">
+        <item quantity="zero">كل %1$d أسبوع يوم %2$s</item>
+        <item quantity="one">كل أسبوع يوم %2$s</item>
+        <item quantity="two">كل أسبوعين يوم %2$s</item>
+        <item quantity="few">كل %1$d أسابيع يوم %2$s</item>
+        <item quantity="many">كل %1$d أسبوعًا يوم %2$s</item>
+        <item quantity="other">كل %1$d أسبوع يوم %2$s</item>
+    </plurals>
+    <plurals name="recurring_cadence_monthly">
+        <item quantity="zero">كل %1$d شهر يوم %2$d</item>
+        <item quantity="one">كل شهر يوم %2$d</item>
+        <item quantity="two">كل شهرين يوم %2$d</item>
+        <item quantity="few">كل %1$d أشهر يوم %2$d</item>
+        <item quantity="many">كل %1$d شهرًا يوم %2$d</item>
+        <item quantity="other">كل %1$d شهر يوم %2$d</item>
+    </plurals>
+    <plurals name="recurring_cadence_yearly">
+        <item quantity="zero">كل %1$d سنة في %2$s</item>
+        <item quantity="one">كل سنة في %2$s</item>
+        <item quantity="two">كل سنتين في %2$s</item>
+        <item quantity="few">كل %1$d سنوات في %2$s</item>
+        <item quantity="many">كل %1$d سنة في %2$s</item>
+        <item quantity="other">كل %1$d سنة في %2$s</item>
+    </plurals>
+    <string name="recurring_cadence_unknown">توقيت آخر</string>
+    <plurals name="recurring_cadence_times">
+        <item quantity="zero">بعد %1$d مرة</item>
+        <item quantity="one">بعد مرة واحدة</item>
+        <item quantity="two">بعد مرتين</item>
+        <item quantity="few">بعد %1$d مرات</item>
+        <item quantity="many">بعد %1$d مرة</item>
+        <item quantity="other">بعد %1$d مرة</item>
+    </plurals>
+    <string name="recurring_cadence_until">حتى %1$s</string>
+    <string name="recurring_next_date">التالية: %1$s</string>
+    <string name="recurring_next_none">لا موعد قادم</string>
+    <string name="recurring_amount_of_total">%1$s من %2$s</string>
+    <string name="recurring_payout_amount">القبض %1$s</string>
+    <string name="recurring_auto_on">التأكيد التلقائي: مفعّل</string>
+    <string name="recurring_auto_off">التأكيد التلقائي: متوقف</string>
+    <string name="recurring_author">أضافها %1$s</string>
+    <string-array name="recurring_weekdays">
+        <item>الاثنين</item>
+        <item>الثلاثاء</item>
+        <item>الأربعاء</item>
+        <item>الخميس</item>
+        <item>الجمعة</item>
+        <item>السبت</item>
+        <item>الأحد</item>
+    </string-array>
+
+    <!-- Rule editor -->
+    <string name="recurring_field_preset">نوع القاعدة</string>
+    <string name="recurring_preset_custom">مخصصة</string>
+    <string name="recurring_preset_gameya">جمعية</string>
+    <string name="recurring_preset_installment">قسط</string>
+    <string name="recurring_field_kind">النوع</string>
+    <string name="recurring_field_amount_round">المبلغ في كل دفعة</string>
+    <string name="recurring_field_basis">المبلغ هو</string>
+    <string name="recurring_basis_each">كل قسط</string>
+    <string name="recurring_basis_total">الإجمالي</string>
+    <string name="recurring_field_rounds">عدد الدفعات</string>
+    <string name="recurring_field_payout_round">دفعة القبض</string>
+    <string name="recurring_field_payout_category">فئة القبض</string>
+    <string name="recurring_field_frequency">التكرار</string>
+    <string name="recurring_frequency_daily">يوميًا</string>
+    <string name="recurring_frequency_weekly">أسبوعيًا</string>
+    <string name="recurring_frequency_monthly">شهريًا</string>
+    <string name="recurring_frequency_yearly">سنويًا</string>
+    <string name="recurring_frequency_unknown">أخرى</string>
+    <string name="recurring_field_interval">كل</string>
+    <string name="recurring_unit_daily">أيام</string>
+    <string name="recurring_unit_weekly">أسابيع</string>
+    <string name="recurring_unit_monthly">أشهر</string>
+    <string name="recurring_unit_yearly">سنوات</string>
+    <string name="recurring_field_day">اليوم من الشهر</string>
+    <string name="recurring_field_day_help">الأشهر الأقصر تستخدم آخر يوم فيها.</string>
+    <string name="recurring_field_start">تبدأ</string>
+    <string name="recurring_field_from">التغيير من</string>
+    <string name="recurring_from_note">الدفعات قبل هذا التاريخ تبقى كما هي.</string>
+    <string name="recurring_field_end">تنتهي</string>
+    <string name="recurring_end_never">أبدًا</string>
+    <string name="recurring_end_date">في تاريخ</string>
+    <string name="recurring_end_count">بعد عدد من المرات</string>
+    <string name="recurring_field_end_date">تاريخ الانتهاء</string>
+    <string name="recurring_field_count">عدد المرات</string>
+    <string name="recurring_auto_confirm">تأكيد تلقائي</string>
+    <string name="recurring_auto_help">عند التفعيل يضيف الخادم كل دفعة في تاريخها باسم صاحب القاعدة، ولا يضيف دفعات تسبق يوم التفعيل.</string>
+    <string name="recurring_fixed_by_type">يحدده نوع القاعدة</string>
+    <string name="recurring_locked_note">لا يمكن تغيير النوع والمحفظة والوجهة بعد حفظ القاعدة.</string>
+    <string name="recurring_frozen_reason">لا يمكن تغييره بعد تأكيد دفعة أو تخطيها. استخدم التغيير من تاريخ.</string>
+    <string name="recurring_preview_label">معاينة</string>
+    <string name="recurring_preview_title">المواعيد القادمة</string>
+    <string name="recurring_preview_none">لا مواعيد لعرضها.</string>
+    <string name="recurring_save">حفظ</string>
+    <string name="recurring_save_rule">حفظ القاعدة</string>
+
+    <!-- Field problems -->
+    <string name="recurring_error_required">املأ هذا الحقل.</string>
+    <string name="recurring_error_invalid">راجع هذا الحقل.</string>
+    <string name="recurring_error_out_of_range">استخدم رقمًا من %1$d إلى %2$d.</string>
+    <string name="recurring_error_too_long">استخدم %1$d حرفًا على الأكثر.</string>
+    <string name="recurring_error_amount_digits">استخدم %1$d أرقام على الأكثر بعد الفاصلة العشرية.</string>
+    <string name="recurring_error_total_small">الإجمالي صغير جدًا لتقسيمه على هذا العدد من الدفعات.</string>
+    <string name="recurring_error_payout_large">مبلغ القبض كبير جدًا.</string>
+    <string name="recurring_error_cuts_round">لا يمكن أن يسبق الانتهاء دفعة أكدتها أو تخطيتها.</string>
+    <string name="recurring_error_from_range">اختر تاريخًا بعد آخر دفعة مؤكدة أو متخطاة، وليس قبل بداية القاعدة.</string>
+    <string name="recurring_error_end_before_start">لا يمكن أن يسبق الانتهاء البداية.</string>
+    <string name="recurring_error_payout_category">اختر فئة الدخل الخاصة بالقبض.</string>
+    <string name="recurring_error_immutable">لا يمكن تغيير هذا بعد حفظ القاعدة.</string>
+    <string name="recurring_error_date_range">اختر تاريخًا بين 1900 و2999.</string>
+    <string name="recurring_error_amount_empty">أدخل المبلغ.</string>
+    <string name="recurring_error_amount_positive">أدخل مبلغًا أكبر من صفر.</string>
+    <string name="recurring_error_category_required">اختر فئة.</string>
+    <string name="recurring_error_destination_required">اختر المحفظة التي ستحوّل إليها.</string>
+
+    <!-- Refusals, by code and field -->
+    <string name="recurring_reason_not_verified">أكّد عنوان بريدك الإلكتروني لحفظ هذا.</string>
+    <string name="recurring_reason_gone">لم تعد هذه القاعدة أو محفظتها متاحة.</string>
+    <string name="recurring_reason_occurrence_gone">لم تعد هذه الدفعة متاحة.</string>
+    <string name="recurring_reason_no_right">لا يمكنك تغيير القواعد المتكررة في هذه المحفظة.</string>
+    <string name="recurring_reason_no_right_other">لا يمكنك إضافة المعاملات في المحفظة الأخرى.</string>
+    <string name="recurring_reason_category">لم تعد هذه الفئة صالحة للاستخدام. اختر فئة أخرى.</string>
+    <string name="recurring_reason_destination">لم تعد المحفظة التي تحوّل إليها متاحة.</string>
+    <string name="recurring_reason_currency_changed">تغيّرت عملة هذه المحفظة إلى %1$s. أدخل المبلغ مرة أخرى.</string>
+    <string name="recurring_reason_currencies_differ">أصبحت المحفظتان بعملتين مختلفتين.</string>
+    <string name="recurring_reason_range">تاريخ أو مبلغ خارج النطاق المسموح.</string>
+    <string name="recurring_reason_confirmation">رُفض التأكيد. حاول مرة أخرى.</string>
+    <string name="recurring_reason_immutable">جرى تغيير ما لا يمكن تغييره بعد حفظ القاعدة.</string>
+    <string name="recurring_reason_invalid">يحتاج شيء هنا إلى تصحيح.</string>
+    <string name="recurring_reason_other">لم تُحفظ. المرجع: %1$s</string>
+    <string name="recurring_reason_other_plain">لم تُحفظ.</string>
+    <string name="recurring_auto_refusal_not_permitted">لم يتم التأكيد التلقائي: لم يعد بإمكان صاحب القاعدة إضافة معاملات هنا.</string>
+    <string name="recurring_auto_refusal_destination">لم يتم التأكيد التلقائي: المحفظة التي تحوّل إليها غير متاحة.</string>
+    <string name="recurring_auto_refusal_currency">لم يتم التأكيد التلقائي: المحفظتان بعملتين مختلفتين.</string>
+    <string name="recurring_auto_refusal_unknown">لم يتم التأكيد التلقائي.</string>
+
+    <!-- Rule detail actions -->
+    <string name="recurring_action_edit">تعديل</string>
+    <string name="recurring_action_change_from">التغيير من تاريخ</string>
+    <string name="recurring_action_pause">إيقاف مؤقت</string>
+    <string name="recurring_action_resume">استئناف</string>
+    <string name="recurring_action_end">إنهاء القاعدة</string>
+    <string name="recurring_action_delete">حذف القاعدة</string>
+    <string name="recurring_action_catch_up">التحقق من مواعيد جديدة</string>
+    <string name="recurring_catch_up_hint">يحتاج إلى اتصال.</string>
+    <string name="recurring_catch_up_offline">التحقق من مواعيد جديدة يحتاج إلى اتصال.</string>
+    <string name="recurring_catch_up_done">المواعيد محدّثة.</string>
+    <string name="recurring_catch_up_failed">تعذّر التحقق من مواعيد جديدة. حاول لاحقًا.</string>
+    <string name="recurring_catch_up_failed_reference">تعذّر التحقق من مواعيد جديدة. المرجع: %1$s</string>
+    <string name="recurring_end_title">إنهاء هذه القاعدة؟</string>
+    <string name="recurring_end_body">تختفي الدفعات التي بعد اليوم. تبقى الدفعات المستحقة لتؤكدها أو تتخطاها.</string>
+    <string name="recurring_end_confirm">نعم، أنهِها</string>
+    <string name="recurring_delete_title">حذف هذه القاعدة؟</string>
+    <string name="recurring_delete_body">تبقى المعاملات التي أنتجتها. لا يمكن التراجع عن الحذف.</string>
+    <string name="recurring_delete_confirm">نعم، احذفها</string>
+
+    <!-- Occurrence -->
+    <string name="recurring_confirm">تأكيد</string>
+    <string name="recurring_skip">تخطي</string>
+    <string name="recurring_unskip">التراجع عن التخطي</string>
+    <string name="recurring_edit_one">تعديل هذه الدفعة</string>
+    <string name="recurring_change_confirmation">تغيير التأكيد</string>
+    <string name="recurring_cancel_confirmation">إلغاء التأكيد</string>
+    <string name="recurring_open_transaction">فتح المعاملة</string>
+    <string name="recurring_open_rule">فتح القاعدة</string>
+    <string name="recurring_notice_already">تم تأكيدها بالفعل</string>
+    <string name="recurring_notice_already_body">تم تأكيدها على جهاز آخر أو تلقائيًا. لم تُضف أي معاملة مرتين.</string>
+    <string name="recurring_confirmed_body">تم تأكيد هذه الدفعة ولا يمكن تغييرها.</string>
+    <string name="recurring_no_dates_yet">تظهر المواعيد بعد المزامنة، وعندها يمكنك تأكيدها أو تخطيها.</string>
+    <string name="recurring_form_confirm_title">تأكيد</string>
+    <string name="recurring_form_edit_title">تعديل هذه الدفعة</string>
+
+    <!-- Transactions, Home, wallet detail -->
+    <plurals name="recurring_due_count">
+        <item quantity="zero">%1$d مستحقة</item>
+        <item quantity="one">دفعة واحدة مستحقة</item>
+        <item quantity="two">دفعتان مستحقتان</item>
+        <item quantity="few">%1$d دفعات مستحقة</item>
+        <item quantity="many">%1$d دفعة مستحقة</item>
+        <item quantity="other">%1$d دفعة مستحقة</item>
+    </plurals>
+    <string name="recurring_match_offer">أكّد %1$s (%2$s) بدلًا من ذلك</string>
+    <string name="recurring_match_title">تبدو هذه من الدفعات المتكررة</string>
+
+    <!-- Accessibility -->
+    <string name="recurring_cd_add">إضافة متكررة</string>
+    <string name="recurring_cd_state">الحالة: %1$s</string>
+    <string name="recurring_cd_due_card">%1$s. افتح المتكررة.</string>
+    <string name="recurring_cd_preview">معاينة المواعيد القادمة</string>
+    <string name="recurring_cd_open_rule">فتح القاعدة %1$s</string>
+
+    <!-- Catalogue -->
+    <string name="recurring_catalog_section">متكررة</string>
+    <string name="recurring_catalog_rent">الإيجار</string>
+    <string name="recurring_catalog_gameya">جمعية العمل</string>
+    <string name="recurring_catalog_installment">قسط اللابتوب</string>
 </resources>

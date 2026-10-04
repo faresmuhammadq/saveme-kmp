@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; the phone confirms the due item. The other device confirms the same occurrence on the server meanwhile.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- tapOn:
+    id: "transactions.due.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.confirm"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.confirm"
+- tapOn:
+    id: "occurrence.form.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: confirmOccurrence, SLOT: B, WALLET: "Alpha" }

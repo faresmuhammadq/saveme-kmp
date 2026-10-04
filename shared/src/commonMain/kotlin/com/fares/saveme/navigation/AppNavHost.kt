@@ -49,6 +49,15 @@ import com.fares.saveme.feature.transactions.ui.list.TransactionsEffect
 import com.fares.saveme.feature.transactions.ui.list.TransactionsRoute
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailEffect
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailRoute
+import com.fares.saveme.feature.recurring.ui.editor.RuleEditorEffect
+import com.fares.saveme.feature.recurring.ui.editor.RuleEditorRoute
+import com.fares.saveme.feature.recurring.domain.model.RulePrefill
+import com.fares.saveme.feature.recurring.ui.list.RecurringEffect
+import com.fares.saveme.feature.recurring.ui.list.RecurringRoute
+import com.fares.saveme.feature.recurring.ui.rule.RuleDetailEffect
+import com.fares.saveme.feature.recurring.ui.rule.RuleDetailRoute
+import com.fares.saveme.feature.recurring.ui.occurrence.OccurrenceEffect
+import com.fares.saveme.feature.recurring.ui.occurrence.OccurrenceRoute
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorEffect
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorRoute
 import com.fares.saveme.feature.wallets.ui.list.WalletsEffect
@@ -222,6 +231,7 @@ fun AppNavHost(
                         HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
                         HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
                         HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
+                        HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
                 })
@@ -301,6 +311,7 @@ fun AppNavHost(
                         when (effect) {
                             is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
                             is WalletDetailEffect.OpenTransactions -> appStack.add(TransactionsKey(effect.walletId))
+                            is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
                             is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
                             WalletDetailEffect.NavigateBack -> appStack.pop()
                             is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
@@ -352,6 +363,8 @@ fun AppNavHost(
                     onEffect = { effect ->
                         when (effect) {
                             is TransactionsEffect.OpenEditor -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                            is TransactionsEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                            is TransactionsEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
                             TransactionsEffect.Back -> appStack.pop()
                             TransactionsEffect.RequireVerification -> Unit // routed to onRequireVerification
                         }
@@ -367,7 +380,92 @@ fun AppNavHost(
                         when (effect) {
                             TransactionEditorEffect.Close -> appStack.pop()
                             TransactionEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
+                            is TransactionEditorEffect.MakeRecurring -> {
+                                val draft = effect.draft
+                                appStack.pop()
+                                appStack.add(
+                                    RuleEditorKey(
+                                        walletId = draft.walletId,
+                                        prefill = RulePrefill(
+                                            walletId = draft.walletId, kind = draft.kind, amountMinor = draft.amountMinor,
+                                            categoryId = draft.categoryId, counterWalletId = draft.counterWalletId,
+                                            description = draft.description, memo = draft.memo, counterparty = draft.counterparty,
+                                            startDate = draft.date,
+                                        ),
+                                    ),
+                                )
+                            }
+                            is TransactionEditorEffect.OpenOccurrence -> {
+                                appStack.pop()
+                                appStack.add(OccurrenceKey(effect.id))
+                            }
+                            is TransactionEditorEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
                             is TransactionEditorEffect.ShowMessage, TransactionEditorEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<RecurringKey> { key ->
+                RecurringRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is RecurringEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
+                            is RecurringEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                            is RecurringEffect.OpenEditor -> appStack.add(RuleEditorKey(walletId = effect.walletId))
+                            RecurringEffect.Back -> appStack.pop()
+                            RecurringEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<RuleDetailKey> { key ->
+                RuleDetailRoute(
+                    ruleId = key.ruleId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            RuleDetailEffect.Close -> appStack.pop()
+                            is RuleDetailEffect.OpenEditor ->
+                                appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = effect.fromDate))
+                            is RuleDetailEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                            is RuleDetailEffect.ShowMessage, RuleDetailEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<RuleEditorKey> { key ->
+                RuleEditorRoute(
+                    walletId = key.walletId,
+                    ruleId = key.ruleId,
+                    fromDate = key.fromDate,
+                    prefill = key.prefill,
+                    onEffect = { effect ->
+                        when (effect) {
+                            RuleEditorEffect.Close -> appStack.pop()
+                            is RuleEditorEffect.OpenFromDate -> {
+                                appStack.pop()
+                                appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = true))
+                            }
+                            RuleEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
+                            is RuleEditorEffect.ShowMessage, RuleEditorEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<OccurrenceKey> { key ->
+                OccurrenceRoute(
+                    occurrenceId = key.occurrenceId,
+                    confirm = key.confirm,
+                    onEffect = { effect ->
+                        when (effect) {
+                            OccurrenceEffect.Close -> appStack.pop()
+                            is OccurrenceEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                            is OccurrenceEffect.OpenRule -> appStack.add(RuleDetailKey(effect.ruleId))
+                            is OccurrenceEffect.ShowMessage, OccurrenceEffect.RequireVerification -> Unit // shown by the route
                         }
                     },
                     onRequireVerification = { emailNotVerifiedVisible = true },

@@ -25,6 +25,8 @@ import com.fares.saveme.designsystem.catalog.ListsSection
 import com.fares.saveme.designsystem.catalog.MembersSection
 import com.fares.saveme.designsystem.catalog.MoneySection
 import com.fares.saveme.designsystem.catalog.PlansSection
+import com.fares.saveme.designsystem.catalog.RecurringOccurrencesSection
+import com.fares.saveme.designsystem.catalog.RecurringRulesSection
 import com.fares.saveme.designsystem.catalog.SelectionSection
 import com.fares.saveme.designsystem.catalog.SheetSection
 import com.fares.saveme.designsystem.catalog.TransactionsSection
@@ -101,6 +103,8 @@ class ComponentScreenshotTest(
             arrayOf("rows", @Composable { RowsSection() }),
             arrayOf("dialogs", @Composable { DialogsSection() }),
             arrayOf("transactions", @Composable { TransactionsSection() }),
+            arrayOf("recurring_occurrences", @Composable { RecurringOccurrencesSection() }),
+            arrayOf("recurring_rules", @Composable { RecurringRulesSection() }),
         )
     }
 }

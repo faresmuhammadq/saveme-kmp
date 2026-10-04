@@ -19,6 +19,8 @@ import com.fares.saveme.feature.categories.domain.CategoriesService
 import com.fares.saveme.feature.categories.domain.CategoriesSyncCoordinator
 import com.fares.saveme.feature.categories.domain.CategoryReferencesCleanup
 import com.fares.saveme.feature.categories.domain.DefaultCategoriesService
+import com.fares.saveme.feature.categories.domain.PendingCategoryUses
+import com.fares.saveme.feature.categories.domain.UnionCategoryUses
 import com.fares.saveme.feature.categories.domain.model.CategoryKind
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorViewModel
 import com.fares.saveme.feature.categories.ui.list.CategoriesViewModel
@@ -60,7 +62,7 @@ val categoriesModule = module {
             references = get(),
             engine = get(),
             authState = get<SessionManager>().state,
-            pendingUses = get(),
+            pendingUses = UnionCategoryUses(getAll<PendingCategoryUses>()),
             language = languages.language.map { it ?: languages.device() },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
             runner = get(),

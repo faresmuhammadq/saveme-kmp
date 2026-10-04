@@ -1,0 +1,33 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the phone's confirmation meets the confirmed copy, is dropped, and the occurrence says so. One transaction remains.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- tapOn:
+    id: "transactions.recurring"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.list"
+    timeout: 15000
+- tapOn:
+    id: "recurring.rule.0"
+- extendedWaitUntil:
+    visible:
+      id: "rule.occurrence.0"
+    timeout: 15000
+- tapOn:
+    id: "rule.occurrence.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.state"
+    timeout: 15000
+- assertVisible: "Already confirmed"

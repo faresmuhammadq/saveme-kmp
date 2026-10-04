@@ -1,0 +1,12 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; the check says it needs a connection and queues nothing.
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- tapOn:
+    id: "rule.catchUp"
+- extendedWaitUntil:
+    visible: "Checking for new dates needs a connection."
+    timeout: 15000

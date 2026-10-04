@@ -209,7 +209,13 @@ class SyncEngine(
      * and is not an item earlier in the same request (spec 009 R-07).
      */
     private suspend fun isHeld(prerequisites: List<RecordKey>, inRequest: Set<RecordKey>): Boolean =
-        prerequisites.any { key -> key !in inRequest && dao.get(key.recordType, key.recordId)?.baseVersion == 0L }
+        prerequisites.any { key ->
+            if (key.untilSettled) {
+                dao.get(key.recordType, key.recordId) != null
+            } else {
+                key !in inRequest && dao.get(key.recordType, key.recordId)?.baseVersion == 0L
+            }
+        }
 
     /** Sends the batch built so far; true when nothing else can be sent now. */
     private suspend fun flush(run: DrainRun): Boolean {
@@ -376,6 +382,14 @@ class SyncEngine(
                 val row = current ?: return false
                 val clash = result.problem.current
                 when {
+                    result.code == ApiErrorCode.VERSION_CONFLICT && clash != null &&
+                        handler.acceptsClash(row.toDomain(), clash) -> {
+                        handler.applyServerCopy(clash)
+                        dao.delete(sent.recordType, sent.recordId)
+                        handler.onDiscarded(sent.recordId)
+                        log.i { "clash accepted on ${sent.recordType}/${sent.recordId} (request ${result.problem.requestId})" }
+                        return false
+                    }
                     result.code == ApiErrorCode.VERSION_CONFLICT && clash != null -> {
                         dao.upsert(row.copy(state = ChangeState.Clash.name, clashJson = clash.toString(), attempts = 0, nextAttemptAt = null))
                         log.i { "clash on ${sent.recordType}/${sent.recordId} (request ${result.problem.requestId})" }

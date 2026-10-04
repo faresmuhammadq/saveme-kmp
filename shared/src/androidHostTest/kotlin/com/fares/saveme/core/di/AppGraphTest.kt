@@ -101,11 +101,43 @@ class AppGraphTest {
         assertTrue(koin.getAll<SyncHandler>().any { it is TransactionSyncHandler && it.recordType == "transaction" })
         // C4's and C5's zero bindings are gone: the hooks resolve to the transactions implementations.
         assertTrue(koin.get<PendingPostings>() is TransactionPostings)
-        assertTrue(koin.get<PendingCategoryUses>() is TransactionCategoryUses)
+        // Spec 010 R-10: the hook is a union of every bound source (transactions' and recurring's).
+        assertTrue(koin.getAll<PendingCategoryUses>().any { it is TransactionCategoryUses })
         assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is TransactionsWalletCleanup })
         assertEquals(1, koin.getAll<PendingPostings>().size)
-        assertEquals(1, koin.getAll<PendingCategoryUses>().size)
+        assertEquals(2, koin.getAll<PendingCategoryUses>().size)
         assertNotNull(koin.get<TransactionsSyncCoordinator>())
+    }
+
+    @Test
+    fun theRecurringModuleStartsWithBothHandlers() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        assertNotNull(koin.get<SyncEngine>())
+        val types = koin.getAll<SyncHandler>().map { it.recordType }
+        assertTrue("recurring_rule" in types)
+        assertTrue("occurrence" in types)
+        assertTrue(koin.get<com.fares.saveme.feature.transactions.domain.OccurrenceTransactions>() is com.fares.saveme.feature.transactions.domain.DefaultOccurrenceTransactions)
+    }
+
+    @Test
+    fun theRecurringHooksOverrideTheDefaultsAndTheServiceResolves() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        assertTrue(koin.get<com.fares.saveme.feature.recurring.domain.RecurringService>() is com.fares.saveme.feature.recurring.domain.DefaultRecurringService)
+        assertTrue(koin.get<com.fares.saveme.feature.transactions.domain.RecurringLinks>() is com.fares.saveme.feature.recurring.domain.RecurringLinksImpl)
+        assertTrue(koin.get<com.fares.saveme.feature.auth.domain.DueSummary>() is com.fares.saveme.feature.recurring.domain.RecurringDueSummary)
+        assertTrue(koin.getAll<PendingCategoryUses>().any { it is com.fares.saveme.feature.recurring.domain.RecurringCategoryUses })
+        assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is com.fares.saveme.feature.recurring.domain.RecurringWalletCleanup })
+        assertNotNull(koin.get<com.fares.saveme.feature.categories.domain.CategoriesService>())
     }
 
     @Test
@@ -122,11 +154,12 @@ class AppGraphTest {
         assertNotNull(koin.get<SyncEngine>())
         val appliers = koin.getAll<FeedApplier>()
         val pairs = appliers.map { it.scopeKind to it.rowType }
-        assertEquals(8, appliers.size)
+        assertEquals(10, appliers.size)
         assertEquals(
             setOf(
                 ScopeKind.User to "profile", ScopeKind.User to "device_session", ScopeKind.User to "category", ScopeKind.User to "wallet_member",
                 ScopeKind.Wallet to "wallet", ScopeKind.Wallet to "wallet_member", ScopeKind.Wallet to "category_reference", ScopeKind.Wallet to "transaction",
+                ScopeKind.Wallet to "recurring_rule", ScopeKind.Wallet to "occurrence",
             ),
             pairs.toSet(),
         )

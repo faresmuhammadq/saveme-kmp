@@ -106,6 +106,15 @@ class AuthScreensScreenshotTest(
             arrayOf("home_verify_prompt", @Composable {
                 HomeScreen(HomeState(email = "sara@example.com", emailVerified = false), {})
             }),
+            arrayOf("home_due", @Composable {
+                HomeScreen(
+                    HomeState(
+                        email = "sara@example.com", dueCount = 2,
+                        firstDue = com.fares.saveme.feature.auth.domain.DueGlimpse("Rent", kotlinx.datetime.LocalDate(2026, 10, 1)),
+                    ),
+                    {},
+                )
+            }),
             arrayOf("forgot", @Composable { ForgotPasswordScreen(ForgotPasswordState(email = "sara@example.com")) {} }),
             arrayOf("reset", @Composable { ResetPasswordScreen(ResetPasswordState()) {} }),
             arrayOf("reset_done", @Composable { ResetPasswordScreen(ResetPasswordState(status = ResetStatus.Done)) {} }),

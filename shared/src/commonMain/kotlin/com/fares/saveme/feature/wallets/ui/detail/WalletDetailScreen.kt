@@ -88,6 +88,7 @@ import saveme.shared.generated.resources.wallet_field_name
 import saveme.shared.generated.resources.wallet_field_opening_balance
 import saveme.shared.generated.resources.wallet_keep_mine
 import saveme.shared.generated.resources.wallet_members
+import saveme.shared.generated.resources.recurring_open
 import saveme.shared.generated.resources.transactions_add
 import saveme.shared.generated.resources.wallet_transactions
 import saveme.shared.generated.resources.wallet_none
@@ -136,6 +137,12 @@ private fun TransactionsSection(state: WalletDetailState, onIntent: (WalletDetai
             modifier = Modifier.testTag("walletDetail.transactions"),
             trailing = ListTrailing.Chevron,
             onClick = { onIntent(WalletDetailIntent.TransactionsClicked) },
+        )
+        AppListItem(
+            stringResource(Res.string.recurring_open),
+            modifier = Modifier.testTag("walletDetail.recurring"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(WalletDetailIntent.RecurringClicked) },
         )
         if (state.canAddTransaction) {
             AppListItem(

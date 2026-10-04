@@ -2,6 +2,8 @@ package com.fares.saveme.feature.transactions.ui.editor
 
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
+import com.fares.saveme.feature.transactions.domain.DueItem
+import com.fares.saveme.feature.transactions.domain.MakeRecurringDraft
 import com.fares.saveme.feature.transactions.domain.TransactionAmount
 import com.fares.saveme.feature.transactions.domain.model.AddedBy
 import com.fares.saveme.feature.transactions.domain.model.RefusalReason
@@ -105,6 +107,11 @@ data class TransactionEditorState(
     val confirmDelete: Boolean = false,
     val saving: Boolean = false,
     val busy: Boolean = false,
+    /** Received, unconfirmed occurrences this entry may duplicate: "Confirm … instead" (spec 010 FR-031); create mode only. */
+    val matches: List<DueItem> = emptyList(),
+    /** The recurring rule a produced transaction came from, and whether it is on this phone (FR-038). */
+    val ruleId: String? = null,
+    val ruleOnPhone: Boolean = false,
 ) {
     val isCreate: Boolean get() = transactionId == null
     val kind: TransactionKind get() = TransactionKind.fromWire(kindWire)
@@ -120,6 +127,12 @@ data class TransactionEditorState(
 
     /** The wallet is chosen only while recording; a transfer's wallets never change (FR-008, FR-012). */
     val walletEditable: Boolean get() = isCreate
+
+    /** "Make recurring" is offered while recording, to people who can record (spec 010 FR-003). */
+    val canMakeRecurring: Boolean
+        get() = loaded && isCreate && canEdit && !noWallet && walletId.isNotEmpty() && kind != TransactionKind.Unknown
+
+    val canOpenRule: Boolean get() = !isCreate && ruleId != null && ruleOnPhone
 
     val destinationsEmpty: Boolean get() = kind == TransactionKind.Transfer && destinationChoices.isEmpty() && destinationId == null
     val categoriesEmpty: Boolean get() = categoryChoices?.isEmpty == true && categoryId == null
@@ -165,6 +178,9 @@ sealed interface TransactionEditorIntent {
     data object TryAgain : TransactionEditorIntent
     data object Discard : TransactionEditorIntent
     data object CreateWalletClicked : TransactionEditorIntent
+    data object MakeRecurringClicked : TransactionEditorIntent
+    data class MatchClicked(val occurrenceId: String) : TransactionEditorIntent
+    data object OpenRuleClicked : TransactionEditorIntent
     data object Back : TransactionEditorIntent
 }
 
@@ -173,6 +189,13 @@ sealed interface TransactionEditorEffect {
     data class ShowMessage(val message: EditorMessage) : TransactionEditorEffect
     data object RequireVerification : TransactionEditorEffect
     data object OpenWalletEditor : TransactionEditorEffect
+
+    /** Replaces the editor with the recurring rule editor, prefilled from what was typed (spec 010 FR-003). */
+    data class MakeRecurring(val draft: MakeRecurringDraft) : TransactionEditorEffect
+
+    /** Replaces the editor with the occurrence it confirmed instead (FR-031). */
+    data class OpenOccurrence(val id: String) : TransactionEditorEffect
+    data class OpenRule(val id: String) : TransactionEditorEffect
 }
 
 sealed interface TransactionEditorChange {
@@ -204,6 +227,8 @@ sealed interface TransactionEditorChange {
     data class Saving(val busy: Boolean) : TransactionEditorChange
     data class Busy(val busy: Boolean) : TransactionEditorChange
     data class NoWallet(val none: Boolean) : TransactionEditorChange
+    data class Matches(val items: List<DueItem>) : TransactionEditorChange
+    data class RuleOnPhone(val onPhone: Boolean) : TransactionEditorChange
 }
 
 const val MAX_NOTE = 100
@@ -279,6 +304,8 @@ fun reduce(state: TransactionEditorState, change: TransactionEditorChange): Tran
     is TransactionEditorChange.Saving -> state.copy(saving = change.busy)
     is TransactionEditorChange.Busy -> state.copy(busy = change.busy)
     is TransactionEditorChange.NoWallet -> state.copy(noWallet = change.none)
+    is TransactionEditorChange.Matches -> state.copy(matches = if (state.isCreate) change.items.take(3) else emptyList())
+    is TransactionEditorChange.RuleOnPhone -> state.copy(ruleOnPhone = change.onPhone)
 }
 
 internal fun TransactionSyncState.toEditorSync(view: TransactionView, lines: List<ClashLine>): EditorSync = when (this) {

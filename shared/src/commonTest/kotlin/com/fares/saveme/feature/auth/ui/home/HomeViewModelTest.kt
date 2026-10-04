@@ -126,3 +126,35 @@ class HomeAddTransactionTest {
         }
     }
 }
+
+class HomeDueCardTest {
+    @Test
+    fun theCardShowsWhenSomethingIsDueAndHidesAtZero() = runMviTest {
+        val count = MutableStateFlow(2)
+        val first = MutableStateFlow<com.fares.saveme.feature.auth.domain.DueGlimpse?>(
+            com.fares.saveme.feature.auth.domain.DueGlimpse("Rent", kotlinx.datetime.LocalDate(2026, 10, 1)),
+        )
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)), dueCount = count, firstDue = first)
+        assertEquals(2, vm.state.value.dueCount)
+        assertEquals("Rent", vm.state.value.firstDue?.title)
+        count.value = 0
+        first.value = null
+        assertEquals(0, vm.state.value.dueCount)
+        assertEquals(null, vm.state.value.firstDue)
+    }
+
+    @Test
+    fun withoutRecurringTheCountStaysZero() = runMviTest {
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
+        assertEquals(0, vm.state.value.dueCount)
+    }
+
+    @Test
+    fun tappingTheCardOpensTheDueList() = runMviTest {
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)), dueCount = MutableStateFlow(1))
+        vm.effects.test {
+            vm.onIntent(HomeIntent.DueClicked)
+            assertEquals(HomeEffect.OpenDue, awaitItem())
+        }
+    }
+}

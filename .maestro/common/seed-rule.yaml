@@ -1,0 +1,19 @@
+# Creates a recurring rule from the second device (slot B, signed in already): WALLET (name), DESCRIPTION, AMOUNT in minor units,
+# CATEGORY (name), and optionally START_IN_DAYS (default: starts today, so one occurrence is due at once), FREQUENCY, COUNT, AUTO_CONFIRM.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: createRule
+      SLOT: B
+      WALLET: ${WALLET}
+      DESCRIPTION: ${DESCRIPTION}
+      AMOUNT: ${AMOUNT}
+      CATEGORY: "${typeof CATEGORY !== 'undefined' ? CATEGORY : 'Rent'}"
+      START_IN_DAYS: "${typeof START_IN_DAYS !== 'undefined' ? START_IN_DAYS : ''}"
+      FREQUENCY: "${typeof FREQUENCY !== 'undefined' ? FREQUENCY : 'monthly'}"
+      COUNT: "${typeof COUNT !== 'undefined' ? COUNT : ''}"
+      AUTO_CONFIRM: "${typeof AUTO_CONFIRM !== 'undefined' ? AUTO_CONFIRM : 'false'}"

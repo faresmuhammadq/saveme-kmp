@@ -110,6 +110,7 @@ fun CatalogSections() {
         RowsSection()
         DialogsSection()
         TransactionsSection()
+        RecurringSection()
     }
 }
 

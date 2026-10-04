@@ -5,6 +5,8 @@ import com.fares.saveme.core.config.Environment
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.core.sync.CurrentAccount
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.DueSummary
+import com.fares.saveme.feature.auth.domain.NoDueSummary
 import com.fares.saveme.feature.auth.data.AccountSnapshotStore
 import com.fares.saveme.feature.auth.data.AuthRepository
 import com.fares.saveme.feature.auth.data.EntitlementsApi
@@ -36,6 +38,8 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val authModule = module {
+    // Default until the recurring module rebinds it (spec 010 research R-10).
+    single<DueSummary> { NoDueSummary }
     single { AccountSnapshotStore(get()) }
     single { IdentityApi(get()) }
     single { EntitlementsApi(get()) }

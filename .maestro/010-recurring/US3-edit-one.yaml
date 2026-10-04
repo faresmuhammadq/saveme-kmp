@@ -1,0 +1,52 @@
+# deferred: E2E on owner's device
+# US3: Given a due item, When the person edits this one to 4,000.00, Then only it changes; the rule keeps its amount.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "recurring.due.0"
+    timeout: 60000
+- tapOn:
+    id: "recurring.due.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.edit"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.edit"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.form.amount"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.form.amount"
+- eraseText: 20
+- inputText: "4000"
+- hideKeyboard
+- tapOn:
+    id: "occurrence.form.save"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.list"
+    timeout: 15000
+- assertVisible: "EGP 4,000.00"
+- assertVisible: "EGP 4,500.00"

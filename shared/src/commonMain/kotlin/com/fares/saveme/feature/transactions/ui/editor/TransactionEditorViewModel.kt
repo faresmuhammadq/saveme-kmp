@@ -5,6 +5,9 @@ import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplays
+import com.fares.saveme.feature.transactions.domain.ConfirmFromDraftResult
+import com.fares.saveme.feature.transactions.domain.DueItem
+import com.fares.saveme.feature.transactions.domain.MakeRecurringDraft
 import com.fares.saveme.feature.transactions.domain.TransactionAmount
 import com.fares.saveme.feature.transactions.domain.model.Counterpart
 import com.fares.saveme.feature.transactions.domain.model.CreateResult
@@ -24,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
@@ -53,11 +57,16 @@ class TransactionEditorViewModel(
     private val tryAgain: suspend (String) -> Unit,
     private val discard: suspend (String) -> Unit,
     private val today: () -> LocalDate,
+    /** Received occurrences this entry may duplicate (spec 010 FR-031): wallet, kind, category, destination, date. */
+    private val matches: (String, String, String?, String?, LocalDate) -> Flow<List<DueItem>> = { _, _, _, _, _ -> flowOf(emptyList()) },
+    private val confirmFromDraft: suspend (String, TransactionDraft) -> ConfirmFromDraftResult = { _, _ -> ConfirmFromDraftResult.NotAvailable },
+    private val ruleOnPhone: (String) -> Flow<Boolean> = { flowOf(false) },
 ) : MviViewModel<TransactionEditorState, TransactionEditorIntent, TransactionEditorEffect>(
     TransactionEditorState(transactionId = transactionId),
 ) {
 
     private val walletFlow = MutableStateFlow<String?>(null)
+    private val matchKey = MutableStateFlow<MatchKey?>(null)
     private val kindFlow = MutableStateFlow(TransactionKind.Expense)
     private var currentCategoryId: String? = null
     private var displaysSnapshot: CategoryDisplays? = null
@@ -126,6 +135,29 @@ class TransactionEditorViewModel(
                 if (kind == TransactionKind.Income || kind == TransactionKind.Expense) categoryChoices(kind, null) else emptyFlow()
             }.collect { choices -> setState { reduce(it, TransactionEditorChange.Choices(choices)) } }
         }
+        viewModelScope.launch {
+            matchKey.flatMapLatest { key ->
+                if (key == null) flowOf(emptyList()) else matches(key.walletId, key.kindWire, key.categoryId, key.counterWalletId, key.date)
+            }.collect { items -> setState { reduce(it, TransactionEditorChange.Matches(items)) } }
+        }
+        updateMatchKey()
+    }
+
+    private data class MatchKey(val walletId: String, val kindWire: String, val categoryId: String?, val counterWalletId: String?, val date: LocalDate)
+
+    /** The offer follows what is typed: same wallet, kind, category (or destination) and a date within a week (FR-031). */
+    private fun updateMatchKey() {
+        val state = currentState
+        matchKey.value = if (state.isCreate && state.loaded && state.walletId.isNotEmpty() && state.date != null && state.kind != TransactionKind.Unknown) {
+            MatchKey(
+                state.walletId, state.kindWire,
+                state.categoryId.takeIf { state.kind != TransactionKind.Transfer },
+                state.destinationId.takeIf { state.kind == TransactionKind.Transfer },
+                state.date,
+            )
+        } else {
+            null
+        }
     }
 
     private suspend fun loadEdit(id: String) {
@@ -141,6 +173,9 @@ class TransactionEditorViewModel(
         displaysSnapshot = snapshot
         val categoryDisplay = first.shown.categoryId?.let { snapshot.resolve(it) }
         setState { reduce(it, TransactionEditorChange.Loaded(stateFrom(first, categoryDisplay, it))) }
+        first.recurringRuleId?.let { ruleId ->
+            viewModelScope.launch { ruleOnPhone(ruleId).collect { onPhone -> setState { reduce(it, TransactionEditorChange.RuleOnPhone(onPhone)) } } }
+        }
         loadedForm = EditorForm.of(currentState)
         lastServer = first.server
         kindFlow.value = first.shown.kind
@@ -183,6 +218,7 @@ class TransactionEditorViewModel(
             canDelete = view.canDelete && !view.pendingDelete,
             addedBy = view.addedBy,
             fromRecurringRule = view.fromRecurringRule,
+            ruleId = view.recurringRuleId,
             errors = (view.syncState as? TransactionSyncState.Refused)?.fields.orEmpty().asProblems(),
         )
     }
@@ -252,11 +288,74 @@ class TransactionEditorViewModel(
             TransactionEditorIntent.TryAgain -> resolve(tryAgain)
             TransactionEditorIntent.Discard -> resolve(discard, reload = true)
             TransactionEditorIntent.CreateWalletClicked -> sendEffect(TransactionEditorEffect.OpenWalletEditor)
+            TransactionEditorIntent.MakeRecurringClicked -> makeRecurring()
+            is TransactionEditorIntent.MatchClicked -> confirmInstead(intent.occurrenceId)
+            TransactionEditorIntent.OpenRuleClicked -> currentState.ruleId?.takeIf { currentState.canOpenRule }?.let { sendEffect(TransactionEditorEffect.OpenRule(it)) }
             TransactionEditorIntent.Back -> sendEffect(TransactionEditorEffect.Close)
         }
     }
 
-    private fun change(change: TransactionEditorChange) = setState { reduce(it, change) }
+    private fun change(change: TransactionEditorChange) {
+        setState { reduce(it, change) }
+        if (currentState.isCreate) updateMatchKey()
+    }
+
+    /** "Make recurring": hands the form as typed to the recurring editor; nothing is recorded (FR-003). */
+    private fun makeRecurring() {
+        val state = currentState
+        if (!state.canMakeRecurring) return
+        val amount = if (state.amountText.isBlank()) {
+            0L
+        } else {
+            val parsed = TransactionAmount.parse(state.amountText, state.currency)
+            if (parsed !is TransactionAmount.Result.Valid) {
+                change(TransactionEditorChange.Errors(state.errors + (TransactionField.Amount to (parsed as TransactionAmount.Result.Invalid).problem)))
+                return
+            }
+            parsed.minor
+        }
+        sendEffect(
+            TransactionEditorEffect.MakeRecurring(
+                MakeRecurringDraft(
+                    walletId = state.walletId,
+                    kind = state.kind,
+                    amountMinor = amount,
+                    categoryId = state.categoryId.takeIf { state.kind != TransactionKind.Transfer },
+                    counterWalletId = state.destinationId.takeIf { state.kind == TransactionKind.Transfer },
+                    description = state.note.ifBlank { null },
+                    memo = state.details.ifBlank { null },
+                    counterparty = state.person.ifBlank { null },
+                    date = state.date ?: today(),
+                ),
+            ),
+        )
+    }
+
+    /** "Confirm … instead": the typed amount, date and texts confirm the occurrence; no transaction is recorded (FR-031). */
+    private fun confirmInstead(occurrenceId: String) {
+        val state = currentState
+        if (!state.isCreate || !state.canSave || state.matches.none { it.id == occurrenceId }) return
+        val amount = TransactionAmount.parse(state.amountText, state.currency)
+        if (amount !is TransactionAmount.Result.Valid) {
+            change(TransactionEditorChange.Errors(state.errors + (TransactionField.Amount to (amount as TransactionAmount.Result.Invalid).problem)))
+            return
+        }
+        val draft = TransactionDraft(
+            walletId = state.walletId, kindWire = state.kindWire, date = state.date ?: today(), amountMinor = amount.minor,
+            currency = state.currency, categoryId = state.categoryId, counterWalletId = state.destinationId,
+            description = state.note, memo = state.details, counterparty = state.person, cleared = state.cleared,
+        )
+        change(TransactionEditorChange.Saving(true))
+        viewModelScope.launch {
+            when (val result = confirmFromDraft(occurrenceId, draft)) {
+                is ConfirmFromDraftResult.Confirmed -> sendEffect(TransactionEditorEffect.OpenOccurrence(result.occurrenceId))
+                ConfirmFromDraftResult.NotVerified -> sendEffect(TransactionEditorEffect.RequireVerification)
+                ConfirmFromDraftResult.NotAllowed -> sendEffect(TransactionEditorEffect.ShowMessage(EditorMessage.NotAllowed))
+                ConfirmFromDraftResult.NotAvailable -> sendEffect(TransactionEditorEffect.ShowMessage(EditorMessage.Gone))
+            }
+            change(TransactionEditorChange.Saving(false))
+        }
+    }
 
     private fun chooseCategory(id: String) {
         val choices = currentState.categoryChoices ?: return

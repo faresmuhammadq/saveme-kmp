@@ -97,7 +97,7 @@ class Migration4To5Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+        .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
         .build()
 
     @Test

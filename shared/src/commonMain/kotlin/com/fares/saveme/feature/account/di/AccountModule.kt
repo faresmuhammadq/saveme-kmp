@@ -27,6 +27,7 @@ import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountViewModel
 import com.fares.saveme.feature.account.ui.profile.ProfileViewModel
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.DueSummary
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.auth.domain.usecase.ResendVerificationUseCase
 import com.fares.saveme.feature.auth.domain.usecase.SignOutUseCase
@@ -76,6 +77,7 @@ val accountModule = module {
         val cancel = get<CancelDeletionUseCase>()
         val resend = get<ResendVerificationUseCase>()
         val engine = get<SyncEngine>()
+        val due = get<DueSummary>()
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -89,6 +91,8 @@ val accountModule = module {
             resendVerification = { resend() },
             syncStatus = engine.status,
             syncNow = { engine.syncNow() },
+            dueCount = due.observeDueCount(),
+            firstDue = due.observeFirstDue(),
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's

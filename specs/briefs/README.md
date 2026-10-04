@@ -22,7 +22,7 @@ backend, spec directories take the next free number, so `C4` will not become `sp
 | [C5](C05-categories.md) Categories | B5 → spec 011 | Built | **Built** in spec 007 (categories screen with defaults in both languages, editor, offline create/edit/archive/delete through the sync engine, in-use refusal, choice list and display resolver for C6, now used on the transaction screens; device E2E deferred) | C4 |
 | [C6](C06-transactions.md) Transactions ledger | B6 → spec 012 | Built | **Built** in spec 008 (wallet transactions screen with day groups, search and filters, transaction editor with offline create/edit/delete, transfers, clash and restore choices, balance projection with carry, currency lock and category-use hooks; device E2E deferred) | C4, C5, C14 engine |
 | [C14](C14-sync-engine.md) Sync engine | B14 | Brief | Profile/sessions pull only (`AccountSyncCoordinator`) | — (engine), B14 (batch) |
-| [C7](C07-recurring.md) Recurring transactions | B7 | Brief | — | C6 |
+| [C7](C07-recurring.md) Recurring transactions | B7 | Built | **Built** in spec 010 (recurring list, rule editor with gam'eya and installment presets, rule detail, occurrence confirm/skip/edit offline with a pending transaction, due section, Home card, duplicate guard, catch-up; device E2E deferred) | C6 |
 | [C8](C08-budgets.md) Budgets | B8 | Brief | `BudgetProgress` component exists | C5, C6 |
 | [C9](C09-sharing.md) Sharing & invitations | B9 | Brief | `WalletMembers` catalog sample | C3, C4 |
 | [C10](C10-billing-google-play.md) Google Play billing | B10 | Brief | — | C3 |

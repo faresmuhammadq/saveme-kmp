@@ -19,6 +19,10 @@ import com.fares.saveme.feature.transactions.data.TransactionRepository
 import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
 import com.fares.saveme.feature.transactions.domain.BalanceReconciler
 import com.fares.saveme.feature.transactions.domain.DefaultTransactionsService
+import com.fares.saveme.feature.transactions.domain.DefaultOccurrenceTransactions
+import com.fares.saveme.feature.transactions.domain.OccurrenceTransactions
+import com.fares.saveme.feature.transactions.domain.NoRecurringLinks
+import com.fares.saveme.feature.transactions.domain.RecurringLinks
 import com.fares.saveme.feature.transactions.domain.TransactionCategoryUses
 import com.fares.saveme.feature.transactions.domain.TransactionPostings
 import com.fares.saveme.feature.transactions.domain.TransactionsService
@@ -88,8 +92,16 @@ val transactionsModule = module {
         )
     } bind SyncHandler::class
     // The hooks C4 and C5 left (research R-26): their zero/no-op bindings moved here.
+    // The transactions side of a recurring confirmation (spec 010 R-07): called by recurring, never imports it.
+    single<OccurrenceTransactions> {
+        val sessions = get<SessionManager>()
+        DefaultOccurrenceTransactions(repository = get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
+    }
     single<PendingPostings> { TransactionPostings(engine = { get<SyncEngine>() }, repository = get()) }
-    single<PendingCategoryUses> { TransactionCategoryUses(engine = { get<SyncEngine>() }) }
+    // One of the sources C5 unions (spec 010 FR-032): bound as a secondary type so recurring's can sit beside it.
+    single { TransactionCategoryUses(engine = { get<SyncEngine>() }) } bind PendingCategoryUses::class
+    // Default until the recurring module rebinds it (research R-10).
+    single<RecurringLinks> { NoRecurringLinks }
     single { BalanceReconciler(repository = get(), runner = get(), scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
     // The wallet feed's transactions (spec 009).
     single { TransactionFeedApplier(get()) } bind FeedApplier::class
@@ -144,6 +156,8 @@ val transactionsModule = module {
             isEmailVerified = { (sessions.state.value as? AuthState.SignedIn)?.account?.emailVerified == true },
             today = { get<ProfileToday>().today() },
             timeZoneId = profile.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
+            due = get<RecurringLinks>().observeDue(walletId),
+            confirmationStatus = { id -> get<RecurringLinks>().observeConfirmationStatus(id) },
         )
     }
     viewModel { params ->
@@ -167,6 +181,9 @@ val transactionsModule = module {
             tryAgain = { transactions.tryAgain(it) },
             discard = { transactions.discard(it) },
             today = { get<ProfileToday>().today() },
+            matches = { wallet, kind, category, destination, date -> get<RecurringLinks>().observeMatches(wallet, kind, category, destination, date) },
+            confirmFromDraft = { occurrenceId, draft -> get<RecurringLinks>().confirmFromDraft(occurrenceId, draft) },
+            ruleOnPhone = { ruleId -> get<RecurringLinks>().observeRuleOnPhone(ruleId) },
         )
     }
 }

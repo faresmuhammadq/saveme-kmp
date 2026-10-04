@@ -14,6 +14,7 @@ import com.fares.saveme.designsystem.component.ListTrailing
 import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.AppTopAppBar
 import com.fares.saveme.designsystem.component.DestructiveButton
+import com.fares.saveme.designsystem.component.DueCard
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.PrimaryButton
 import com.fares.saveme.designsystem.format.formatDate
@@ -22,8 +23,12 @@ import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.auth.ui.signout.SignOutConfirmSheet
 import com.fares.saveme.feature.auth.ui.verify.text
 import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.recurring_cd_due_card
+import saveme.shared.generated.resources.recurring_due_count
+import saveme.shared.generated.resources.recurring_rule_title
 import saveme.shared.generated.resources.action_resend_email
 import saveme.shared.generated.resources.home_verify_prompt
 import saveme.shared.generated.resources.cd_account
@@ -79,6 +84,17 @@ fun HomeScreen(
             InlineAlert(
                 tone = AlertTone.Info,
                 text = stringResource(Res.string.home_deletion_cancelled),
+            )
+        }
+        if (state.dueCount > 0) {
+            val card = pluralStringResource(Res.plurals.recurring_due_count, state.dueCount, state.dueCount)
+            DueCard(
+                countText = card,
+                firstTitle = state.firstDue?.title ?: stringResource(Res.string.recurring_rule_title),
+                firstDate = state.firstDue?.date?.let { formatDate(it) }.orEmpty(),
+                modifier = Modifier.testTag("home.due"),
+                contentDescription = stringResource(Res.string.recurring_cd_due_card, card),
+                onClick = { onIntent(HomeIntent.DueClicked) },
             )
         }
         PrimaryButton(
