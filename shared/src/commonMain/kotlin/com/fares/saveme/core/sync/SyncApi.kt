@@ -6,6 +6,7 @@ import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiEvent
 import com.fares.saveme.core.network.ApiEvents
 import com.fares.saveme.core.network.ApiResult
+import com.fares.saveme.core.network.CollectionMeta
 import com.fares.saveme.core.network.Envelope
 import com.fares.saveme.core.network.ProblemDetails
 import io.ktor.client.call.body
@@ -36,12 +37,30 @@ data class FeedMetaDto(
     @SerialName("has_more") val hasMore: Boolean = false,
     val limit: Int = 0,
     @SerialName("sync_cursor") val syncCursor: String = "",
+    /** The integer position of [syncCursor]'s place, sent by backend v1.10 and later; null from an older server (spec 011). */
+    @SerialName("sync_position") val syncPosition: Long? = null,
 ) {
     override fun toString() = "FeedMetaDto(hasMore=$hasMore, limit=$limit)"
 }
 
 @Serializable
 data class FeedPageDto(val data: List<ChangeRowDto> = emptyList(), val meta: FeedMetaDto = FeedMetaDto())
+
+/** sync.yaml `WalletHead`: where a followed wallet's feed stands (spec 011). The values are never logged. */
+@Serializable
+data class WalletHeadDto(
+    @SerialName("wallet_id") val walletId: String,
+    @SerialName("change_seq") val changeSeq: Long,
+    @SerialName("purged_change_seq") val purgedChangeSeq: Long,
+) {
+    override fun toString() = "WalletHeadDto()"
+}
+
+/** One page of `listWalletHeads` (spec 011). */
+@Serializable
+data class HeadsPageDto(val data: List<WalletHeadDto> = emptyList(), val meta: CollectionMeta = CollectionMeta()) {
+    override fun toString() = "HeadsPageDto(${data.size} heads, $meta)"
+}
 
 /** sync.yaml `BatchItem`: `wallet_id` is omitted when null (only transactions carry one). */
 @Serializable
@@ -73,6 +92,9 @@ interface SyncApi {
 
     suspend fun walletChanges(walletId: String, cursor: String?, limit: Int = HttpSyncApi.PAGE_SIZE): ApiResult<FeedPageDto>
 
+    /** One page of the heads of the wallets the person follows (`listWalletHeads`, sync.yaml v1.10). Only `cursor` and `limit` are sent. */
+    suspend fun walletHeads(cursor: String?, limit: Int = HttpSyncApi.PAGE_SIZE): ApiResult<HeadsPageDto>
+
     /**
      * Sends up to 50 items. A refusal of the whole request comes back as [ApiResult.Failure]; an
      * answer that is not the documented shape comes back with `problem.code` [HttpSyncApi.UNREADABLE].
@@ -92,6 +114,15 @@ class HttpSyncApi(
 
     override suspend fun walletChanges(walletId: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> =
         feed("sync/wallets/$walletId/changes", cursor, limit)
+
+    override suspend fun walletHeads(cursor: String?, limit: Int): ApiResult<HeadsPageDto> = guarded {
+        client.execute({
+            method = HttpMethod.Get
+            url("sync/wallets/heads")
+            parameter("limit", limit)
+            if (cursor != null) parameter("cursor", cursor)
+        }) { response -> response.body<HeadsPageDto>() }
+    }
 
     private suspend fun feed(path: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> = guarded {
         client.execute({

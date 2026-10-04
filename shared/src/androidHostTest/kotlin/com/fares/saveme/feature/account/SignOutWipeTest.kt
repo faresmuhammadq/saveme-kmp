@@ -107,9 +107,9 @@ class SignOutWipeTest {
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         // Feed positions and read stamps are the account's too (spec 009 FR-028).
-        db.syncScopeDao().storeFeedPage("user:u1", "position-1")
+        db.syncScopeDao().storeFeedPage("user:u1", "position-1", 11L)
         db.syncScopeDao().markFeedRead("user:u1", "2026-09-28T10:00:00.000Z")
-        db.syncScopeDao().storeFeedPage("wallet:w1", "position-2")
+        db.syncScopeDao().storeFeedPage("wallet:w1", "position-2", 12L)
         languages.set(AppLanguage.Ar)
 
         SignOutUseCase(env.repository, sessions, serverTimeout = null)()
@@ -129,6 +129,8 @@ class SignOutWipeTest {
         assertNull(db.syncScopeDao().observe(SyncScopeEntity.PROFILE).first())
         assertNull(db.syncScopeDao().feedCursor("user:u1"))
         assertNull(db.syncScopeDao().feedCursor("wallet:w1"))
+        assertNull("no integer position survives sign-out either (spec 011 FR-021)", db.syncScopeDao().feedPlace("user:u1"))
+        assertNull(db.syncScopeDao().feedPlace("wallet:w1"))
         assertNull(db.syncScopeDao().observeFeedReadAt("user:u1").first())
         assertNull(db.syncScopeDao().observe("user:u1").first())
         assertEquals("the sync run in progress is stopped, so it sends and applies nothing afterwards", 1, runner.cancelled)

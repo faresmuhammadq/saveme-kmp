@@ -46,9 +46,10 @@ Without it the app falls back to `10.0.2.2:8080`. Full validation steps:
 Syncable data (profile, devices signed in; later wallets and transactions) lives in a Room
 database, `saveme.db`, which screens read from (constitution P-04). The schema is exported to
 `shared/schemas/` on every build — commit changes to it, and add a Room migration whenever the
-version in `AppDatabase` goes up (now v7: recurring rules and occurrences added). Sign-out clears every table. Sync reads only what changed since
-the last position it stored per scope (the person's own, and one per wallet), and sends waiting changes
-in batches of up to 50.
+version in `AppDatabase` goes up (now v8: an integer feed position stored beside each place; v7 added recurring rules and
+occurrences). Sign-out clears every table. Sync reads only what changed since the last position it stored per scope (the
+person's own, and one per wallet), and sends waiting changes in batches of up to 50. A refresh first asks the server where
+the followed wallets stand (`GET /sync/wallets/heads`) and reads only the wallets that moved.
 
 ### Running tests
 

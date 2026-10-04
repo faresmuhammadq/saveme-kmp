@@ -182,3 +182,14 @@ internal val MIGRATION_6_7 = object : Migration(6, 7) {
         connection.execSQL("UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL WHERE `scope` LIKE 'wallet:%'")
     }
 }
+
+/**
+ * v7 → v8 (spec 011, data-model §1): the integer feed position stored beside each place. The column is added and
+ * nothing else changes: every stored cursor and read stamp is kept, so the first run after the update reads each wallet
+ * from its place once and stores the position (research R-12).
+ */
+internal val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `feed_position` INTEGER")
+    }
+}

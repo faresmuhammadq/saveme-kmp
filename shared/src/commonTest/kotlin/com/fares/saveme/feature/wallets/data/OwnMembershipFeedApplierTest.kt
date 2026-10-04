@@ -49,7 +49,7 @@ class OwnMembershipFeedApplierTest {
         val env = env(backgroundScope)
         env.seed(walletJson("w1", version = 2))
         env.memberDao.insertAll(listOf(com.fares.saveme.feature.wallets.data.local.WalletMemberEntity("m2", "w1", "u2", null, "editor", 1, "2026-09-01T00:00:00Z")))
-        env.scopeDao.storeFeedPage("wallet:w1", "pos")
+        env.scopeDao.storeFeedPage("wallet:w1", "pos", null)
         env.scopeDao.markFeedRead("wallet:w1", "2026-10-01T00:00:00.000Z")
 
         OwnMembershipFeedApplier(env.repository).apply(user, listOf(json(live()), json(ended())))
@@ -77,7 +77,7 @@ class OwnMembershipFeedApplierTest {
         val env = env(backgroundScope)
         env.seed(walletJson("w1", version = 2))
         env.engine.enqueue("wallet", "w1", SyncScope(ScopeKind.Wallet, "w1"), 2, AppJson.encodeToString(WalletDraft.serializer(), WalletDraft("cash", "Mine", "EGP", 25_000, null, null)))
-        env.scopeDao.storeFeedPage("wallet:w1", "pos")
+        env.scopeDao.storeFeedPage("wallet:w1", "pos", null)
 
         OwnMembershipFeedApplier(env.repository).apply(user, listOf(json(ended())))
 

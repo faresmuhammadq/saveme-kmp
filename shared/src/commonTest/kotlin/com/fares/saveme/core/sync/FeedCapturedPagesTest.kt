@@ -286,7 +286,7 @@ class FeedCapturedPagesTest {
         )) {
             val w = World(backgroundScope, PERSON_A)
             w.server.signedIn()
-            w.tx.scopeDao.storeFeedPage(w.user.key, "a-position-the-server-refuses")
+            w.tx.scopeDao.storeFeedPage(w.user.key, "a-position-the-server-refuses", null)
             w.server.user = { cursor -> if (cursor == null) USER_FIRST else refusal }
             assertIs<ScopeRead.Done>(w.puller.read(w.user))
             assertEquals(syncCursorOf(USER_FIRST), w.position(w.user))
@@ -317,7 +317,7 @@ class FeedCapturedPagesTest {
         assertEquals(syncCursorOf(USER_PAGE_3), syncCursorOf(USER_PAGE_EMPTY), "an empty page answers the same position")
 
         w.server.wallet = { _, _ -> WALLET_1_EMPTY }
-        w.tx.scopeDao.storeFeedPage(w.wallet1.key, "stored")
+        w.tx.scopeDao.storeFeedPage(w.wallet1.key, "stored", null)
         assertIs<ScopeRead.Done>(w.puller.read(w.wallet1))
         assertEquals(syncCursorOf(WALLET_1_EMPTY), w.position(w.wallet1))
     }
@@ -349,7 +349,7 @@ class FeedCapturedPagesTest {
         for (refusal in listOf(CapturedSyncResponses.WALLET_ID_MALFORMED, CapturedSyncResponses.LIMIT_ZERO, CapturedSyncResponses.FILTER_SENT)) {
             val w = World(backgroundScope, PERSON_A)
             w.server.signedIn()
-            w.tx.scopeDao.storeFeedPage(w.wallet1.key, "stored")
+            w.tx.scopeDao.storeFeedPage(w.wallet1.key, "stored", null)
             w.server.wallet = { _, _ -> refusal }
             assertEquals(ScopeRead.Failed, w.puller.read(w.wallet1))
             assertEquals("stored", w.position(w.wallet1))

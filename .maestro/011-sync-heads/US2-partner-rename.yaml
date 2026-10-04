@@ -1,0 +1,41 @@
+# deferred: E2E on owner's device
+# US2 (spec 011): Given a member whose display name is changed on another device, When the person refreshes, Then the wallet's members list shows the new name (the server re-stamps the member row without raising its version). The app has no sharing screens yet, so the member is the person themself, which arrives on the same feeds as a partner's row would.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, DISPLAY_NAME: "Before Rename" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.member.0"
+    timeout: 20000
+- assertVisible: "Before Rename"
+- tapOn: "Back"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveProfile, SLOT: B, DISPLAY_NAME: "After Rename" }
+# The server re-stamps the member rows from its queue; allow it a moment, then refresh the list.
+- extendedWaitUntil:
+    visible:
+      id: "wallets.list"
+    timeout: 15000
+- swipe:
+    start: 50%, 30%
+    end: 50%, 75%
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible: "After Rename"
+    timeout: 60000
+- assertNotVisible: "Before Rename"

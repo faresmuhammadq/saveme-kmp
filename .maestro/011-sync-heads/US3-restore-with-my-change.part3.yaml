@@ -1,0 +1,27 @@
+# e2e-between: network-on
+# Part 3: the deletion is shown with its choices; "Restore with my change" sends the restore and the edit together and the transaction returns with the phone's amount.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- extendedWaitUntil:
+    visible: "Changed on another device."
+    timeout: 60000
+- tapOn:
+    id: "transactions.row.0"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.restoreWithMine"
+    timeout: 15000
+- assertVisible: "Deleted on another device."
+- tapOn:
+    id: "txEditor.restoreWithMine"
+- extendedWaitUntil:
+    notVisible: "Deleted on another device."
+    timeout: 60000
+- assertNotVisible: "Waiting to sync"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- assertTrue: ${output.transactions[0].amount_minor == 6000}

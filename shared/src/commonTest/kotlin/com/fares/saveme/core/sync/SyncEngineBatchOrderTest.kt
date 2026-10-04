@@ -21,8 +21,30 @@ class SyncEngineBatchOrderTest {
         assertTrue(h.dao.rows.value.isEmpty())
     }
 
+    /** Rewritten for spec 011: the restore no longer leaves the batch, it rides it as a pair (two items) at its place. */
     @Test
-    fun anArchiveAndARestoreInTheMiddleOfTenEditsKeepTheirPlace() = runTest {
+    fun anArchiveInTheMiddleOfTenEditsKeepsItsPlaceAndARestoreRidesTheBatchAsAPairAtItsPlace() = runTest {
+        val h = BatchHarness()
+        h.handler.perRecordOnly += "archive"
+        h.handler.answer = { EngineHarness.ok(2) }
+        (1..4).forEach { h.save("e$it") }
+        h.save("archive")
+        (5..7).forEach { h.save("e$it") }
+        h.saveRestore("restore")
+        (8..10).forEach { h.save("e$it") }
+        h.engine.drain()
+
+        assertEquals(
+            listOf(
+                "batch 4: e1, e2, e3, e4", "send archive", "batch 8: e5, e6, e7, restore, restore, e8, e9, e10",
+            ),
+            h.log,
+        )
+        assertEquals(listOf("upsert", "upsert", "upsert", "restore", "upsert", "upsert", "upsert", "upsert"), h.api.batches[1].map { it.op })
+    }
+
+    @Test
+    fun aRestoreAHandlerCannotPairStillGoesPerRecordAtItsPlace() = runTest {
         val h = BatchHarness()
         h.handler.perRecordOnly += setOf("archive", "restore")
         h.handler.answer = { EngineHarness.ok(2) }

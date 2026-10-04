@@ -60,8 +60,8 @@ class DefaultWalletScopesTest {
         val env = env(backgroundScope)
         env.seed(walletJson("held", version = 2))
         env.repository.insertPlaceholder("fresh", WalletDraft("cash", "New", "EGP", 1, null, null), "u1")
-        env.scopeDao.storeFeedPage("wallet:held", "pos")
-        env.scopeDao.storeFeedPage("wallet:fresh", "pos")
+        env.scopeDao.storeFeedPage("wallet:held", "pos", null)
+        env.scopeDao.storeFeedPage("wallet:fresh", "pos", null)
         val scopes = scopes(env)
 
         scopes.accessLost("held")
@@ -88,13 +88,13 @@ class DefaultWalletScopesTest {
     fun discardingAChangeOfAWalletTheServerNoLongerSharesReadsItAgainFromTheStart() = runTest {
         val env = env(backgroundScope)
         env.seed(walletJson("w1", version = 2))
-        env.scopeDao.storeFeedPage("wallet:w1", "pos")
+        env.scopeDao.storeFeedPage("wallet:w1", "pos", null)
         env.engine.enqueue("wallet", "w1", com.fares.saveme.core.sync.SyncScope(com.fares.saveme.core.sync.ScopeKind.Wallet, "w1"), 2, "{}")
         env.engine.discard("wallet", "w1")
         assertNull(env.scopeDao.feedCursor("wallet:w1"), "no live membership: the next read decides")
         assertNotNull(env.walletDao.rows.value["w1"])
 
-        env.scopeDao.storeFeedPage("wallet:w1", "pos2")
+        env.scopeDao.storeFeedPage("wallet:w1", "pos2", null)
         env.memberDao.insertAll(listOf(own("m1", "w1")))
         env.engine.enqueue("wallet", "w1", com.fares.saveme.core.sync.SyncScope(com.fares.saveme.core.sync.ScopeKind.Wallet, "w1"), 2, "{}")
         env.engine.discard("wallet", "w1")

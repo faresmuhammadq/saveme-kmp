@@ -2,10 +2,14 @@ package com.fares.saveme.core.sync
 
 import kotlinx.serialization.json.JsonElement
 
-/** The two writes the batch upload carries (backend ADR-0016); archives and restores stay per record (spec 009 R-05). */
+/**
+ * The writes the batch upload carries (backend ADR-0016); archives stay per record (spec 009 R-05).
+ * [Restore] is for transactions only: it travels as the first of a pair, followed by the person's upsert (spec 011 R-09).
+ */
 enum class BatchOp(val wire: String) {
     Upsert("upsert"),
     Delete("delete"),
+    Restore("restore"),
 }
 
 /**
