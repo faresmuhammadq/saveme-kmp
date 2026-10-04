@@ -55,7 +55,7 @@ class MigrationTest {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
         .build()
 
     @Test
@@ -99,7 +99,7 @@ class MigrationTest {
     }
 
     @Test
-    fun theWholeChainEndsAtV6WithNoFeedPositions() = runTest {
+    fun theWholeChainEndsAtV7WithNoFeedPositions() = runTest {
         val db = open(v1Database(profileRow(pending = null, base = null)))
         db.syncScopeDao().markPushed("user:u1", "2026-10-02T10:00:00.000Z")
         assertNull(db.syncScopeDao().feedCursor("user:u1"))

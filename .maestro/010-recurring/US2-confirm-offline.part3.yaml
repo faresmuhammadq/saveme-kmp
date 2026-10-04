@@ -1,0 +1,17 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the confirmation is sent and the server holds exactly one transaction, linked to the occurrence.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- assertVisible: "EGP 5,600.00"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 1}
+- assertTrue: ${output.transactions[0].amount_minor == 440000}
+- assertTrue: ${output.transactions[0].occurrence_id != null}

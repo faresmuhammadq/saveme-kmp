@@ -5,6 +5,8 @@ import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplays
+import com.fares.saveme.feature.transactions.domain.ConfirmationStatus
+import com.fares.saveme.feature.transactions.domain.DueItem
 import com.fares.saveme.feature.transactions.domain.TransactionFilter
 import com.fares.saveme.feature.transactions.domain.model.TransactionList
 import com.fares.saveme.feature.transactions.domain.model.TransactionQuery
@@ -15,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -36,6 +40,8 @@ class TransactionsViewModel(
     private val isEmailVerified: () -> Boolean,
     private val today: () -> LocalDate,
     timeZoneId: Flow<String> = emptyFlow(),
+    due: Flow<List<DueItem>> = flowOf(emptyList()),
+    private val confirmationStatus: (String) -> Flow<ConfirmationStatus?> = { flowOf(null) },
 ) : MviViewModel<TransactionsState, TransactionsIntent, TransactionsEffect>(TransactionsState(walletId = walletId)) {
 
     private val query = MutableStateFlow(TransactionQuery())
@@ -48,12 +54,15 @@ class TransactionsViewModel(
     init {
         setState { reduce(it, TransactionsChange.Today(today())) }
         wallet.onEach { view -> setState { reduce(it, TransactionsChange.Wallet(view)) } }.launchIn(viewModelScope)
-        combine(query.flatMapLatest { list(it) }, displays) { stored, shown -> stored to shown }
-            .onEach { (stored, shown) ->
+        due.onEach { items -> setState { reduce(it, TransactionsChange.Due(items)) } }.launchIn(viewModelScope)
+        combine(query.flatMapLatest { q -> list(q).flatMapLatest { stored -> confirmations(stored).map { stored to it } } }, displays) { (stored, statuses), shown ->
+            Triple(stored, shown, statuses)
+        }
+            .onEach { (stored, shown, statuses) ->
                 latestDisplays = shown
                 usedCategoryIds = stored.categoryIds
                 val days = stored.days.map { day ->
-                    DayUi(day.date, day.netMinor, day.items.map { view -> view.toRow(view.shown.categoryId?.let { shown.resolve(it) }) })
+                    DayUi(day.date, day.netMinor, day.items.map { view -> view.toRow(view.shown.categoryId?.let { shown.resolve(it) }, statuses[view.id]) })
                 }
                 setState { reduce(it, TransactionsChange.Data(stored, days)) }
                 publishFilterChoices()
@@ -64,6 +73,15 @@ class TransactionsViewModel(
             publishFilterChoices()
         }.launchIn(viewModelScope)
         timeZoneId.onEach { id -> setState { reduce(it, TransactionsChange.TimeZone(id)) } }.launchIn(viewModelScope)
+    }
+
+    /** The occurrence status of each phone-only pending confirmation among [stored] (spec 010 R-07). */
+    private fun confirmations(stored: TransactionList): Flow<Map<String, ConfirmationStatus>> {
+        val ids = stored.days.flatMap { day -> day.items.filter { it.pendingConfirmation }.map { it.id } }
+        if (ids.isEmpty()) return flowOf(emptyMap())
+        return combine(ids.map { id -> confirmationStatus(id).map { id to it } }) { pairs ->
+            pairs.mapNotNull { (id, status) -> status?.let { id to it } }.toMap()
+        }
     }
 
     /** What the wallet's transactions use plus what the person can choose now, once each, by name (research R-12). */
@@ -96,7 +114,13 @@ class TransactionsViewModel(
             }
             is TransactionsIntent.ChipCleared -> setQuery(currentState.query.without(intent.chip))
             TransactionsIntent.ClearAll -> setQuery(TransactionQuery(), "")
-            is TransactionsIntent.RowClicked -> sendEffect(TransactionsEffect.OpenEditor(intent.id, walletId))
+            is TransactionsIntent.RowClicked -> {
+                val occurrenceId = currentState.days.firstNotNullOfOrNull { day -> day.rows.firstOrNull { it.id == intent.id } }?.occurrenceId
+                if (occurrenceId != null) sendEffect(TransactionsEffect.OpenOccurrence(occurrenceId))
+                else sendEffect(TransactionsEffect.OpenEditor(intent.id, walletId))
+            }
+            is TransactionsIntent.DueClicked -> sendEffect(TransactionsEffect.OpenOccurrence(intent.id))
+            TransactionsIntent.RecurringClicked -> sendEffect(TransactionsEffect.OpenRecurring(walletId))
             TransactionsIntent.AddClicked ->
                 if (!currentState.canAdd) Unit
                 else if (isEmailVerified()) sendEffect(TransactionsEffect.OpenEditor(null, walletId))

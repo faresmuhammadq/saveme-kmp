@@ -69,7 +69,11 @@ class FakeTransactionDao : TransactionDao {
     override fun observe(id: String): Flow<TransactionEntity?> = rows.map { it[id] }
     override suspend fun get(id: String): TransactionEntity? = rows.value[id]
     override fun observeRelevant(ids: List<String>): Flow<List<TransactionEntity>> =
-        rows.map { all -> all.values.filter { it.id in ids || it.carryConfirmedAt != null } }
+        rows.map { all -> all.values.filter { it.id in ids || it.carryConfirmedAt != null || it.pendingConfirmation } }
+    override fun observeCarriedOrPending(): Flow<List<TransactionEntity>> =
+        rows.map { all -> all.values.filter { it.carryConfirmedAt != null || it.pendingConfirmation } }
+    override suspend fun getPendingForOccurrence(occurrenceId: String) =
+        rows.value.values.filter { it.occurrenceId == occurrenceId && it.pendingConfirmation && it.version == 0L }
     override suspend fun getTouching(walletId: String) = rows.value.values.filter { it.walletId == walletId || it.counterWalletId == walletId }
     override suspend fun getAll() = rows.value.values.toList()
 
@@ -241,6 +245,7 @@ class TransactionTestEnv(
         pendingDao, scopeDao, listOf(walletHandler, syncHandler), scheduler, currentAccountId = { "u1" }, clock = clock,
     )
     val postings = TransactionPostings({ engine }, repository)
+    val occurrenceTransactions = com.fares.saveme.feature.transactions.domain.DefaultOccurrenceTransactions(repository, accountId = { "u1" }, clock = clock)
     val runner = FakeSyncRunner(engine = engine, scope = scope)
     private var nextWalletId = 0
     val wallets = DefaultWalletsService(

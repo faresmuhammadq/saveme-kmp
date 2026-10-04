@@ -61,6 +61,11 @@ data class TransactionView(
     val canDelete: Boolean,
     /** The transaction's own wallet's present currency on this phone, else the shown one (FR-026). */
     val walletCurrency: String,
+    /** The occurrence this transaction confirms or came from (spec 010); null for an ordinary transaction. */
+    val occurrenceId: String? = null,
+    val recurringRuleId: String? = null,
+    /** A phone-only row showing a confirmation not yet answered by the server (research R-07). */
+    val pendingConfirmation: Boolean = false,
 ) {
     /** The version this phone last saw; 0 for a create that never reached the server. */
     val baseVersion: Long get() = server?.version ?: 0

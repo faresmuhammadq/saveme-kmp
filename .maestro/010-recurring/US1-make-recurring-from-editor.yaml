@@ -1,0 +1,53 @@
+# deferred: E2E on owner's device
+# US1: Given the transaction editor with an amount and a category, When the person taps "Make recurring" and saves the rule, Then no transaction is recorded.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "transactions.add"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "txEditor.amount"
+- inputText: "4500"
+- hideKeyboard
+- tapOn:
+    id: "txEditor.category"
+- extendedWaitUntil:
+    visible: "Rent"
+    timeout: 15000
+- tapOn: "Rent"
+- tapOn:
+    id: "txEditor.makeRecurring"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.amount"
+    timeout: 15000
+- assertVisible: "4500.00"
+- tapOn:
+    id: "ruleEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 15000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listTransactions, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.transactionCount == 0}

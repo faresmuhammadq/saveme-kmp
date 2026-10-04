@@ -1,0 +1,27 @@
+# deferred: E2E on owner's device
+# US2: Given a rule dated today, When the person confirms the due item offline with another amount, Then a pending transaction is listed waiting and the balance moves; online there is one linked transaction. Part 1: online, the due item is on the phone.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "transactions.due.0"
+    timeout: 60000

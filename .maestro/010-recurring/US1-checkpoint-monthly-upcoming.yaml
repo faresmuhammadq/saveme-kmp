@@ -1,0 +1,57 @@
+# deferred: E2E on owner's device
+# US1 (brief checkpoint 1): Given a wallet, When the person creates a monthly rule on day 31 from the wallet's Recurring screen, Then it syncs and its first date (today) is listed as due.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "recurring.add"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.amount"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.amount"
+- inputText: "4500"
+- hideKeyboard
+- tapOn:
+    id: "ruleEditor.category"
+- extendedWaitUntil:
+    visible: "Rent"
+    timeout: 15000
+- tapOn: "Rent"
+- tapOn:
+    id: "ruleEditor.note"
+- inputText: "Rent"
+- hideKeyboard
+- assertVisible:
+    id: "ruleEditor.preview"
+- tapOn:
+    id: "ruleEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 15000
+# The rule starts today, so the server's first date is due; it arrives with the next wallet read.
+- extendedWaitUntil:
+    visible:
+      id: "recurring.due.0"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listOccurrences, SLOT: B, WALLET: "Alpha" }
+- assertTrue: ${output.occurrenceCount >= 1}

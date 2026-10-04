@@ -631,4 +631,249 @@
     <string name="tx_cd_money_out">Money out</string>
     <string name="tx_cd_clear_search">Clear search</string>
     <string name="tx_cd_remove_filter">Remove filter %1$s</string>
+
+    <!-- Recurring (spec 010) -->
+    <!-- Screens and lists -->
+    <string name="recurring_title">Recurring</string>
+    <string name="recurring_rule_title">Recurring rule</string>
+    <string name="recurring_new_title">New recurring rule</string>
+    <string name="recurring_edit_title">Edit recurring rule</string>
+    <string name="recurring_change_from_title">Change from a date</string>
+    <string name="recurring_occurrence_title">Occurrence</string>
+    <string name="recurring_add">Add recurring</string>
+    <string name="recurring_open">Recurring</string>
+    <string name="recurring_open_subtitle">Rules, due and upcoming</string>
+    <string name="recurring_empty">No recurring rules yet.</string>
+    <string name="recurring_empty_hint">Set up rent, a salary or an installment once, then confirm each date as it comes.</string>
+    <string name="recurring_empty_viewer">No recurring rules in this wallet.</string>
+    <string name="recurring_section_due">Due</string>
+    <string name="recurring_section_upcoming">Upcoming</string>
+    <string name="recurring_section_rules">Rules</string>
+    <string name="recurring_section_active">Active</string>
+    <string name="recurring_section_paused">Paused</string>
+    <string name="recurring_section_ended">Ended</string>
+    <string name="recurring_section_history">Earlier</string>
+    <string name="recurring_see_all">See all (%1$d)</string>
+    <string name="recurring_no_upcoming">Nothing coming up.</string>
+    <string name="recurring_all_wallets">All wallets</string>
+    <string name="recurring_refresh_failed">Couldn’t update. Showing what is on this phone.</string>
+    <string name="recurring_field_wallet">Wallet</string>
+    <string name="recurring_occurrences_title">Dates</string>
+    <string name="recurring_occurrences_empty">No dates yet.</string>
+    <string name="recurring_make_recurring">Make recurring</string>
+
+    <!-- States -->
+    <string name="recurring_state_upcoming">Upcoming</string>
+    <string name="recurring_state_due">Due</string>
+    <string name="recurring_state_missed">Missed</string>
+    <string name="recurring_state_confirmed">Confirmed</string>
+    <string name="recurring_state_skipped">Skipped</string>
+    <string name="recurring_state_unknown">Other</string>
+    <string name="recurring_payout">Payout</string>
+    <string name="recurring_round_number">Round %1$d</string>
+    <string name="recurring_edited">Edited</string>
+    <string name="recurring_originally">Originally %1$s</string>
+    <string name="recurring_status_active">Active</string>
+    <string name="recurring_status_paused">Paused</string>
+    <string name="recurring_status_ended">Ended</string>
+    <string name="recurring_status_unknown">Other</string>
+    <string name="recurring_status_waiting">Waiting to sync</string>
+    <string name="recurring_status_clash">Changed on another device.</string>
+    <string name="recurring_status_deleted">Deleted on another device.</string>
+    <string name="recurring_status_not_saved">Not saved.</string>
+    <string name="recurring_confirmation_waiting">Confirmation waiting to sync</string>
+    <string name="recurring_clash_body">Choose which one to keep.</string>
+    <string name="recurring_clash_delete_body">You deleted this rule here, but it changed on another device.</string>
+    <string name="recurring_deleted_body">This was deleted on another device. Accept the deletion to remove it here.</string>
+    <string name="recurring_held">Waiting for the change to %1$s</string>
+    <string name="recurring_cancelled_with">This change was cancelled with the change to %1$s</string>
+    <string name="recurring_update_after_sync">Upcoming rounds update after sync</string>
+    <string name="recurring_dates_after_sync">Dates appear after sync</string>
+    <string name="recurring_unsynced_hint">Saved on this phone. Dates appear after sync.</string>
+    <string name="recurring_readonly_unknown">This rule uses settings the app doesn’t know yet. Update the app to change it.</string>
+    <string name="recurring_readonly_ended">This rule has ended. You can only delete it.</string>
+    <string name="recurring_readonly_viewer">You can look at this rule but not change it.</string>
+
+    <!-- Cadence and amounts -->
+    <plurals name="recurring_cadence_daily">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
+    <plurals name="recurring_cadence_weekly">
+        <item quantity="one">Every week on %2$s</item>
+        <item quantity="other">Every %1$d weeks on %2$s</item>
+    </plurals>
+    <plurals name="recurring_cadence_monthly">
+        <item quantity="one">Every month on day %2$d</item>
+        <item quantity="other">Every %1$d months on day %2$d</item>
+    </plurals>
+    <plurals name="recurring_cadence_yearly">
+        <item quantity="one">Every year on %2$s</item>
+        <item quantity="other">Every %1$d years on %2$s</item>
+    </plurals>
+    <string name="recurring_cadence_unknown">Other timing</string>
+    <plurals name="recurring_cadence_times">
+        <item quantity="one">After %1$d time</item>
+        <item quantity="other">After %1$d times</item>
+    </plurals>
+    <string name="recurring_cadence_until">Until %1$s</string>
+    <string name="recurring_next_date">Next: %1$s</string>
+    <string name="recurring_next_none">No upcoming date</string>
+    <string name="recurring_amount_of_total">%1$s of %2$s</string>
+    <string name="recurring_payout_amount">Payout %1$s</string>
+    <string name="recurring_auto_on">Automatic confirmation: on</string>
+    <string name="recurring_auto_off">Automatic confirmation: off</string>
+    <string name="recurring_author">Added by %1$s</string>
+    <string-array name="recurring_weekdays">
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+        <item>Sunday</item>
+    </string-array>
+
+    <!-- Rule editor -->
+    <string name="recurring_field_preset">Rule type</string>
+    <string name="recurring_preset_custom">Custom</string>
+    <string name="recurring_preset_gameya">Gam’eya</string>
+    <string name="recurring_preset_installment">Installment</string>
+    <string name="recurring_field_kind">Kind</string>
+    <string name="recurring_field_amount_round">Amount each round</string>
+    <string name="recurring_field_basis">The amount is</string>
+    <string name="recurring_basis_each">Each installment</string>
+    <string name="recurring_basis_total">Total</string>
+    <string name="recurring_field_rounds">Number of rounds</string>
+    <string name="recurring_field_payout_round">Payout round</string>
+    <string name="recurring_field_payout_category">Payout category</string>
+    <string name="recurring_field_frequency">How often</string>
+    <string name="recurring_frequency_daily">Daily</string>
+    <string name="recurring_frequency_weekly">Weekly</string>
+    <string name="recurring_frequency_monthly">Monthly</string>
+    <string name="recurring_frequency_yearly">Yearly</string>
+    <string name="recurring_frequency_unknown">Other</string>
+    <string name="recurring_field_interval">Every</string>
+    <string name="recurring_unit_daily">days</string>
+    <string name="recurring_unit_weekly">weeks</string>
+    <string name="recurring_unit_monthly">months</string>
+    <string name="recurring_unit_yearly">years</string>
+    <string name="recurring_field_day">Day of the month</string>
+    <string name="recurring_field_day_help">Months with fewer days use their last day.</string>
+    <string name="recurring_field_start">Starts</string>
+    <string name="recurring_field_from">Change from</string>
+    <string name="recurring_from_note">Rounds before this date stay as they are.</string>
+    <string name="recurring_field_end">Ends</string>
+    <string name="recurring_end_never">Never</string>
+    <string name="recurring_end_date">On a date</string>
+    <string name="recurring_end_count">After a number of times</string>
+    <string name="recurring_field_end_date">End date</string>
+    <string name="recurring_field_count">Number of times</string>
+    <string name="recurring_auto_confirm">Automatic confirmation</string>
+    <string name="recurring_auto_help">When on, the server adds each round on its date as the rule’s author, and never for dates before the day you switch it on.</string>
+    <string name="recurring_fixed_by_type">Set by the rule type</string>
+    <string name="recurring_locked_note">Kind, wallet and destination can’t change after the rule is saved.</string>
+    <string name="recurring_frozen_reason">Can’t change after a round is confirmed or skipped. Use Change from a date.</string>
+    <string name="recurring_preview_label">Preview</string>
+    <string name="recurring_preview_title">Next dates</string>
+    <string name="recurring_preview_none">No dates to show.</string>
+    <string name="recurring_save">Save</string>
+    <string name="recurring_save_rule">Save rule</string>
+
+    <!-- Field problems -->
+    <string name="recurring_error_required">Fill in this field.</string>
+    <string name="recurring_error_invalid">Check this field.</string>
+    <string name="recurring_error_out_of_range">Use a number from %1$d to %2$d.</string>
+    <string name="recurring_error_too_long">Use at most %1$d characters.</string>
+    <string name="recurring_error_amount_digits">Use at most %1$d digits after the decimal mark.</string>
+    <string name="recurring_error_total_small">The total is too small to split into this many rounds.</string>
+    <string name="recurring_error_payout_large">The payout is too large.</string>
+    <string name="recurring_error_cuts_round">The end can’t come before a round you already confirmed or skipped.</string>
+    <string name="recurring_error_from_range">Choose a date after the last confirmed or skipped round, not before the rule starts.</string>
+    <string name="recurring_error_end_before_start">The end can’t be before the start.</string>
+    <string name="recurring_error_payout_category">Choose the income category for the payout.</string>
+    <string name="recurring_error_immutable">This can’t change after the rule is saved.</string>
+    <string name="recurring_error_date_range">Choose a date between 1900 and 2999.</string>
+    <string name="recurring_error_amount_empty">Enter an amount.</string>
+    <string name="recurring_error_amount_positive">Enter an amount greater than zero.</string>
+    <string name="recurring_error_category_required">Choose a category.</string>
+    <string name="recurring_error_destination_required">Choose the wallet to transfer to.</string>
+
+    <!-- Refusals, by code and field -->
+    <string name="recurring_reason_not_verified">Verify your email address to save this.</string>
+    <string name="recurring_reason_gone">This rule or its wallet is no longer available.</string>
+    <string name="recurring_reason_occurrence_gone">This one is no longer available.</string>
+    <string name="recurring_reason_no_right">You can’t change recurring rules in this wallet.</string>
+    <string name="recurring_reason_no_right_other">You can’t add transactions in the other wallet.</string>
+    <string name="recurring_reason_category">This category can’t be used any more. Choose another.</string>
+    <string name="recurring_reason_destination">The wallet you transfer to is no longer available.</string>
+    <string name="recurring_reason_currency_changed">This wallet’s currency changed to %1$s. Enter the amount again.</string>
+    <string name="recurring_reason_currencies_differ">The two wallets now use different currencies.</string>
+    <string name="recurring_reason_range">A date or an amount is out of range.</string>
+    <string name="recurring_reason_confirmation">The confirmation was refused. Try again.</string>
+    <string name="recurring_reason_immutable">Something that can’t change after the rule was saved was changed.</string>
+    <string name="recurring_reason_invalid">Something here needs fixing.</string>
+    <string name="recurring_reason_other">Not saved. Reference: %1$s</string>
+    <string name="recurring_reason_other_plain">Not saved.</string>
+    <string name="recurring_auto_refusal_not_permitted">Automatic confirmation didn’t happen: the rule’s author no longer can add transactions here.</string>
+    <string name="recurring_auto_refusal_destination">Automatic confirmation didn’t happen: the wallet you transfer to is unavailable.</string>
+    <string name="recurring_auto_refusal_currency">Automatic confirmation didn’t happen: the two wallets use different currencies.</string>
+    <string name="recurring_auto_refusal_unknown">Automatic confirmation didn’t happen.</string>
+
+    <!-- Rule detail actions -->
+    <string name="recurring_action_edit">Edit</string>
+    <string name="recurring_action_change_from">Change from a date</string>
+    <string name="recurring_action_pause">Pause</string>
+    <string name="recurring_action_resume">Resume</string>
+    <string name="recurring_action_end">End rule</string>
+    <string name="recurring_action_delete">Delete rule</string>
+    <string name="recurring_action_catch_up">Check for new dates</string>
+    <string name="recurring_catch_up_hint">Needs a connection.</string>
+    <string name="recurring_catch_up_offline">Checking for new dates needs a connection.</string>
+    <string name="recurring_catch_up_done">Dates are up to date.</string>
+    <string name="recurring_catch_up_failed">Couldn’t check for new dates. Try again later.</string>
+    <string name="recurring_catch_up_failed_reference">Couldn’t check for new dates. Reference: %1$s</string>
+    <string name="recurring_end_title">End this rule?</string>
+    <string name="recurring_end_body">Rounds dated after today go away. Rounds already due stay, so you can confirm or skip them.</string>
+    <string name="recurring_end_confirm">Yes, end it</string>
+    <string name="recurring_delete_title">Delete this rule?</string>
+    <string name="recurring_delete_body">Transactions it produced stay. Deleting can’t be undone.</string>
+    <string name="recurring_delete_confirm">Yes, delete it</string>
+
+    <!-- Occurrence -->
+    <string name="recurring_confirm">Confirm</string>
+    <string name="recurring_skip">Skip</string>
+    <string name="recurring_unskip">Undo skip</string>
+    <string name="recurring_edit_one">Edit this one</string>
+    <string name="recurring_change_confirmation">Change it</string>
+    <string name="recurring_cancel_confirmation">Cancel confirmation</string>
+    <string name="recurring_open_transaction">Open transaction</string>
+    <string name="recurring_open_rule">Open the rule</string>
+    <string name="recurring_notice_already">Already confirmed</string>
+    <string name="recurring_notice_already_body">It was confirmed on another device or automatically. Nothing was added twice.</string>
+    <string name="recurring_confirmed_body">This is confirmed and can’t change.</string>
+    <string name="recurring_no_dates_yet">Dates appear after sync. Then you can confirm or skip them.</string>
+    <string name="recurring_form_confirm_title">Confirm</string>
+    <string name="recurring_form_edit_title">Edit this one</string>
+
+    <!-- Transactions, Home, wallet detail -->
+    <plurals name="recurring_due_count">
+        <item quantity="one">%1$d due</item>
+        <item quantity="other">%1$d due</item>
+    </plurals>
+    <string name="recurring_match_offer">Confirm %1$s (%2$s) instead</string>
+    <string name="recurring_match_title">This looks like a recurring one</string>
+
+    <!-- Accessibility -->
+    <string name="recurring_cd_add">Add recurring</string>
+    <string name="recurring_cd_state">Status: %1$s</string>
+    <string name="recurring_cd_due_card">%1$s. Open recurring.</string>
+    <string name="recurring_cd_preview">Preview of the next dates</string>
+    <string name="recurring_cd_open_rule">Open rule %1$s</string>
+
+    <!-- Catalogue -->
+    <string name="recurring_catalog_section">Recurring</string>
+    <string name="recurring_catalog_rent">Rent</string>
+    <string name="recurring_catalog_gameya">Office gam’eya</string>
+    <string name="recurring_catalog_installment">Laptop installment</string>
 </resources>

@@ -22,6 +22,7 @@ import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.AppSelectField
 import com.fares.saveme.designsystem.component.AppTextField
+import com.fares.saveme.designsystem.component.AppTextButton
 import com.fares.saveme.designsystem.component.CategoryChoiceGroup
 import com.fares.saveme.designsystem.component.CategoryChoiceItem
 import com.fares.saveme.designsystem.component.CategoryChoiceSheet
@@ -92,6 +93,11 @@ import saveme.shared.generated.resources.tx_field_destination
 import saveme.shared.generated.resources.tx_field_details
 import saveme.shared.generated.resources.tx_field_note
 import saveme.shared.generated.resources.tx_field_person
+import saveme.shared.generated.resources.recurring_make_recurring
+import saveme.shared.generated.resources.recurring_match_offer
+import saveme.shared.generated.resources.recurring_match_title
+import saveme.shared.generated.resources.recurring_open_rule
+import saveme.shared.generated.resources.recurring_rule_title
 import saveme.shared.generated.resources.tx_field_wallet
 import saveme.shared.generated.resources.tx_from_recurring
 import saveme.shared.generated.resources.tx_kind_locked_note
@@ -170,7 +176,16 @@ fun TransactionEditorScreen(
             enabled = state.canEdit,
         )
         MoreDetails(state, onIntent)
-        Captions(state)
+        MatchOffers(state, onIntent)
+        Captions(state, onIntent)
+        if (state.canMakeRecurring) {
+            SecondaryButton(
+                stringResource(Res.string.recurring_make_recurring),
+                { onIntent(TransactionEditorIntent.MakeRecurringClicked) },
+                modifier = Modifier.testTag("txEditor.makeRecurring"),
+                enabled = !state.saving && !state.busy,
+            )
+        }
         if (state.canEdit) {
             PrimaryButton(
                 stringResource(Res.string.tx_save),
@@ -331,14 +346,39 @@ private fun MoreDetails(state: TransactionEditorState, onIntent: (TransactionEdi
     )
 }
 
+/** "Confirm … instead": a received occurrence this entry may duplicate, so one payment is not recorded twice (spec 010 FR-031). */
 @Composable
-private fun Captions(state: TransactionEditorState) {
+private fun MatchOffers(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    if (!state.isCreate || state.matches.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
+        InlineAlert(AlertTone.Info, stringResource(Res.string.recurring_match_title), Modifier.testTag("txEditor.matches"))
+        state.matches.forEachIndexed { index, item ->
+            val title = item.description?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.recurring_rule_title)
+            SecondaryButton(
+                stringResource(Res.string.recurring_match_offer, title, formatMoney(item.amountMinor, item.currency)),
+                { onIntent(TransactionEditorIntent.MatchClicked(item.id)) },
+                modifier = Modifier.testTag("txEditor.match.$index"),
+                enabled = state.canSave,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Captions(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
     when (val by = state.addedBy) {
         is AddedBy.Member -> Caption(stringResource(Res.string.tx_added_by, by.name), "txEditor.addedBy")
         AddedBy.AnotherMember -> Caption(stringResource(Res.string.tx_added_by_other), "txEditor.addedBy")
         AddedBy.You, null -> Unit
     }
     if (state.fromRecurringRule) Caption(stringResource(Res.string.tx_from_recurring), "txEditor.recurring")
+    if (state.canOpenRule) {
+        AppTextButton(
+            stringResource(Res.string.recurring_open_rule),
+            { onIntent(TransactionEditorIntent.OpenRuleClicked) },
+            Modifier.testTag("txEditor.openRule"),
+        )
+    }
 }
 
 @Composable

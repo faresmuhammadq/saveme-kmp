@@ -60,6 +60,7 @@ class WalletDetailViewModel(
     override fun onIntent(intent: WalletDetailIntent) {
         when (intent) {
             WalletDetailIntent.TransactionsClicked -> sendEffect(WalletDetailEffect.OpenTransactions(walletId))
+            WalletDetailIntent.RecurringClicked -> sendEffect(WalletDetailEffect.OpenRecurring(walletId))
             WalletDetailIntent.AddTransactionClicked -> if (currentState.canAddTransaction) sendEffect(WalletDetailEffect.OpenAddTransaction(walletId))
             WalletDetailIntent.EditClicked -> if (currentState.canEdit) sendEffect(WalletDetailEffect.OpenEditor(walletId))
             WalletDetailIntent.ArchiveClicked -> if (currentState.canEdit) confirm(DetailConfirm.Archive)

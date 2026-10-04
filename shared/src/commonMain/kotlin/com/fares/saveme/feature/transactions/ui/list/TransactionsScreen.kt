@@ -35,6 +35,8 @@ import com.fares.saveme.designsystem.component.DateHeader
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.MoneyKind
 import com.fares.saveme.designsystem.component.MoneyText
+import com.fares.saveme.designsystem.component.OccurrenceRow
+import com.fares.saveme.designsystem.component.OccurrenceVisualState
 import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.component.SyncBanner
 import com.fares.saveme.designsystem.component.SyncBannerState
@@ -43,6 +45,7 @@ import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.format.formatDateTime
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
+import com.fares.saveme.feature.transactions.domain.DueState
 import com.fares.saveme.feature.transactions.domain.model.Counterpart
 import com.fares.saveme.feature.transactions.domain.model.Direction
 import com.fares.saveme.feature.transactions.domain.model.TransactionKind
@@ -56,7 +59,16 @@ import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.category_unavailable
 import saveme.shared.generated.resources.filter_clear_all
+import saveme.shared.generated.resources.recurring_open
+import saveme.shared.generated.resources.recurring_payout
+import saveme.shared.generated.resources.recurring_rule_title
+import saveme.shared.generated.resources.recurring_section_due
+import saveme.shared.generated.resources.recurring_see_all
+import saveme.shared.generated.resources.recurring_state_due
+import saveme.shared.generated.resources.recurring_state_missed
+import saveme.shared.generated.resources.recurring_state_upcoming
 import saveme.shared.generated.resources.tx_another_wallet
+import saveme.shared.generated.resources.tx_from_recurring
 import saveme.shared.generated.resources.tx_cd_clear_search
 import saveme.shared.generated.resources.tx_cd_money_in
 import saveme.shared.generated.resources.tx_cd_money_out
@@ -136,6 +148,7 @@ private fun TransactionsContent(state: TransactionsState, onIntent: (Transaction
             item { InlineAlert(AlertTone.Warning, stringResource(Res.string.transactions_refresh_failed), Modifier.testTag("transactions.refreshFailed")) }
         }
         item { SearchAndFilters(state, onIntent) }
+        dueSection(state, onIntent)
         when {
             state.loading -> items(4) { Skeleton(Modifier.fillMaxWidth().height(AppTheme.sizes.rowTwoLine)) }
             state.isEmpty -> item {
@@ -171,6 +184,68 @@ private fun TransactionsContent(state: TransactionsState, onIntent: (Transaction
                     }
                 }
             }
+        }
+    }
+}
+
+/** Due and missed occurrences (spec 010 FR-019): at most three, never in totals, search or filters, with the way to the whole list. */
+private fun androidx.compose.foundation.lazy.LazyListScope.dueSection(state: TransactionsState, onIntent: (TransactionsIntent) -> Unit) {
+    if (state.loading) return
+    item(key = "recurring-link") {
+        androidx.compose.foundation.layout.Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (state.due.isEmpty()) "" else stringResource(Res.string.recurring_section_due),
+                style = AppTheme.type.title,
+                color = AppTheme.colors.ink,
+            )
+            AppTextButton(
+                stringResource(Res.string.recurring_open),
+                { onIntent(TransactionsIntent.RecurringClicked) },
+                Modifier.testTag("transactions.recurring"),
+            )
+        }
+    }
+    state.due.forEachIndexed { index, item ->
+        item(key = "due-${item.id}") {
+            OccurrenceRow(
+                dateText = formatDate(item.date),
+                title = item.description?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.recurring_rule_title),
+                amountMinor = item.amountMinor,
+                currency = item.currency,
+                kind = when (item.kindWire) {
+                    "income" -> MoneyKind.Income
+                    "expense" -> MoneyKind.Expense
+                    else -> MoneyKind.Balance
+                },
+                state = when (item.state) {
+                    DueState.Due -> OccurrenceVisualState.Due
+                    DueState.Missed -> OccurrenceVisualState.Missed
+                    DueState.Upcoming -> OccurrenceVisualState.Upcoming
+                },
+                stateLabel = stringResource(
+                    when (item.state) {
+                        DueState.Due -> Res.string.recurring_state_due
+                        DueState.Missed -> Res.string.recurring_state_missed
+                        DueState.Upcoming -> Res.string.recurring_state_upcoming
+                    },
+                ),
+                payoutLabel = if (item.isPayout) stringResource(Res.string.recurring_payout) else null,
+                onClick = { onIntent(TransactionsIntent.DueClicked(item.id)) },
+                modifier = Modifier.testTag("transactions.due.$index"),
+            )
+        }
+    }
+    if (state.dueTotal > state.due.size) {
+        item(key = "due-all") {
+            AppTextButton(
+                stringResource(Res.string.recurring_see_all, state.dueTotal),
+                { onIntent(TransactionsIntent.RecurringClicked) },
+                Modifier.testTag("transactions.due.all"),
+            )
         }
     }
 }
@@ -265,7 +340,7 @@ private fun TransactionItem(row: RowUi, state: TransactionsState, index: Int, on
     }
     TransactionRow(
         title = title,
-        subtitle = row.note ?: stringResource(row.kind.labelRes()),
+        subtitle = row.note ?: stringResource(if (row.occurrenceId != null) Res.string.tx_from_recurring else row.kind.labelRes()),
         amountMinor = row.amountMinor,
         currency = state.currency,
         kind = money,

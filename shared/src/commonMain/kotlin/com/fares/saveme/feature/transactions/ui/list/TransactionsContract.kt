@@ -2,7 +2,9 @@ package com.fares.saveme.feature.transactions.ui.list
 
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
+import com.fares.saveme.feature.transactions.domain.ConfirmationStatus
 import com.fares.saveme.feature.transactions.domain.DatePresets
+import com.fares.saveme.feature.transactions.domain.DueItem
 import com.fares.saveme.feature.transactions.domain.model.Counterpart
 import com.fares.saveme.feature.transactions.domain.model.Direction
 import com.fares.saveme.feature.transactions.domain.model.TransactionKind
@@ -28,6 +30,8 @@ data class RowUi(
     val note: String?,
     val amountMinor: Long,
     val status: RowStatus,
+    /** Set only for a phone-only pending confirmation: the row opens its occurrence (spec 010 R-07). */
+    val occurrenceId: String? = null,
 )
 
 data class DayUi(val date: LocalDate, val netMinor: Long, val rows: List<RowUi>)
@@ -62,6 +66,9 @@ data class TransactionsState(
     /** "Today" in the profile's time zone, for the day labels and the month presets. */
     val today: LocalDate? = null,
     val timeZoneId: String = "UTC",
+    /** Due and missed occurrences, at most [MAX_DUE] (spec 010 FR-019); never in totals, search or filters. */
+    val due: List<DueItem> = emptyList(),
+    val dueTotal: Int = 0,
 ) {
     val chips: List<FilterChip>
         get() = buildList {
@@ -73,6 +80,10 @@ data class TransactionsState(
     val isEmpty: Boolean get() = !loading && totalCount == 0
     val noMatches: Boolean get() = !loading && totalCount > 0 && days.isEmpty()
     val filtersActive: Boolean get() = query.isActive
+
+    companion object {
+        const val MAX_DUE = 3
+    }
 }
 
 sealed interface TransactionsIntent {
@@ -91,11 +102,15 @@ sealed interface TransactionsIntent {
     data object ClearAll : TransactionsIntent
     data class RowClicked(val id: String) : TransactionsIntent
     data object AddClicked : TransactionsIntent
+    data class DueClicked(val id: String) : TransactionsIntent
+    data object RecurringClicked : TransactionsIntent
     data object Back : TransactionsIntent
 }
 
 sealed interface TransactionsEffect {
     data class OpenEditor(val transactionId: String?, val walletId: String) : TransactionsEffect
+    data class OpenOccurrence(val id: String) : TransactionsEffect
+    data class OpenRecurring(val walletId: String) : TransactionsEffect
     data object RequireVerification : TransactionsEffect
     data object Back : TransactionsEffect
 }
@@ -110,6 +125,7 @@ sealed interface TransactionsChange {
     data class FilterSheet(val open: Boolean) : TransactionsChange
     data class Today(val date: LocalDate) : TransactionsChange
     data class TimeZone(val id: String) : TransactionsChange
+    data class Due(val items: List<DueItem>) : TransactionsChange
 }
 
 fun reduce(state: TransactionsState, change: TransactionsChange): TransactionsState = when (change) {
@@ -143,9 +159,10 @@ fun reduce(state: TransactionsState, change: TransactionsChange): TransactionsSt
     is TransactionsChange.FilterSheet -> state.copy(filterSheetOpen = change.open)
     is TransactionsChange.Today -> state.copy(today = change.date)
     is TransactionsChange.TimeZone -> state.copy(timeZoneId = change.id)
+    is TransactionsChange.Due -> state.copy(due = change.items.take(TransactionsState.MAX_DUE), dueTotal = change.items.size)
 }
 
-internal fun TransactionView.toRow(category: CategoryDisplay?) = RowUi(
+internal fun TransactionView.toRow(category: CategoryDisplay?, confirmation: ConfirmationStatus? = null) = RowUi(
     id = id,
     kind = shown.kind,
     direction = direction,
@@ -153,12 +170,21 @@ internal fun TransactionView.toRow(category: CategoryDisplay?) = RowUi(
     category = category,
     note = shown.description?.takeIf { it.isNotBlank() },
     amountMinor = shown.amountMinor,
-    status = when (syncState) {
-        TransactionSyncState.None -> RowStatus.None
-        TransactionSyncState.Waiting -> RowStatus.Waiting
-        is TransactionSyncState.Clash -> RowStatus.Changed
-        is TransactionSyncState.Refused -> RowStatus.NotSaved
+    status = if (pendingConfirmation) {
+        when (confirmation) {
+            ConfirmationStatus.Clash -> RowStatus.Changed
+            ConfirmationStatus.Refused -> RowStatus.NotSaved
+            ConfirmationStatus.Waiting, null -> RowStatus.Waiting
+        }
+    } else {
+        when (syncState) {
+            TransactionSyncState.None -> RowStatus.None
+            TransactionSyncState.Waiting -> RowStatus.Waiting
+            is TransactionSyncState.Clash -> RowStatus.Changed
+            is TransactionSyncState.Refused -> RowStatus.NotSaved
+        }
     },
+    occurrenceId = occurrenceId.takeIf { pendingConfirmation },
 )
 
 /** The query after a month preset or a custom range; presets use "today" in the profile's time zone (research R-12). */

@@ -209,6 +209,71 @@ function transactionBody(t, changes) {
     }
 }
 
+// Recurring rules (spec 010). The wallet is WALLET_ID, or WALLET (a name), or output.walletId; a rule is found by RULE_ID,
+// or output.ruleId from a createRule in this run. Occurrences are server-made: the script only lists, confirms and materialises.
+function ruleId() {
+    var id = arg('RULE_ID') ? arg('RULE_ID') : output.ruleId
+    if (!id) throw new Error('recurring: no RULE_ID and no rule created by this script run')
+    return id
+}
+
+function listAllOccurrences(walletId) {
+    var all = expect(call('GET', 'wallets/' + walletId + '/occurrences?limit=200', undefined, token()), 200, 'listOccurrences').body.data
+    return all.filter(function (o) { return !arg('RULE_ID') && !output.ruleId ? true : o.recurring_rule_id === ruleId() })
+}
+
+// The whole RecurringRuleWrite, as the app sends it (21 members, explicit nulls).
+function ruleBody(w, version) {
+    var start = arg('START') ? arg('START') : todayIso()
+    if (arg('START_IN_DAYS')) {
+        var shifted = new Date()
+        shifted.setDate(shifted.getDate() + parseInt(arg('START_IN_DAYS')))
+        start = shifted.getFullYear() + '-' + (shifted.getMonth() + 1 < 10 ? '0' : '') + (shifted.getMonth() + 1) + '-' + (shifted.getDate() < 10 ? '0' : '') + shifted.getDate()
+    }
+    var frequency = arg('FREQUENCY', 'monthly')
+    var monthly = frequency === 'monthly' || frequency === 'yearly'
+    return {
+        preset: arg('PRESET', 'custom'),
+        status: arg('STATUS', 'active'),
+        kind: arg('KIND', 'expense'),
+        amount_minor: parseInt(arg('AMOUNT', '450000')),
+        amount_basis: arg('BASIS', 'per_occurrence'),
+        currency: w.currency,
+        category_id: arg('KIND', 'expense') === 'transfer' ? null : resolveCategoryId(),
+        counter_wallet_id: arg('KIND', 'expense') === 'transfer' ? arg('COUNTER_WALLET_ID') : null,
+        description: arg('DESCRIPTION', null),
+        memo: null,
+        counterparty: null,
+        auto_confirm: arg('AUTO_CONFIRM', 'false') === 'true',
+        frequency: frequency,
+        interval: parseInt(arg('INTERVAL', '1')),
+        anchor_day: monthly ? parseInt(arg('ANCHOR_DAY', String(parseInt(start.slice(8, 10))))) : null,
+        start_date: start,
+        end_date: arg('END') ? arg('END') : null,
+        occurrence_count: arg('COUNT') ? parseInt(arg('COUNT')) : null,
+        payout_round: arg('PAYOUT_ROUND') ? parseInt(arg('PAYOUT_ROUND')) : null,
+        payout_category_id: arg('PAYOUT_CATEGORY_ID') ? arg('PAYOUT_CATEGORY_ID') : null,
+        version: version,
+    }
+}
+
+// The whole OccurrenceWrite, as the app sends it (nine members); CHANGES overrides.
+function occurrenceBody(o, changes) {
+    var body = {
+        status: o.status,
+        date: o.date,
+        amount_minor: o.amount_minor,
+        category_id: o.category_id,
+        description: o.description,
+        memo: o.memo,
+        counterparty: o.counterparty,
+        transaction_id: o.transaction_id,
+        version: o.version,
+    }
+    for (var key in changes) body[key] = changes[key]
+    return body
+}
+
 var email = arg('EMAIL', arg('E2E_EMAIL'))
 var password = arg('PASSWORD', arg('E2E_PASSWORD'))
 
@@ -455,6 +520,56 @@ switch (arg('ACTION')) {
         var restoredWalletId = transactionWalletId()
         var tombstone = expect(call('GET', 'wallets/' + restoredWalletId + '/transactions/' + arg('ID'), undefined, token()), 200, 'getTransaction').body.data
         output.transaction = expect(call('PATCH', 'wallets/' + restoredWalletId + '/transactions/' + arg('ID'), { deleted_at: null, version: tombstone.version }, token()), 200, 'restoreTransaction').body.data
+        break
+
+    // Creates a recurring rule from this slot: WALLET_ID/WALLET, DESCRIPTION, AMOUNT in minor units (450000), KIND (expense), CATEGORY
+    // (name) or CATEGORY_ID, FREQUENCY (monthly), INTERVAL (1), ANCHOR_DAY (the start's day), START (today) or START_IN_DAYS (days from today), END or COUNT, AUTO_CONFIRM
+    // ("true"), PRESET (custom), BASIS (per_occurrence), PAYOUT_ROUND, PAYOUT_CATEGORY_ID. Copies it into output.rule and its id
+    // into output.ruleId. The server makes the occurrences; a rule starting today has one due at once.
+    case 'createRule':
+        var ruleWalletId = transactionWalletId()
+        var ruleWallet = expect(call('GET', 'wallets/' + ruleWalletId, undefined, token()), 200, 'getWallet').body.data
+        var newRuleId = uuid7()
+        output.rule = expect(call('PUT', 'wallets/' + ruleWalletId + '/recurring-rules/' + newRuleId, ruleBody(ruleWallet, 0), token()), 201, 'createRule').body.data
+        output.ruleId = newRuleId
+        break
+
+    // Deletes a rule from this slot (JSON body on DELETE): RULE_ID or the rule of this run.
+    case 'deleteRule':
+        var deleteRuleWalletId = transactionWalletId()
+        var ruleToDelete = expect(call('GET', 'wallets/' + deleteRuleWalletId + '/recurring-rules/' + ruleId(), undefined, token()), 200, 'getRule').body.data
+        output.rule = expect(call('DELETE_WITH_BODY', 'wallets/' + deleteRuleWalletId + '/recurring-rules/' + ruleId(), { version: ruleToDelete.version }, token()), 200, 'deleteRule').body.data
+        break
+
+    // Asks the server to make the rule's occurrences up to today ("Check for new dates"): RULE_ID or the rule of this run.
+    // An auto-confirm rule is confirmed by the server here. Accepts 200 and 409 (nothing to make).
+    case 'materialise':
+        var materialiseResponse = call('POST', 'wallets/' + transactionWalletId() + '/recurring-rules/' + ruleId() + '/materialise', undefined, token())
+        if (materialiseResponse.status !== 200 && materialiseResponse.status !== 409) {
+            throw new Error('materialise: expected HTTP 200 or 409, got ' + materialiseResponse.status + ' ' + JSON.stringify(materialiseResponse.body))
+        }
+        break
+
+    // Copies a wallet's occurrences (of RULE_ID, or of the rule of this run when there is one) into output.occurrences, their number
+    // into output.occurrenceCount and the number of confirmed ones into output.confirmedCount.
+    case 'listOccurrences':
+        output.occurrences = listAllOccurrences(transactionWalletId())
+        output.occurrenceCount = output.occurrences.length
+        output.confirmedCount = output.occurrences.filter(function (o) { return o.status === 'confirmed' }).length
+        break
+
+    // Confirms the first scheduled occurrence of the rule from this slot, as another device would: AMOUNT (the planned one) in minor
+    // units, DATE (the planned one). Copies the occurrence into output.occurrence and the transaction id into output.transactionId.
+    case 'confirmOccurrence':
+        var confirmWalletId = transactionWalletId()
+        var scheduled = listAllOccurrences(confirmWalletId).filter(function (o) { return o.status === 'scheduled' })
+        if (scheduled.length < 1) throw new Error('confirmOccurrence: no scheduled occurrence')
+        var toConfirm = scheduled[0]
+        var changes = { status: 'confirmed', transaction_id: uuid7() }
+        if (arg('AMOUNT')) changes.amount_minor = parseInt(arg('AMOUNT'))
+        if (arg('DATE')) changes.date = arg('DATE')
+        output.occurrence = expect(call('PUT', 'wallets/' + confirmWalletId + '/occurrences/' + toConfirm.id, occurrenceBody(toConfirm, changes), token()), 200, 'confirmOccurrence').body.data
+        output.transactionId = changes.transaction_id
         break
 
     default:

@@ -1,0 +1,61 @@
+# deferred: E2E on owner's device
+# US3: Given a rule, When the person pauses, resumes, ends and deletes it, Then each is confirmed where it needs to be and transactions it produced stay.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000", START_IN_DAYS: "3" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 60000
+- tapOn:
+    id: "recurring.rule.0"
+- extendedWaitUntil:
+    visible:
+      id: "rule.pause"
+    timeout: 15000
+- tapOn:
+    id: "rule.pause"
+- extendedWaitUntil:
+    visible:
+      id: "rule.resume"
+    timeout: 15000
+- assertVisible: "Paused"
+- tapOn:
+    id: "rule.resume"
+- extendedWaitUntil:
+    visible:
+      id: "rule.pause"
+    timeout: 15000
+- tapOn:
+    id: "rule.end"
+- tapOn: "Yes, end it"
+- extendedWaitUntil:
+    visible: "Ended"
+    timeout: 15000
+- tapOn:
+    id: "rule.delete"
+- tapOn: "Yes, delete it"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.list"
+    timeout: 15000
+- assertNotVisible:
+    id: "recurring.rule.0"

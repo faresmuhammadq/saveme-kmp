@@ -91,6 +91,19 @@ class SignOutWipeTest {
             ),
         )
         env.keyValues.set("transactions.lastWallet", "w1")
+        // Recurring rules and occurrences are wiped too (spec 010 FR-033).
+        db.recurringRuleDao().upsert(
+            com.fares.saveme.feature.recurring.data.local.RecurringRuleEntity(
+                "r1", "u1", "w1", "custom", "active", "expense", 450_000, "per_occurrence", "EGP", "c1", null, "Rent", null, null, false,
+                "monthly", 1, 1, "2026-11-01", null, null, null, null, "Africa/Cairo", "u1", 1, 1, stamp, stamp, stamp,
+            ),
+        )
+        db.occurrenceDao().upsert(
+            com.fares.saveme.feature.recurring.data.local.OccurrenceEntity(
+                "o1", "u1", "w1", "r1", 1, false, "2026-11-01", "2026-11-01", "scheduled", "expense", 450_000, "EGP", "c1", null, "Rent",
+                null, null, false, null, null, 1, 1, stamp, stamp, stamp,
+            ),
+        )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         // Feed positions and read stamps are the account's too (spec 009 FR-028).
@@ -108,6 +121,8 @@ class SignOutWipeTest {
         assertNull(db.categoryDao().get("c1"))
         assertEquals(emptyList<com.fares.saveme.feature.transactions.data.local.TransactionEntity>(), db.transactionDao().getAll())
         assertNull(env.keyValues.values["transactions.lastWallet"])
+        assertNull(db.recurringRuleDao().get("r1"))
+        assertEquals(emptyList<com.fares.saveme.feature.recurring.data.local.OccurrenceEntity>(), db.occurrenceDao().getForWallet("w1"))
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity>(), db.platformCategoryDao().getAll())
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.CategoryReferenceEntity>(), db.categoryReferenceDao().get("w1"))
         assertEquals(emptyList<DeviceSessionEntity>(), db.deviceSessionDao().observeAll().first())

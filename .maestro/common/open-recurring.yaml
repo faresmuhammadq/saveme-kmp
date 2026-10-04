@@ -1,0 +1,22 @@
+# From Home: opens the recurring screen of the wallet named ${WALLET} (Home, Wallets, the wallet, Recurring) and waits for it.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "home.wallets"
+- extendedWaitUntil:
+    visible:
+      id: "wallets.list"
+    timeout: 15000
+- tapOn: ${WALLET}
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.recurring"
+    timeout: 15000
+- tapOn:
+    id: "walletDetail.recurring"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.list"
+    timeout: 15000

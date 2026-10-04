@@ -1,0 +1,58 @@
+# deferred: E2E on owner's device
+# US3 (brief checkpoint 3): Given a monthly rule with round 1 confirmed, When the person changes it from a later date to 5,000.00, Then the old rule ends the day before and a new rule starts; confirmed rounds are unchanged.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: confirmOccurrence, SLOT: B, WALLET: "Alpha" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 60000
+- tapOn:
+    id: "recurring.rule.0"
+- extendedWaitUntil:
+    visible:
+      id: "rule.changeFrom"
+    timeout: 15000
+- tapOn:
+    id: "rule.changeFrom"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.from"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.amount"
+- eraseText: 20
+- inputText: "5000"
+- hideKeyboard
+- tapOn:
+    id: "ruleEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.1"
+    timeout: 60000
+- assertVisible: "EGP 5,000.00"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listOccurrences, SLOT: B, WALLET: "Alpha", RULE_ID: "" }
+- assertTrue: ${output.confirmedCount == 1}

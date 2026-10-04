@@ -1,0 +1,47 @@
+# deferred: E2E on owner's device
+# US4: Given an installment of 10,000.00 in total over 12 months, When the person previews it, Then the rounds are 4 x 833.34 then 8 x 833.33.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Laptop", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- tapOn:
+    id: "recurring.add"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.preset.installment"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.preset.installment"
+- tapOn:
+    id: "ruleEditor.basis.total"
+- tapOn:
+    id: "ruleEditor.amount"
+- inputText: "10000"
+- hideKeyboard
+- tapOn:
+    id: "ruleEditor.category"
+- extendedWaitUntil:
+    visible: "Laptop"
+    timeout: 15000
+- tapOn: "Laptop"
+- tapOn:
+    id: "ruleEditor.rounds"
+- inputText: "12"
+- hideKeyboard
+- assertVisible:
+    id: "ruleEditor.preview"
+- assertVisible: "EGP 833.34"

@@ -1,0 +1,47 @@
+# deferred: E2E on owner's device
+# US2 (brief checkpoint 2): Given an upcoming date, When the person skips it, Then it leaves Upcoming and shows as skipped; undoing the skip brings it back.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000", START_IN_DAYS: "3" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "recurring.upcoming.0"
+    timeout: 60000
+- tapOn:
+    id: "recurring.upcoming.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.skip"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.skip"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.unskip"
+    timeout: 15000
+- assertVisible: "Skipped"
+- tapOn:
+    id: "occurrence.unskip"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.skip"
+    timeout: 15000
+- assertVisible: "Upcoming"

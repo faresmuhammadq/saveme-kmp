@@ -1,0 +1,32 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; confirm with 4,400.00, the transaction is listed waiting and the balance includes it.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- tapOn:
+    id: "transactions.due.0"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.confirm"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.confirm"
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.form.amount"
+    timeout: 15000
+- tapOn:
+    id: "occurrence.form.amount"
+- eraseText: 20
+- inputText: "4400"
+- hideKeyboard
+- tapOn:
+    id: "occurrence.form.save"
+- extendedWaitUntil:
+    visible:
+      id: "transactions.list"
+    timeout: 15000
+- assertVisible: "Waiting to sync"
+- assertVisible: "EGP 5,600.00"

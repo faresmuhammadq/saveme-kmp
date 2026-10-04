@@ -1,0 +1,40 @@
+# deferred: E2E on owner's device
+# US6: Given a rule behind today, When the person taps "Check for new dates", Then online it reads the new dates and offline it says it needs a connection. Part 1: online, on the rule.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Rent", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000", FREQUENCY: "daily" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/open-recurring.yaml
+    env: { WALLET: "Alpha" }
+- extendedWaitUntil:
+    visible:
+      id: "recurring.rule.0"
+    timeout: 60000
+- tapOn:
+    id: "recurring.rule.0"
+- extendedWaitUntil:
+    visible:
+      id: "rule.catchUp"
+    timeout: 15000
+- tapOn:
+    id: "rule.catchUp"
+- extendedWaitUntil:
+    visible:
+      id: "rule.catchUpNote"
+    timeout: 30000
+- assertVisible: "Dates are up to date."

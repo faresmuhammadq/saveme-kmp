@@ -78,6 +78,9 @@ class FakeHandler(
     val applied = mutableListOf<JsonElement>()
     val discarded = mutableListOf<String>()
     var duringSend: suspend () -> Unit = {}
+    var accepts: (PendingChange, JsonElement) -> Boolean = { _, _ -> false }
+
+    override suspend fun acceptsClash(change: PendingChange, current: JsonElement): Boolean = accepts(change, current)
 
     override suspend fun send(change: PendingChange): ApiResult<JsonElement> {
         sent += change

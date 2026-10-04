@@ -55,7 +55,7 @@ class TransactionRepository(
 
     /** The rows of [ids] and every row still carrying a confirmed effect, from one read of the table. */
     fun observeRelevant(ids: List<String>): Flow<List<TransactionEntity>> =
-        if (ids.isEmpty()) transactions.observeCarried() else transactions.observeRelevant(ids)
+        if (ids.isEmpty()) transactions.observeCarriedOrPending() else transactions.observeRelevant(ids)
 
     fun observeCarried(): Flow<List<TransactionEntity>> = transactions.observeCarried()
 
@@ -99,6 +99,14 @@ class TransactionRepository(
         var carrySource = old?.carrySourceMinor ?: 0
         var carryCounter = old?.carryCounterMinor ?: 0
         var confirmedAt = old?.carryConfirmedAt
+        if (old?.pendingConfirmation == true && !own) {
+            // The server's copy replaces the phone-only confirmation row in place; its effect, counted until now by
+            // the row itself, joins the carry until a wallet read includes it (spec 010 R-07).
+            val moved = movedFromPending(dto)
+            carrySource = moved.first
+            carryCounter = moved.second
+            confirmedAt = clock.now().fixedStamp()
+        }
         if (own) {
             carrySource += effect(dto, dto.walletId) - effectOf(old, dto.walletId)
             carryCounter += dto.counterWalletId?.let { effect(dto, it) - effectOf(old, it) } ?: 0
@@ -172,14 +180,49 @@ class TransactionRepository(
                 return true
             }
         }
+        val moved = if (old?.pendingConfirmation == true) movedFromPending(dto) else null
         transactions.upsert(
             dto.toEntity(accountId().orEmpty(), clock.now().toString()).copy(
-                carrySourceMinor = old?.carrySourceMinor ?: 0,
-                carryCounterMinor = old?.carryCounterMinor ?: 0,
-                carryConfirmedAt = old?.carryConfirmedAt,
+                carrySourceMinor = moved?.first ?: old?.carrySourceMinor ?: 0,
+                carryCounterMinor = moved?.second ?: old?.carryCounterMinor ?: 0,
+                carryConfirmedAt = if (moved != null) clock.now().fixedStamp() else old?.carryConfirmedAt,
             ),
         )
         return true
+    }
+
+    /**
+     * The effect a replaced phone-only confirmation row moves into the carry (source, destination); the source's part
+     * is dropped when the phone's copy of the wallet already counts the transaction (spec 010 R-07, spec 009 FR-013).
+     */
+    private suspend fun movedFromPending(dto: TransactionDto): Pair<Long, Long> {
+        val source = if (dto.changeSeq > 0 && (walletChangeSeq(dto.walletId) ?: 0L) >= dto.changeSeq) 0L else effect(dto, dto.walletId)
+        val counter = dto.counterWalletId?.let { effect(dto, it) } ?: 0L
+        return source to counter
+    }
+
+    /** Inserts a phone-only confirmation row (spec 010 R-07). */
+    suspend fun placeConfirmation(row: TransactionEntity) = transactions.upsert(row)
+
+    /** Deletes the confirmation row of [transactionId] while it is still phone-only. */
+    suspend fun dropConfirmation(transactionId: String) {
+        val row = transactions.get(transactionId)
+        if (row != null && row.pendingConfirmation && row.version == 0L) transactions.delete(transactionId)
+    }
+
+    /** Deletes the phone-only confirmation row of an occurrence, except the one with id [exceptTransactionId]. */
+    suspend fun dropConfirmationOf(occurrenceId: String, exceptTransactionId: String?) {
+        transactions.getPendingForOccurrence(occurrenceId).filter { it.id != exceptTransactionId }.forEach { transactions.delete(it.id) }
+    }
+
+    /**
+     * After a complete read of [walletId]: a confirmation row whose transaction the server recorded ([confirmedIds])
+     * but never delivered is dropped, as the transaction was deleted meanwhile (spec 010 R-07).
+     */
+    suspend fun sweepConfirmations(walletId: String, confirmedIds: Set<String>) {
+        transactions.getTouching(walletId)
+            .filter { it.pendingConfirmation && it.version == 0L && it.id in confirmedIds }
+            .forEach { transactions.delete(it.id) }
     }
 
     /**

@@ -26,5 +26,10 @@ data class BatchItem(
     override fun toString() = "BatchItem($type/$id, $op)"
 }
 
-/** A record's type and id: what a change needs to exist on the server first (spec 009 R-07). */
-data class RecordKey(val recordType: String, val recordId: String)
+/**
+ * A record's type and id: what a change needs to exist on the server first (spec 009 R-07).
+ *
+ * With [untilSettled] the change is held until the record has no change in the queue at all, in any
+ * state and even when that change is earlier in the same request (spec 010 R-09).
+ */
+data class RecordKey(val recordType: String, val recordId: String, val untilSettled: Boolean = false)

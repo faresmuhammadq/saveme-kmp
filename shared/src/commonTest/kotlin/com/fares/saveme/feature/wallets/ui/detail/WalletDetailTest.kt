@@ -235,6 +235,15 @@ class WalletDetailTransactionsTest {
     }
 
     @Test
+    fun theRecurringRowOpensTheWalletsRecurringScreen() = runMviTest {
+        val vm = vm()
+        vm.effects.test {
+            vm.onIntent(WalletDetailIntent.RecurringClicked)
+            assertEquals(WalletDetailEffect.OpenRecurring("w1"), awaitItem())
+        }
+    }
+
+    @Test
     fun addTransactionIsOfferedToOwnersAndEditorsOfAnActiveWalletOnly() = runMviTest {
         val vm = vm()
         assertTrue(vm.state.value.canAddTransaction)

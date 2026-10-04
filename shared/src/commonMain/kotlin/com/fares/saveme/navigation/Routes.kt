@@ -3,6 +3,7 @@ package com.fares.saveme.navigation
 import androidx.navigation3.runtime.NavKey
 import com.fares.saveme.feature.auth.domain.SignOutReason
 import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxKind
+import com.fares.saveme.feature.recurring.domain.model.RulePrefill
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -62,6 +63,33 @@ data class TransactionsKey(val walletId: String) : NavKey
  */
 @Serializable
 data class TransactionEditorKey(val transactionId: String? = null, val walletId: String? = null) : NavKey
+
+// Recurring (spec 010).
+
+/** The recurring screen of one wallet, or of every wallet when [walletId] is null (Home's "Due" card). */
+@Serializable
+data class RecurringKey(val walletId: String? = null) : NavKey
+
+@Serializable
+data class RuleDetailKey(val ruleId: String) : NavKey
+
+/**
+ * Creates a rule in [walletId] (prefilled from [prefill] when it comes from the transaction editor), edits [ruleId], or with
+ * [fromDate] edits it "from a date". The prefill's amounts and texts never print (P-09.2).
+ */
+@Serializable
+data class RuleEditorKey(
+    val walletId: String? = null,
+    val ruleId: String? = null,
+    val fromDate: Boolean = false,
+    val prefill: RulePrefill? = null,
+) : NavKey {
+    override fun toString() = "RuleEditorKey(walletId=$walletId, ruleId=$ruleId, fromDate=$fromDate, prefill=${prefill?.let { "yes" } ?: "no"})"
+}
+
+/** One occurrence; [confirm] opens its confirm form straight away. */
+@Serializable
+data class OccurrenceKey(val occurrenceId: String, val confirm: Boolean = false) : NavKey
 
 @Serializable
 data object ChangePasswordKey : NavKey

@@ -52,6 +52,13 @@ interface SyncHandler {
     /** Side effects of dropping a local change (the profile restores the app language). */
     suspend fun onDiscarded(recordId: String) {}
 
+    /**
+     * Whether a `VERSION_CONFLICT` carrying [current] needs no choice from the person: the engine then
+     * treats it as "use theirs" (applies the server copy, drops the change, calls [onDiscarded]) and
+     * never asks. Accepting the server's record never overwrites it (P-04.4). Spec 010 R-06.
+     */
+    suspend fun acceptsClash(change: PendingChange, current: JsonElement): Boolean = false
+
     /** Maps validation pointers to the feature's field names for its screens. */
     fun refusalFields(problem: ProblemDetails): Map<String, String> = emptyMap()
 }

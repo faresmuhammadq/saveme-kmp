@@ -145,3 +145,40 @@ internal val MIGRATION_5_6 = object : Migration(5, 6) {
         connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `feed_read_at` TEXT")
     }
 }
+
+/**
+ * v6 → v7 (spec 010, research R-02): the recurring rule and occurrence tables, the phone-only
+ * `pending_confirmation` flag on transactions, and every wallet scope's feed position cleared once, so the
+ * rule and occurrence rows spec 009 skipped are read from the start (FR-030). Every existing row and the
+ * user scope's position are kept.
+ */
+internal val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `recurring_rule` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL,
+            `preset` TEXT NOT NULL, `status` TEXT NOT NULL, `kind` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL,
+            `amount_basis` TEXT NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT, `counter_wallet_id` TEXT,
+            `description` TEXT, `memo` TEXT, `counterparty` TEXT, `auto_confirm` INTEGER NOT NULL, `frequency` TEXT NOT NULL,
+            `interval` INTEGER NOT NULL, `anchor_day` INTEGER, `start_date` TEXT NOT NULL, `end_date` TEXT,
+            `occurrence_count` INTEGER, `payout_round` INTEGER, `payout_category_id` TEXT, `timezone` TEXT, `created_by` TEXT,
+            `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL,
+            `refreshed_at` TEXT NOT NULL, `follows_rule_id` TEXT, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_recurring_rule_account_id_wallet_id_status` ON `recurring_rule` (`account_id`, `wallet_id`, `status`)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_recurring_rule_follows_rule_id` ON `recurring_rule` (`follows_rule_id`)")
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `occurrence` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL,
+            `recurring_rule_id` TEXT NOT NULL, `ordinal` INTEGER NOT NULL, `is_payout` INTEGER NOT NULL,
+            `scheduled_date` TEXT NOT NULL, `date` TEXT NOT NULL, `status` TEXT NOT NULL, `kind` TEXT NOT NULL,
+            `amount_minor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT, `counter_wallet_id` TEXT,
+            `description` TEXT, `memo` TEXT, `counterparty` TEXT, `edited` INTEGER NOT NULL, `transaction_id` TEXT,
+            `auto_confirm_refusal` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL,
+            `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, `local_notice` TEXT, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_occurrence_account_id_wallet_id_date` ON `occurrence` (`account_id`, `wallet_id`, `date`)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_occurrence_recurring_rule_id_date` ON `occurrence` (`recurring_rule_id`, `date`)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_occurrence_transaction_id` ON `occurrence` (`transaction_id`)")
+        connection.execSQL("ALTER TABLE `transactions` ADD COLUMN `pending_confirmation` INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL WHERE `scope` LIKE 'wallet:%'")
+    }
+}

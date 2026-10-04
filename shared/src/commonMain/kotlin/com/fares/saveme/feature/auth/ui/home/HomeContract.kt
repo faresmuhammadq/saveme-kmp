@@ -2,6 +2,7 @@ package com.fares.saveme.feature.auth.ui.home
 
 import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.DueGlimpse
 import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.auth.ui.verify.ResendChange
 import com.fares.saveme.feature.auth.ui.verify.ResendState
@@ -21,6 +22,9 @@ data class HomeState(
     val resend: ResendState = ResendState(),
     /** Changes still only on this phone; the sign-out sheet warns about them (spec 004 FR-017). */
     val sync: SyncStatus = SyncStatus(),
+    /** Due and missed recurring occurrences in wallets the person can write to; the card shows when above zero (spec 010 FR-019). */
+    val dueCount: Int = 0,
+    val firstDue: DueGlimpse? = null,
 )
 
 /** What cancelling a pending deletion came to, as far as Home needs to know. */
@@ -38,6 +42,7 @@ sealed interface HomeIntent {
     data object SignOutDismissed : HomeIntent
     data object ResendClicked : HomeIntent
     data object SyncNowClicked : HomeIntent
+    data object DueClicked : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -45,6 +50,7 @@ sealed interface HomeEffect {
     data object NavigateWallets : HomeEffect
     data object NavigateCategories : HomeEffect
     data object NavigateAddTransaction : HomeEffect
+    data object OpenDue : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 
@@ -58,6 +64,7 @@ sealed interface HomeChange {
     data object SigningOut : HomeChange
     data class Resend(val change: ResendChange) : HomeChange
     data class Sync(val status: SyncStatus) : HomeChange
+    data class Due(val count: Int, val first: DueGlimpse?) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -74,4 +81,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     HomeChange.SigningOut -> state.copy(signingOut = true)
     is HomeChange.Resend -> state.copy(resend = reduceResend(state.resend, change.change))
     is HomeChange.Sync -> state.copy(sync = change.status)
+    is HomeChange.Due -> state.copy(dueCount = change.count, firstDue = change.first)
 }

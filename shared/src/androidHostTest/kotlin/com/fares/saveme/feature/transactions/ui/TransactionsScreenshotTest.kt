@@ -154,6 +154,9 @@ class TransactionsScreenshotTest(
             canAdd = true, today = today, timeZoneId = "Africa/Cairo", filterChoices = listOf(groceries, transport, dining, salary),
         )
 
+        private fun dueItem(id: String, title: String, date: String, state: com.fares.saveme.feature.transactions.domain.DueState) =
+            com.fares.saveme.feature.transactions.domain.DueItem(id, "w1", "r1", title, kotlinx.datetime.LocalDate.parse(date), 450_000, "EGP", "expense", state)
+
         private fun dialog(state: TransactionEditorState): @Composable () -> Unit = {
             Column(Modifier.padding(16.dp)) {
                 AppAlertDialogCard(
@@ -185,6 +188,18 @@ class TransactionsScreenshotTest(
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
         fun screens(): List<Array<Any>> = listOf(
             // The editor: recording.
+            arrayOf("editor_create_match_offer", @Composable {
+                TransactionEditorScreen(
+                    createBase.copy(
+                        amountText = "4500.00", categoryId = "c1", category = groceries,
+                        matches = listOf(dueItem("o1", "Rent", "2026-10-01", com.fares.saveme.feature.transactions.domain.DueState.Due)),
+                    ),
+                    {},
+                )
+            }),
+            arrayOf("editor_open_rule", @Composable {
+                TransactionEditorScreen(editBase.copy(fromRecurringRule = true, ruleId = "r1", ruleOnPhone = true), {})
+            }),
             arrayOf("editor_create_empty", @Composable { TransactionEditorScreen(createBase, {}) }),
             arrayOf("editor_create_filled", @Composable {
                 TransactionEditorScreen(
@@ -282,6 +297,29 @@ class TransactionsScreenshotTest(
             arrayOf("dialog_delete", dialog(editBase)),
             // The list.
             arrayOf("list_loaded", @Composable { TransactionsScreen(listBase, {}) }),
+            arrayOf("list_due", @Composable {
+                TransactionsScreen(
+                    listBase.copy(
+                        due = listOf(
+                            dueItem("o0", "Rent", "2026-09-01", com.fares.saveme.feature.transactions.domain.DueState.Missed),
+                            dueItem("o1", "Internet", "2026-10-01", com.fares.saveme.feature.transactions.domain.DueState.Due),
+                            dueItem("o2", "Gym", "2026-10-02", com.fares.saveme.feature.transactions.domain.DueState.Due),
+                        ),
+                        dueTotal = 5,
+                    ),
+                    {},
+                )
+            }),
+            arrayOf("list_pending_confirmation", @Composable {
+                TransactionsScreen(
+                    listBase.copy(
+                        days = listOf(
+                            DayUi(today, -450_000, listOf(RowUi("t9", TransactionKind.Expense, Direction.Out, null, groceries, "Rent", 450_000, RowStatus.Waiting, occurrenceId = "o9"))),
+                        ) + days.drop(1),
+                    ),
+                    {},
+                )
+            }),
             arrayOf("list_offline", @Composable {
                 TransactionsScreen(listBase.copy(offline = true, waitingCount = 2, updatedAt = Instant.parse("2026-10-02T08:30:00Z")), {})
             }),
