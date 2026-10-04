@@ -1,0 +1,34 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; create "Food run" 6,000 EGP. It is listed at once with the 3,500.00 already spent this period, marked waiting to sync.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn:
+    id: "budgets.empty.add"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.category"
+    timeout: 15000
+- tapOn:
+    id: "budgetEditor.category"
+# The category choice is a sheet in its own window, so it is tapped by its text.
+- extendedWaitUntil:
+    visible: "Food run"
+    timeout: 15000
+- tapOn: "Food run"
+- tapOn:
+    id: "budgetEditor.limit"
+- inputText: "6000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.0"
+    timeout: 15000
+- assertVisible: "Food run"
+- assertVisible: ".*3,500.00 of 6,000.00.*"
+- assertVisible: "Waiting to sync"
+- assertVisible: "58%"

@@ -1,0 +1,42 @@
+# deferred: E2E on owner's device
+# US5: Given a start day change to 25 that applies later (the server never applies a change at once), When the budgets screen is shown, Then it states "From <date>, periods start on day 25" and keeps the period under way, the one the server reports.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: setStartDay, SLOT: B, DAY: "25" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.period"
+    timeout: 60000
+# The change applies from a later date: the screen says so, and the period under way is the one the server reports.
+- extendedWaitUntil:
+    visible:
+      id: "budgets.pending"
+    timeout: 60000
+- assertVisible:
+    id: "budgets.pending"
+    text: "From .*, periods start on day 25"
+- assertVisible:
+    id: "budgets.period"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgetProgress, SLOT: B }
+- assertTrue: ${output.progress[0].period.end.endsWith('-24')}

@@ -104,6 +104,18 @@ class SignOutWipeTest {
                 null, null, false, null, null, 1, 1, stamp, stamp, stamp,
             ),
         )
+        // Budgets, their stored progress and a waiting budget change are wiped too (spec 012 FR-022).
+        db.budgetDao().upsert(
+            com.fares.saveme.feature.budgets.data.local.BudgetEntity("b1", "u1", "c1", "monthly", 600_000, "EGP", null, 1, 1, stamp, stamp, stamp),
+        )
+        db.budgetProgressDao().upsertAll(
+            listOf(com.fares.saveme.feature.budgets.data.local.BudgetProgressEntity("b1", "u1", "2026-10-01", "2026-10-31", 31, 600_000, 45_000, "EGP", "", 45_000, "", stamp)),
+        )
+        db.pendingChangeDao().upsert(
+            com.fares.saveme.core.sync.PendingChangeEntity(
+                "budget", "b1", "u1", "user", "u1", 1, "{}", false, false, 0, 2, "Waiting", 0, null, null, null, stamp,
+            ),
+        )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         // Feed positions and read stamps are the account's too (spec 009 FR-028).
@@ -121,6 +133,9 @@ class SignOutWipeTest {
         assertNull(db.categoryDao().get("c1"))
         assertEquals(emptyList<com.fares.saveme.feature.transactions.data.local.TransactionEntity>(), db.transactionDao().getAll())
         assertNull(env.keyValues.values["transactions.lastWallet"])
+        assertEquals(emptyList<com.fares.saveme.feature.budgets.data.local.BudgetEntity>(), db.budgetDao().getAll())
+        assertEquals(emptyList<com.fares.saveme.feature.budgets.data.local.BudgetProgressEntity>(), db.budgetProgressDao().getAll())
+        assertNull(db.pendingChangeDao().get("budget", "b1"))
         assertNull(db.recurringRuleDao().get("r1"))
         assertEquals(emptyList<com.fares.saveme.feature.recurring.data.local.OccurrenceEntity>(), db.occurrenceDao().getForWallet("w1"))
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity>(), db.platformCategoryDao().getAll())

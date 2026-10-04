@@ -91,6 +91,8 @@ class RecurringLinksImpl(
 
     override fun observeRuleOnPhone(ruleId: String): Flow<Boolean> = service.observeRule(ruleId).map { it != null && !it.hidden }
 
+    override suspend fun ruleAuthorOf(ruleId: String): String? = service.observeRule(ruleId).first()?.rule?.createdBy
+
     override fun observeConfirmationStatus(transactionId: String): Flow<ConfirmationStatus?> =
         engine().observeAll(OccurrenceSyncHandler.RECORD_TYPE).map { changes ->
             val change = changes.firstOrNull { !it.isDelete && decodeOccurrencePayload(it.payloadJson)?.transactionId == transactionId }

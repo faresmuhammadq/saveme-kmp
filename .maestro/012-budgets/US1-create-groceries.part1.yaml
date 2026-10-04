@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device
+# US1 (brief checkpoint): Given spending already recorded in Groceries, When the person creates a Groceries budget of 6,000 EGP offline, Then it is listed at once with the current period's spending and "Waiting to sync"; online it syncs unchanged. Part 1: online, the budgets screen is open and empty.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "350000", NOTE: "Weekly shop", CATEGORY: "Food run" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.empty"
+    timeout: 30000
+- assertVisible: "Set a monthly limit for a category or for all your spending."

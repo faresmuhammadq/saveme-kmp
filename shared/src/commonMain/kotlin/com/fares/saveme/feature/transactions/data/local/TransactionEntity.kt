@@ -69,6 +69,17 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :id")
     fun observe(id: String): Flow<TransactionEntity?>
 
+    /**
+     * What budgets need (spec 012 R-05) in one snapshot: the live expenses dated in [from]..[to] (ISO dates compare in
+     * time order), every row whose id is in [waitingIds] (a waiting change may move it in or out of the range) and every
+     * phone-only confirmation, for one account. Income, transfers and other people's rows are left to the caller.
+     */
+    @Query(
+        """SELECT * FROM transactions WHERE account_id = :accountId AND deleted_at IS NULL AND (
+        (kind = 'expense' AND date >= :from AND date <= :to) OR id IN (:waitingIds) OR pending_confirmation = 1)""",
+    )
+    fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>>
+
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun get(id: String): TransactionEntity?
 

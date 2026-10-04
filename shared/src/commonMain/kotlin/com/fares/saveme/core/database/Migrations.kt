@@ -193,3 +193,31 @@ internal val MIGRATION_7_8 = object : Migration(7, 8) {
         connection.execSQL("ALTER TABLE `sync_scope` ADD COLUMN `feed_position` INTEGER")
     }
 }
+
+/**
+ * v8 → v9 (spec 012, research R-02, data-model §4): the budget tables, and the person's own feed place forgotten once.
+ * Budgets ride only the user feed, which skipped `budget` rows until now; clearing the cursor, the read stamp and the
+ * integer position together (they are written and cleared together, spec 011) makes the next read start from the
+ * beginning so budgets created earlier appear (FR-020). Wallet scopes keep theirs; every other row is kept.
+ */
+internal val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `budget` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `category_id` TEXT,
+            `period_type` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `archived_at` TEXT,
+            `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL,
+            `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_budget_account_id_archived_at` ON `budget` (`account_id`, `archived_at`)")
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `budget_progress` (`budget_id` TEXT NOT NULL, `account_id` TEXT NOT NULL,
+            `period_start` TEXT NOT NULL, `period_end` TEXT NOT NULL, `days_in_period` INTEGER NOT NULL,
+            `limit_minor` INTEGER NOT NULL, `spent_minor` INTEGER NOT NULL, `currency` TEXT NOT NULL,
+            `other_currencies` TEXT NOT NULL, `local_spent_minor` INTEGER NOT NULL, `local_other_currencies` TEXT NOT NULL,
+            `read_at` TEXT NOT NULL, PRIMARY KEY(`budget_id`))""",
+        )
+        connection.execSQL(
+            "UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL, `feed_position` = NULL WHERE `scope` LIKE 'user:%'",
+        )
+    }
+}

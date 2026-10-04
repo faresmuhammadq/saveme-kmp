@@ -26,6 +26,9 @@ object DateTimeFormat {
     fun date(date: LocalDate, months: List<String>): String =
         "${date.day} ${months[date.month.ordinal]} ${date.year}"
 
+    /** Day and month only ("25 Sep"), for a period whose year is obvious. */
+    fun dayMonth(date: LocalDate, months: List<String>): String = "${date.day} ${months[date.month.ordinal]}"
+
     private fun zoneOrUtc(id: String): TimeZone = runCatching { TimeZone.of(id) }.getOrElse { TimeZone.UTC }
 
     private fun two(value: Int) = value.toString().padStart(2, '0')
@@ -46,3 +49,7 @@ fun formatDate(date: LocalDate): String = DateTimeFormat.date(date, stringArrayR
 @Composable
 fun formatDate(instant: Instant, timeZoneId: String): String =
     formatDate(instant.toLocalDateTime(runCatching { TimeZone.of(timeZoneId) }.getOrElse { TimeZone.UTC }).date)
+
+/** "25 Sep": the day and month of a date, Western digits. */
+@Composable
+fun formatDayMonth(date: LocalDate): String = DateTimeFormat.dayMonth(date, stringArrayResource(Res.array.month_short))

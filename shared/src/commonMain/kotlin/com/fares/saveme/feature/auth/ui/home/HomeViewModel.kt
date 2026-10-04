@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.BudgetGlimpse
 import com.fares.saveme.feature.auth.domain.DueGlimpse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -25,6 +26,7 @@ class HomeViewModel(
     private val syncNow: suspend () -> Unit = {},
     dueCount: Flow<Int> = emptyFlow(),
     firstDue: Flow<DueGlimpse?> = emptyFlow(),
+    budgets: Flow<List<BudgetGlimpse>> = emptyFlow(),
 ) : MviViewModel<HomeState, HomeIntent, HomeEffect>(HomeState()) {
 
     init {
@@ -35,6 +37,7 @@ class HomeViewModel(
         combine(dueCount, firstDue) { count, first -> count to first }
             .onEach { (count, first) -> setState { reduce(it, HomeChange.Due(count, first)) } }
             .launchIn(viewModelScope)
+        budgets.onEach { list -> setState { reduce(it, HomeChange.Budgets(list)) } }.launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: HomeIntent) {
@@ -45,6 +48,8 @@ class HomeViewModel(
             HomeIntent.CategoriesClicked -> sendEffect(HomeEffect.NavigateCategories)
             HomeIntent.AddTransactionClicked -> sendEffect(HomeEffect.NavigateAddTransaction)
             HomeIntent.DueClicked -> sendEffect(HomeEffect.OpenDue)
+            HomeIntent.BudgetsClicked -> sendEffect(HomeEffect.NavigateBudgets)
+            is HomeIntent.BudgetClicked -> sendEffect(HomeEffect.OpenBudget(intent.id))
             HomeIntent.CancelDeletion -> cancel()
             HomeIntent.SignOutClicked -> setState { reduce(it, HomeChange.SignOutConfirmVisible(true)) }
             HomeIntent.SignOutDismissed -> setState { reduce(it, HomeChange.SignOutConfirmVisible(false)) }

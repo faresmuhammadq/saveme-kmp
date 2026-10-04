@@ -928,4 +928,113 @@
     <string name="recurring_catalog_rent">الإيجار</string>
     <string name="recurring_catalog_gameya">جمعية العمل</string>
     <string name="recurring_catalog_installment">قسط اللابتوب</string>
+
+    <!-- Budgets (spec 012) -->
+    <string name="budgets_title">الميزانيات</string>
+    <string name="budgets_new_title">ميزانية جديدة</string>
+    <string name="budgets_edit_title">ميزانية</string>
+    <string name="budgets_set">ضع ميزانية</string>
+    <string name="budgets_empty">حدد حدًا شهريًا لفئة أو لكل مصروفاتك.</string>
+    <string name="budgets_section_active">النشطة</string>
+    <string name="budgets_section_archived">مؤرشفة</string>
+    <string name="budgets_all_expenses">كل المصروفات</string>
+    <string name="budgets_category_unavailable">الفئة غير متاحة</string>
+    <string name="budgets_gone">هذه الميزانية لم تعد متاحة.</string>
+    <string name="budgets_updated_at">آخر تحديث %1$s</string>
+    <string name="budgets_refresh_failed">تعذّر تحديث ميزانياتك. نعرض ما على هذا الهاتف.</string>
+
+    <!-- Budget period -->
+    <string name="budgets_period_line">%1$s · %2$s</string>
+    <string name="budgets_period_range">%1$s – %2$s</string>
+    <plurals name="budgets_days_left">
+        <item quantity="zero">باقٍ %1$d يوم</item>
+        <item quantity="one">باقٍ يوم واحد</item>
+        <item quantity="two">باقٍ يومان</item>
+        <item quantity="few">باقٍ %1$d أيام</item>
+        <item quantity="many">باقٍ %1$d يومًا</item>
+        <item quantity="other">باقٍ %1$d يوم</item>
+    </plurals>
+    <string name="budgets_last_day">آخر يوم في الفترة</string>
+    <string name="budgets_pending_start">من %1$s تبدأ الفترات في اليوم %2$d</string>
+    <string name="budgets_period_monthly">شهريًا، تبدأ في اليوم %1$d</string>
+    <string name="budgets_period_hint">يمكنك تغييره من الملف الشخصي.</string>
+
+    <!-- Rows -->
+    <string name="budgets_on_pace">بهذا المعدل ستصل إلى %1$s</string>
+    <string name="budgets_other_currencies">صُرف أيضًا بعملة %1$s (غير محسوب)</string>
+    <string name="budgets_includes_waiting">يشمل تغييرات في انتظار المزامنة</string>
+    <string name="budgets_unknown_progress">يظهر التقدم بعد المزامنة</string>
+    <string name="budgets_limit_line">الحد %1$s</string>
+    <string name="budgets_newer_version">يظهر كاملًا في الإصدارات الأحدث من التطبيق</string>
+    <string name="budgets_status_waiting">في انتظار المزامنة</string>
+    <string name="budgets_status_clash">تغيّرت على جهاز آخر</string>
+    <string name="budgets_status_deleted">حُذفت على جهاز آخر</string>
+    <string name="budgets_status_not_saved">لم تُحفظ</string>
+
+    <!-- Editor -->
+    <string name="budgets_field_category">الفئة</string>
+    <string name="budgets_field_currency">العملة</string>
+    <string name="budgets_field_limit">الحد</string>
+    <string name="budgets_field_period">فترة الميزانية</string>
+    <string name="budgets_already_budgeted">له ميزانية بالفعل</string>
+    <string name="budgets_immutable">لا يمكن تغييره بعد إنشاء الميزانية</string>
+    <string name="budgets_choose_category">اختر فئة</string>
+    <string name="budgets_choose_currency">اختر عملة</string>
+    <string name="budgets_choice_own">فئاتك</string>
+    <string name="budgets_choice_defaults">الفئات الافتراضية</string>
+    <string name="budgets_choice_empty">لا توجد فئات بعد.</string>
+    <string name="budgets_save">حفظ</string>
+    <string name="budgets_archive">أرشفة الميزانية</string>
+    <string name="budgets_delete">حذف الميزانية</string>
+    <string name="budgets_archive_title">أرشفة هذه الميزانية؟</string>
+    <string name="budgets_archive_body">الميزانيات المؤرشفة تختفي من الرئيسية ولا يمكن إعادة تفعيلها.</string>
+    <string name="budgets_archive_confirm">نعم، أرشفها</string>
+    <string name="budgets_delete_title">حذف هذه الميزانية؟</string>
+    <string name="budgets_delete_body">لا يمكن التراجع عن ذلك.</string>
+    <string name="budgets_delete_confirm">نعم، احذفها</string>
+    <string name="budgets_cancel">إلغاء</string>
+
+    <!-- Clashes and refusals -->
+    <string name="budgets_clash_body">تغيّرت هذه الميزانية على جهاز آخر. اختر أيهما تحتفظ به.</string>
+    <string name="budgets_this_phone">هذا الهاتف: %1$s</string>
+    <string name="budgets_other_device">الجهاز الآخر: %1$s</string>
+    <string name="budgets_keep_mine">احتفظ بتغييري</string>
+    <string name="budgets_use_theirs">استخدم ما على الجهاز الآخر</string>
+    <string name="budgets_delete_anyway">احذفها على أي حال</string>
+    <string name="budgets_keep_budget">احتفظ بالميزانية</string>
+    <string name="budgets_accept_deletion">قبول الحذف</string>
+    <string name="budgets_try_again">حاول مرة أخرى</string>
+    <string name="budgets_discard">تجاهل</string>
+    <string name="budgets_waiting_note">في انتظار المزامنة. محفوظة على هذا الهاتف.</string>
+    <string name="budgets_refusal_not_verified">أكّد بريدك الإلكتروني لتنفيذ ذلك.</string>
+    <string name="budgets_refusal_gone">هذه الميزانية لم تعد متاحة.</string>
+    <string name="budgets_refusal_category">لم يعد بالإمكان وضع ميزانية لهذه الفئة.</string>
+    <string name="budgets_refusal_limit">الحد غير صالح. أدخل مبلغًا أكبر من صفر.</string>
+    <string name="budgets_refusal_currency">لا يمكن استخدام هذه العملة في ميزانية.</string>
+    <string name="budgets_refusal_immutable">لا يمكن تغيير الفئة والعملة والفترة بعد إنشاء الميزانية.</string>
+    <string name="budgets_refusal_invalid">تعذّر حفظ الميزانية. راجعها وحاول مرة أخرى.</string>
+    <string name="budgets_refusal_other">حدث خطأ ما. المرجع: %1$s</string>
+    <string name="budgets_refusal_other_plain">حدث خطأ ما. حاول مرة أخرى.</string>
+
+    <!-- Field problems -->
+    <string name="budgets_error_category_required">اختر فئة أو كل المصروفات.</string>
+    <string name="budgets_error_limit_empty">أدخل الحد.</string>
+    <string name="budgets_error_limit_invalid">أدخل الحد كرقم.</string>
+    <string name="budgets_error_limit_not_positive">يجب أن يكون الحد أكبر من صفر.</string>
+    <string name="budgets_error_limit_range">هذا الحد كبير جدًا.</string>
+    <string name="budgets_error_limit_digits">هذه العملة تسمح بـ %1$d خانات عشرية.</string>
+    <string name="budgets_error_field_invalid">راجع هذا الحقل.</string>
+
+    <!-- Home -->
+    <string name="budgets_home_row">الميزانيات</string>
+    <string name="budgets_home_card_title">الميزانيات</string>
+    <string name="budgets_home_see_all">عرض الكل</string>
+
+    <!-- Accessibility -->
+    <string name="budgets_cd_add">إضافة ميزانية</string>
+    <string name="budgets_cd_open">فتح الميزانية %1$s</string>
+    <string name="budgets_cd_card">الميزانيات. افتح كل الميزانيات.</string>
+
+    <!-- Catalogue -->
+    <string name="budgets_catalog_all">كل المصروفات</string>
 </resources>

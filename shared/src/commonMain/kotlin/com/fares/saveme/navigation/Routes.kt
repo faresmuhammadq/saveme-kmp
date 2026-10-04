@@ -91,6 +91,15 @@ data class RuleEditorKey(
 @Serializable
 data class OccurrenceKey(val occurrenceId: String, val confirm: Boolean = false) : NavKey
 
+// Budgets (spec 012).
+
+@Serializable
+data object BudgetsKey : NavKey
+
+/** A null [budgetId] creates a budget; otherwise the budget is shown and its limit edited. */
+@Serializable
+data class BudgetEditorKey(val budgetId: String? = null) : NavKey
+
 @Serializable
 data object ChangePasswordKey : NavKey
 

@@ -1,0 +1,22 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the expense is sent, the note goes, and the shown figures equal GET /budget-progress.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- pressKey: back
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    notVisible: "Includes changes waiting to sync"
+    timeout: 60000
+- assertVisible: ".*3,700.00 of 6,000.00.*"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgets, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgetProgress, SLOT: B, ID: "${output.budgets[0].id}" }
+- assertTrue: ${output.spentMinor == 370000}
+- assertTrue: ${output.limitMinor == 600000}
+- assertTrue: ${output.remainingMinor == 230000}

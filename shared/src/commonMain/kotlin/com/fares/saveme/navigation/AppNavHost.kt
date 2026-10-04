@@ -39,6 +39,10 @@ import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanEffect
+import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorEffect
+import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
+import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
+import com.fares.saveme.feature.budgets.ui.list.BudgetsRoute
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorRoute
 import com.fares.saveme.feature.categories.ui.list.CategoriesEffect
@@ -232,6 +236,8 @@ fun AppNavHost(
                         HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
                         HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
                         HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
+                        HomeEffect.NavigateBudgets -> appStack.add(BudgetsKey)
+                        is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
                 })
@@ -401,6 +407,30 @@ fun AppNavHost(
                             }
                             is TransactionEditorEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
                             is TransactionEditorEffect.ShowMessage, TransactionEditorEffect.RequireVerification -> Unit // shown by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<BudgetsKey> {
+                BudgetsRoute(
+                    onEffect = { effect ->
+                        when (effect) {
+                            is BudgetsEffect.OpenEditor -> appStack.add(BudgetEditorKey(effect.id))
+                            BudgetsEffect.NavigateBack -> appStack.pop()
+                            BudgetsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<BudgetEditorKey> { key ->
+                BudgetEditorRoute(
+                    budgetId = key.budgetId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            BudgetEditorEffect.Saved, BudgetEditorEffect.NavigateBack -> appStack.pop()
+                            is BudgetEditorEffect.ShowMessage, BudgetEditorEffect.RequireVerification -> Unit // shown by the route
                         }
                     },
                     onRequireVerification = { emailNotVerifiedVisible = true },

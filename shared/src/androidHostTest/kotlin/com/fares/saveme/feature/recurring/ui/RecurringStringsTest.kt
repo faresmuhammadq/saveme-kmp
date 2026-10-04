@@ -13,6 +13,8 @@ class RecurringStringsTest {
     private val marker = "<!-- Recurring (spec 010) -->"
 
     private fun block(lang: String): String = File(dir, "$lang/strings.xml").readText().substringAfter(marker).substringBefore("</resources>")
+        // Only this feature's block: a later feature appends its own after it.
+        .let { rest -> Regex("<!-- [^>]*\\(spec \\d+\\) -->").find(rest)?.let { rest.substring(0, it.range.first) } ?: rest }
 
     private fun names(block: String) = Regex("""<(?:string|plurals|string-array) name="([^"]+)"""").findAll(block).map { it.groupValues[1] }.toSet()
 

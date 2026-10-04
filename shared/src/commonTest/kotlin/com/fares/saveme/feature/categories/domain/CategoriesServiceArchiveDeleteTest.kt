@@ -2,8 +2,6 @@ package com.fares.saveme.feature.categories.domain
 
 import com.fares.saveme.core.network.AppJson
 import com.fares.saveme.core.sync.ChangeState
-import com.fares.saveme.feature.auth.jsonResponse
-import com.fares.saveme.feature.auth.problemBody
 import com.fares.saveme.feature.categories.CategoryTestEnv
 import com.fares.saveme.feature.categories.FakePendingUses
 import com.fares.saveme.feature.categories.categoryJson
@@ -13,6 +11,7 @@ import com.fares.saveme.feature.categories.domain.model.CreateResult
 import com.fares.saveme.feature.categories.domain.model.RefusalReason
 import com.fares.saveme.feature.categories.domain.model.SaveResult
 import com.fares.saveme.feature.categories.domain.model.SyncState
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -25,7 +24,9 @@ import kotlin.test.assertTrue
 
 class CategoriesServiceArchiveDeleteTest {
     private fun env(scope: kotlinx.coroutines.CoroutineScope, uses: FakePendingUses = FakePendingUses()) =
-        CategoryTestEnv(scope, uses) { jsonResponse(503, problemBody(503, "SERVICE_UNAVAILABLE")) }
+        // The upload the service requests parks at the server for good: these tests set the queue's state by hand,
+        // and an answer racing in from the engine's drain on another thread would overwrite it.
+        CategoryTestEnv(scope, uses) { awaitCancellation() }
 
     private fun payloadOf(env: CategoryTestEnv, id: String = "c1") =
         AppJson.decodeFromString(CategoryPayload.serializer(), env.pendingDao.rows.value.getValue("category" to id).payloadJson)

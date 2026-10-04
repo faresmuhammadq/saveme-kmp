@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.component.AlertTone
+import com.fares.saveme.designsystem.component.formatMoney
 import com.fares.saveme.designsystem.component.AppAlertDialogCard
 import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.AppSelectField
@@ -313,7 +314,14 @@ fun CategoriesSection() = CatalogSection(Res.string.catalog_section_categories) 
                 ),
                 CategoryChoiceGroup(
                     stringResource(Res.string.category_choice_defaults),
-                    listOf(CategoryChoiceItem("groceries", stringResource(Res.string.catalog_category_groceries), "cart", "#2E7D32")),
+                    listOf(
+                        CategoryChoiceItem("groceries", stringResource(Res.string.catalog_category_groceries), "cart", "#2E7D32"),
+                        // A choice that can't be taken: dimmed, announced as disabled, its caption says why (spec 012 R-13).
+                        CategoryChoiceItem(
+                            "dining", stringResource(Res.string.catalog_budget_dining), "restaurant", "#EF6C00",
+                            caption = stringResource(Res.string.budgets_already_budgeted), enabled = false,
+                        ),
+                    ),
                     "categoryChoice.default",
                 ),
             ),
@@ -362,6 +370,11 @@ fun BudgetsSection() = CatalogSection(Res.string.catalog_section_budgets) {
     BudgetProgress(stringResource(Res.string.catalog_budget_transport), 61_000, 120_000, "EGP")
     BudgetProgress(stringResource(Res.string.catalog_budget_groceries), 342_000, 400_000, "EGP")
     BudgetProgress(stringResource(Res.string.catalog_budget_dining), 154_000, 120_000, "EGP")
+    // The caption lines a budget row carries under the bar, as the budgets screen writes them (spec 012 R-13).
+    BudgetProgress(stringResource(Res.string.budgets_catalog_all), 350_000, 600_000, "EGP")
+    Text(stringResource(Res.string.budgets_on_pace, formatMoney(1_312_500, "EGP")), style = AppTheme.type.caption, color = AppTheme.colors.caption)
+    Text(stringResource(Res.string.budgets_other_currencies, "USD"), style = AppTheme.type.caption, color = AppTheme.colors.caption)
+    Text(stringResource(Res.string.budgets_includes_waiting), style = AppTheme.type.caption, color = AppTheme.colors.caption)
 }
 
 @Composable

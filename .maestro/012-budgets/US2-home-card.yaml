@@ -1,0 +1,64 @@
+# deferred: E2E on owner's device
+# US2-S5: Given three active budgets, When Home is shown, Then the "Budgets" card lists them highest share first; "See all" opens the budgets screen.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Cafe", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Fares", AMOUNT: "300000" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Cafe", AMOUNT: "200000" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "540000", NOTE: "Big shop", CATEGORY: "Food run" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "90000", NOTE: "Taxi", CATEGORY: "Fares" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "250000", NOTE: "Coffee club", CATEGORY: "Cafe" }
+- runFlow: ../common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home.budgetsCard"
+    timeout: 60000
+# Cafe 125%, Food run 90%, Fares 30%.
+- assertVisible:
+    id: "home.budgetsCard.0"
+- assertVisible:
+    id: "home.budgetsCard.2"
+- assertVisible:
+    text: "Cafe"
+    above: "Food run"
+- assertVisible:
+    text: "Food run"
+    above: "Fares"
+- tapOn:
+    id: "home.budgetsCard.all"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.list"
+    timeout: 15000
+- assertVisible:
+    id: "budgets.period"

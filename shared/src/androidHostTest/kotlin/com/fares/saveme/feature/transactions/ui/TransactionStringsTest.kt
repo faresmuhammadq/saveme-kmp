@@ -14,6 +14,8 @@ class TransactionStringsTest {
     private fun block(lang: String): String {
         val text = File(dir, "$lang/strings.xml").readText()
         return text.substringAfter("<!-- Transactions (spec 008) -->").substringBefore("</resources>")
+            // Only this feature's block: a later feature appends its own after it.
+            .let { rest -> Regex("<!-- [^>]*\\(spec \\d+\\) -->").find(rest)?.let { rest.substring(0, it.range.first) } ?: rest }
     }
 
     private fun names(block: String) = Regex("""<(?:string|plurals) name="([^"]+)"""").findAll(block).map { it.groupValues[1] }.toSet()
