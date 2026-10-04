@@ -257,7 +257,7 @@ description: "Task list for 010-recurring"
 - [X] T099 Update README "On-device database" (Room v7; recurring rules and occurrences) and the C7 row of `specs/briefs/README.md`
 - [ ] T100 Run quickstart.md manual checks 1–10 on the dev build — **deferred: E2E on owner's device**
 - [ ] T101 Run the full `/speckit-e2e 010-recurring` and write `specs/010-recurring/e2e-report.md` incl. the brief's three checkpoints (SC-007) — **deferred: E2E on owner's device**
-- [ ] T102 Write specs/010-recurring/summary.md
+- [X] T102 Write specs/010-recurring/summary.md
 
 ---
 
