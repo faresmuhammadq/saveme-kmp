@@ -151,7 +151,7 @@ description: "Task list for 011-sync-heads"
 - [X] T035 [P] (written; deferred: E2E on owner's device, not run) Write `.maestro/011-sync-heads/US2-partner-rename.yaml` (two accounts, rename, refresh, members list shows the new name) and `US3-restore-with-my-change.yaml`, each starting with `# deferred: E2E on owner's device`; static review that every `id:` selector exists as a `testTag`. **Deferred: E2E on owner's device** — do not run
 - [X] T036 Gates: `./gradlew :shared:testAndroidHostTest --rerun-tasks`, `:shared:verifyRoborazziAndroidHostTest` (no golden changed), `:androidApp:assembleDevDebug`, `:shared:compileKotlinIosSimulatorArm64`; `8.json` exported; record counts and any test edited in the plan's Implementation notes
 - [X] T037 Host QA of spec 011 (host-only, as specs 009 and 010 did): every acceptance scenario, edge case, FR and SC mapped to a passing test or a QA row in `qa-report.md`
-- [ ] T038 (parent writes it) Write specs/011-sync-heads/summary.md (parent writes it)
+- [X] T038 (parent writes it) Write specs/011-sync-heads/summary.md (parent writes it)
 
 ---
 
