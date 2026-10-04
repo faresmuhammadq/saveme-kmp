@@ -876,4 +876,109 @@
     <string name="recurring_catalog_rent">Rent</string>
     <string name="recurring_catalog_gameya">Office gam’eya</string>
     <string name="recurring_catalog_installment">Laptop installment</string>
+
+    <!-- Budgets (spec 012) -->
+    <string name="budgets_title">Budgets</string>
+    <string name="budgets_new_title">New budget</string>
+    <string name="budgets_edit_title">Budget</string>
+    <string name="budgets_set">Set a budget</string>
+    <string name="budgets_empty">Set a monthly limit for a category or for all your spending.</string>
+    <string name="budgets_section_active">Active</string>
+    <string name="budgets_section_archived">Archived</string>
+    <string name="budgets_all_expenses">All expenses</string>
+    <string name="budgets_category_unavailable">Category unavailable</string>
+    <string name="budgets_gone">This budget is no longer available.</string>
+    <string name="budgets_updated_at">Updated %1$s</string>
+    <string name="budgets_refresh_failed">Couldn’t update your budgets. Showing what’s on this phone.</string>
+
+    <!-- Budget period -->
+    <string name="budgets_period_line">%1$s · %2$s</string>
+    <string name="budgets_period_range">%1$s – %2$s</string>
+    <plurals name="budgets_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="budgets_last_day">Last day of the period</string>
+    <string name="budgets_pending_start">From %1$s, periods start on day %2$d</string>
+    <string name="budgets_period_monthly">Monthly, starting on day %1$d</string>
+    <string name="budgets_period_hint">Change it in Profile.</string>
+
+    <!-- Rows -->
+    <string name="budgets_on_pace">On pace for %1$s</string>
+    <string name="budgets_other_currencies">Also spent in %1$s (not counted)</string>
+    <string name="budgets_includes_waiting">Includes changes waiting to sync</string>
+    <string name="budgets_unknown_progress">Progress appears after sync</string>
+    <string name="budgets_limit_line">Limit %1$s</string>
+    <string name="budgets_newer_version">Shown in full on newer versions of the app</string>
+    <string name="budgets_status_waiting">Waiting to sync</string>
+    <string name="budgets_status_clash">Changed on another device</string>
+    <string name="budgets_status_deleted">Deleted on another device</string>
+    <string name="budgets_status_not_saved">Not saved</string>
+
+    <!-- Editor -->
+    <string name="budgets_field_category">Category</string>
+    <string name="budgets_field_currency">Currency</string>
+    <string name="budgets_field_limit">Limit</string>
+    <string name="budgets_field_period">Budget period</string>
+    <string name="budgets_already_budgeted">Already budgeted</string>
+    <string name="budgets_immutable">Can’t be changed after the budget is created</string>
+    <string name="budgets_choose_category">Choose a category</string>
+    <string name="budgets_choose_currency">Choose a currency</string>
+    <string name="budgets_choice_own">Your categories</string>
+    <string name="budgets_choice_defaults">Default categories</string>
+    <string name="budgets_choice_empty">No categories yet.</string>
+    <string name="budgets_save">Save</string>
+    <string name="budgets_archive">Archive budget</string>
+    <string name="budgets_delete">Delete budget</string>
+    <string name="budgets_archive_title">Archive this budget?</string>
+    <string name="budgets_archive_body">Archived budgets leave Home and can’t be made active again.</string>
+    <string name="budgets_archive_confirm">Yes, archive it</string>
+    <string name="budgets_delete_title">Delete this budget?</string>
+    <string name="budgets_delete_body">This can’t be undone.</string>
+    <string name="budgets_delete_confirm">Yes, delete it</string>
+    <string name="budgets_cancel">Cancel</string>
+
+    <!-- Clashes and refusals -->
+    <string name="budgets_clash_body">This budget was changed on another device. Choose which one to keep.</string>
+    <string name="budgets_this_phone">This phone: %1$s</string>
+    <string name="budgets_other_device">Other device: %1$s</string>
+    <string name="budgets_keep_mine">Keep mine</string>
+    <string name="budgets_use_theirs">Use the other device’s</string>
+    <string name="budgets_delete_anyway">Delete anyway</string>
+    <string name="budgets_keep_budget">Keep the budget</string>
+    <string name="budgets_accept_deletion">Accept the deletion</string>
+    <string name="budgets_try_again">Try again</string>
+    <string name="budgets_discard">Discard</string>
+    <string name="budgets_waiting_note">Waiting to sync. It is saved on this phone.</string>
+    <string name="budgets_refusal_not_verified">Verify your email to do this.</string>
+    <string name="budgets_refusal_gone">This budget is no longer available.</string>
+    <string name="budgets_refusal_category">This category can’t have a budget any more.</string>
+    <string name="budgets_refusal_limit">The limit isn’t valid. Enter an amount above zero.</string>
+    <string name="budgets_refusal_currency">This currency can’t be used for a budget.</string>
+    <string name="budgets_refusal_immutable">The category, currency and period can’t be changed after the budget is created.</string>
+    <string name="budgets_refusal_invalid">The budget couldn’t be saved. Check it and try again.</string>
+    <string name="budgets_refusal_other">Something went wrong. Reference: %1$s</string>
+    <string name="budgets_refusal_other_plain">Something went wrong. Try again.</string>
+
+    <!-- Field problems -->
+    <string name="budgets_error_category_required">Choose a category or All expenses.</string>
+    <string name="budgets_error_limit_empty">Enter a limit.</string>
+    <string name="budgets_error_limit_invalid">Enter the limit as a number.</string>
+    <string name="budgets_error_limit_not_positive">The limit must be above zero.</string>
+    <string name="budgets_error_limit_range">That limit is too large.</string>
+    <string name="budgets_error_limit_digits">This currency allows %1$d decimal places.</string>
+    <string name="budgets_error_field_invalid">Check this field.</string>
+
+    <!-- Home -->
+    <string name="budgets_home_row">Budgets</string>
+    <string name="budgets_home_card_title">Budgets</string>
+    <string name="budgets_home_see_all">See all</string>
+
+    <!-- Accessibility -->
+    <string name="budgets_cd_add">Add budget</string>
+    <string name="budgets_cd_open">Open budget %1$s</string>
+    <string name="budgets_cd_card">Budgets. Open all budgets.</string>
+
+    <!-- Catalogue -->
+    <string name="budgets_catalog_all">All expenses</string>
 </resources>

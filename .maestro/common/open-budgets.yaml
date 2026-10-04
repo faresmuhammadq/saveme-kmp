@@ -1,0 +1,11 @@
+# From Home: opens the budgets screen and waits for it.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "home.budgets"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.list"
+    timeout: 15000

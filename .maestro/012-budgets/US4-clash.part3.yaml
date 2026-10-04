@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the phone's save meets the newer version, shows "Changed on another device", and "Keep mine" sends 7,000 on top.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- extendedWaitUntil:
+    visible: "Changed on another device"
+    timeout: 60000
+- tapOn:
+    id: "budgets.active.0"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.keepMine"
+    timeout: 15000
+- assertVisible: "Use the other device’s"
+- tapOn:
+    id: "budgetEditor.keepMine"
+- extendedWaitUntil:
+    notVisible: "Changed on another device"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgets, SLOT: B }
+- assertTrue: ${output.budgets[0].amount_minor == 700000}

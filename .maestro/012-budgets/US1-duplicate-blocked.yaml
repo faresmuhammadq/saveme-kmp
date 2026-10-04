@@ -1,0 +1,56 @@
+# deferred: E2E on owner's device
+# US1-S4: Given an active "Food run" budget in EGP, When the person creates another, Then "Food run" is shown as "Already budgeted" and cannot be chosen; the same category in USD, and "All expenses" in USD, can.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Dollars", OPENING: "100000", CURRENCY: "USD" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.0"
+    timeout: 60000
+- tapOn:
+    id: "budgets.add"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.category"
+    timeout: 15000
+- tapOn:
+    id: "budgetEditor.category"
+- extendedWaitUntil:
+    visible: "Already budgeted"
+    timeout: 15000
+# Tapping the disabled row chooses nothing: the sheet stays open and the field stays empty.
+- tapOn: ".*Food run.*"
+- assertVisible: "Already budgeted"
+- pressKey: back
+- assertNotVisible: "Food run"
+- tapOn:
+    id: "budgetEditor.currency"
+- extendedWaitUntil:
+    visible: "USD"
+    timeout: 15000
+- tapOn: "USD"
+- tapOn:
+    id: "budgetEditor.category"
+- extendedWaitUntil:
+    visible: "Food run"
+    timeout: 15000
+- assertNotVisible: "Already budgeted"

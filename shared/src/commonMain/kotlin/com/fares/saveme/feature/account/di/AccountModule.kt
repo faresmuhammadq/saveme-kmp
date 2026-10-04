@@ -27,6 +27,7 @@ import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountViewModel
 import com.fares.saveme.feature.account.ui.profile.ProfileViewModel
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.BudgetSummary
 import com.fares.saveme.feature.auth.domain.DueSummary
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.auth.domain.usecase.ResendVerificationUseCase
@@ -43,6 +44,9 @@ import kotlinx.coroutines.flow.map
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
+
+/** The budgets Home lists on its card (spec 012 FR-017). */
+private const val HOME_BUDGETS = 3
 
 val accountModule = module {
     single { AccountApi(get()) }
@@ -78,6 +82,7 @@ val accountModule = module {
         val resend = get<ResendVerificationUseCase>()
         val engine = get<SyncEngine>()
         val due = get<DueSummary>()
+        val budgets = get<BudgetSummary>()
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -93,6 +98,7 @@ val accountModule = module {
             syncNow = { engine.syncNow() },
             dueCount = due.observeDueCount(),
             firstDue = due.observeFirstDue(),
+            budgets = budgets.observeTop(HOME_BUDGETS),
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's

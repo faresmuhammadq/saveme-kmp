@@ -65,15 +65,16 @@ class Migration7To8Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_7_8)
+        .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
         .build()
 
     @Test
     fun everyStoredRowAndCursorSurvivesAndNoPositionIsInvented() = runTest {
         val db = open(v7Database())
+        // The database opens at the current version, so 8 -> 9 also ran: it forgets the person's own place once (spec 012).
         val user = db.syncScopeDao().observe("user:u1").first()!!
-        assertEquals("user-cursor", user.feedCursor)
-        assertEquals("2026-10-02T08:00:00.000Z", user.feedReadAt)
+        assertNull(user.feedCursor)
+        assertNull(user.feedReadAt)
         assertEquals("2026-10-01T09:00:00Z", user.lastPushedAt)
         assertNull(user.feedPosition)
         val wallet = db.syncScopeDao().observe("wallet:w1").first()!!

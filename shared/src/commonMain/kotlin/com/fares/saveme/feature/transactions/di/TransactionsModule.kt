@@ -21,6 +21,8 @@ import com.fares.saveme.feature.transactions.domain.BalanceReconciler
 import com.fares.saveme.feature.transactions.domain.DefaultTransactionsService
 import com.fares.saveme.feature.transactions.domain.DefaultOccurrenceTransactions
 import com.fares.saveme.feature.transactions.domain.OccurrenceTransactions
+import com.fares.saveme.feature.transactions.domain.OwnSpending
+import com.fares.saveme.feature.transactions.domain.TransactionOwnSpending
 import com.fares.saveme.feature.transactions.domain.NoRecurringLinks
 import com.fares.saveme.feature.transactions.domain.RecurringLinks
 import com.fares.saveme.feature.transactions.domain.TransactionCategoryUses
@@ -98,6 +100,18 @@ val transactionsModule = module {
         DefaultOccurrenceTransactions(repository = get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
     }
     single<PendingPostings> { TransactionPostings(engine = { get<SyncEngine>() }, repository = get()) }
+    // What budgets sum (spec 012 R-05): the person's own expenses with waiting changes applied. Everything it needs from
+    // other features is resolved on use, so the graph keeps no cycle.
+    single<OwnSpending> {
+        val sessions = get<SessionManager>()
+        TransactionOwnSpending(
+            engine = { get<SyncEngine>() },
+            repository = get(),
+            accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
+            memberWalletIds = { get<WalletsService>().observeList().map { list -> (list.active + list.archived).map { it.id }.toSet() } },
+            ruleAuthorOf = { ruleId -> get<RecurringLinks>().ruleAuthorOf(ruleId) },
+        )
+    }
     // One of the sources C5 unions (spec 010 FR-032): bound as a secondary type so recurring's can sit beside it.
     single { TransactionCategoryUses(engine = { get<SyncEngine>() }) } bind PendingCategoryUses::class
     // Default until the recurring module rebinds it (research R-10).

@@ -1,14 +1,28 @@
 package com.fares.saveme.feature.auth.ui.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AlertTone
 import com.fares.saveme.designsystem.component.AppIconButton
+import com.fares.saveme.designsystem.component.AppTextButton
+import com.fares.saveme.designsystem.component.BudgetProgress
 import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.ListTrailing
 import com.fares.saveme.designsystem.component.AppScreen
@@ -17,9 +31,11 @@ import com.fares.saveme.designsystem.component.DestructiveButton
 import com.fares.saveme.designsystem.component.DueCard
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.PrimaryButton
+import com.fares.saveme.designsystem.component.formatMoney
 import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
+import com.fares.saveme.feature.auth.domain.BudgetGlimpse
 import com.fares.saveme.feature.auth.ui.signout.SignOutConfirmSheet
 import com.fares.saveme.feature.auth.ui.verify.text
 import kotlinx.datetime.TimeZone
@@ -39,6 +55,15 @@ import saveme.shared.generated.resources.home_signed_in_as
 import saveme.shared.generated.resources.home_title
 import saveme.shared.generated.resources.home_add_transaction
 import saveme.shared.generated.resources.home_categories
+import saveme.shared.generated.resources.budgets_all_expenses
+import saveme.shared.generated.resources.budgets_cd_card
+import saveme.shared.generated.resources.budgets_category_unavailable
+import saveme.shared.generated.resources.budgets_home_card_title
+import saveme.shared.generated.resources.budgets_home_row
+import saveme.shared.generated.resources.budgets_home_see_all
+import saveme.shared.generated.resources.budgets_limit_line
+import saveme.shared.generated.resources.budgets_status_waiting
+import saveme.shared.generated.resources.budgets_unknown_progress
 import saveme.shared.generated.resources.home_wallets
 import saveme.shared.generated.resources.sign_out_action
 import kotlin.time.Instant
@@ -97,6 +122,7 @@ fun HomeScreen(
                 onClick = { onIntent(HomeIntent.DueClicked) },
             )
         }
+        if (state.budgets.isNotEmpty()) BudgetsCard(state.budgets, onIntent)
         PrimaryButton(
             stringResource(Res.string.home_add_transaction),
             { onIntent(HomeIntent.AddTransactionClicked) },
@@ -114,6 +140,12 @@ fun HomeScreen(
             trailing = ListTrailing.Chevron,
             onClick = { onIntent(HomeIntent.CategoriesClicked) },
         )
+        AppListItem(
+            headline = stringResource(Res.string.budgets_home_row),
+            modifier = Modifier.testTag("home.budgets"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(HomeIntent.BudgetsClicked) },
+        )
         Text(stringResource(Res.string.home_signed_in_as, state.email), style = AppTheme.type.body, color = AppTheme.colors.ink)
         DestructiveButton(stringResource(Res.string.sign_out_action), { onIntent(HomeIntent.SignOutClicked) })
     }
@@ -125,6 +157,62 @@ fun HomeScreen(
             pendingChanges = state.sync.pending,
             onSyncNow = { onIntent(HomeIntent.SyncNowClicked) },
         )
+    }
+}
+
+/** Up to three active budgets with the design system's progress element, and "See all" (spec 012 FR-017). */
+@Composable
+internal fun BudgetsCard(budgets: List<BudgetGlimpse>, onIntent: (HomeIntent) -> Unit) {
+    val card = stringResource(Res.string.budgets_cd_card)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xxs),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AppTheme.colors.surface, AppTheme.shapes.card)
+            .padding(horizontal = AppTheme.spacing.m, vertical = AppTheme.spacing.xs)
+            .testTag("home.budgetsCard"),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(Res.string.budgets_home_card_title),
+                style = AppTheme.type.itemTitle,
+                color = AppTheme.colors.ink,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            AppTextButton(
+                stringResource(Res.string.budgets_home_see_all),
+                { onIntent(HomeIntent.BudgetsClicked) },
+                modifier = Modifier.testTag("home.budgetsCard.all").semantics { contentDescription = card },
+            )
+        }
+        budgets.forEachIndexed { index, glimpse ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xxs),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(role = Role.Button) { onIntent(HomeIntent.BudgetClicked(glimpse.id)) }
+                    .testTag("home.budgetsCard.$index"),
+            ) {
+                val name = when {
+                    glimpse.categoryName == null -> stringResource(Res.string.budgets_all_expenses)
+                    glimpse.categoryName.isEmpty() -> stringResource(Res.string.budgets_category_unavailable)
+                    else -> glimpse.categoryName
+                }
+                if (glimpse.spentMinor != null) {
+                    BudgetProgress(name, glimpse.spentMinor, glimpse.limitMinor, glimpse.currency)
+                } else {
+                    Text(name, style = AppTheme.type.itemTitle, color = AppTheme.colors.ink)
+                    Text(
+                        stringResource(Res.string.budgets_limit_line, formatMoney(glimpse.limitMinor, glimpse.currency)),
+                        style = AppTheme.type.body, color = AppTheme.colors.ink2,
+                    )
+                    Text(stringResource(Res.string.budgets_unknown_progress), style = AppTheme.type.caption, color = AppTheme.colors.caption)
+                }
+                if (glimpse.includesWaiting) {
+                    Text(stringResource(Res.string.budgets_status_waiting), style = AppTheme.type.caption, color = AppTheme.colors.caption)
+                }
+            }
+        }
     }
 }
 

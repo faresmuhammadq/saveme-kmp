@@ -1,0 +1,22 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; record a 200.00 expense in Food run. The budget moves to 3,700.00 at once and says a change waits.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- pressKey: back
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Alpha" }
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "200", CATEGORY: "Food run" }
+- pressKey: back
+- pressKey: back
+- pressKey: back
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible: ".*3,700.00 of 6,000.00.*"
+    timeout: 15000
+- assertVisible: "Includes changes waiting to sync"

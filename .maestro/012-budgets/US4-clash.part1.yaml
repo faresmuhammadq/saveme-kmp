@@ -1,0 +1,22 @@
+# deferred: E2E on owner's device
+# US4-S5: Given a budget edited offline on the phone and on another device, When the phone reconnects, Then it shows "Changed on another device" and "Keep mine" re-sends the phone's limit. Part 1: online, the budgets screen is open.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.0"
+    timeout: 60000

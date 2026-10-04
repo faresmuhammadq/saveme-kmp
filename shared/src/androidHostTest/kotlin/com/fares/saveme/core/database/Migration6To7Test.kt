@@ -120,7 +120,7 @@ class Migration6To7Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
+        .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
         .build()
 
     @Test
@@ -145,8 +145,9 @@ class Migration6To7Test {
         assertEquals("2026-09-28T09:30:00Z", wallet.lastPushedAt)
         assertEquals("2026-09-28T10:00:00Z", wallet.refreshedAt)
         val user = db.syncScopeDao().observe("user:u1").first()!!
-        assertEquals("user-pos", user.feedCursor)
-        assertEquals("2026-10-01T08:00:00.000Z", user.feedReadAt)
+        // The database opens at the current version, so 8 -> 9 also ran: it forgets the person's own place once (spec 012 FR-020).
+        assertNull(user.feedCursor)
+        assertNull(user.feedReadAt)
         assertNull(db.syncScopeDao().observe("wallets").first()!!.feedCursor)
         db.close()
     }

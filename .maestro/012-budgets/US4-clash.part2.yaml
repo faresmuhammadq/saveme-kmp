@@ -1,0 +1,33 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; raise the limit to 7,000 on the phone, and to 9,000 on the other device (through the API).
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- tapOn:
+    id: "budgets.active.0"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.limit"
+    timeout: 15000
+- tapOn:
+    id: "budgetEditor.limit"
+- eraseText: 20
+- inputText: "7000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible: "Waiting to sync"
+    timeout: 15000
+# This flow starts without part 1's script output, so the budget is found again (the account has exactly one).
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgets, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: saveBudget, SLOT: B, ID: "${output.budgets[0].id}", NEW_AMOUNT: "900000" }

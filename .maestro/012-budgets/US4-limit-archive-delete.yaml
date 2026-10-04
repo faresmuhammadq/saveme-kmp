@@ -1,0 +1,83 @@
+# deferred: E2E on owner's device
+# US4: Given two budgets, When the person raises one limit, archives it and deletes the other, Then each moves at once and all three reach the server.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Fares", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Fares", AMOUNT: "300000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.1"
+    timeout: 60000
+# Raise the first budget (Food run, the oldest) to 7,000.
+- tapOn:
+    id: "budgets.active.0"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.limit"
+    timeout: 15000
+- assertVisible: "Can’t be changed after the budget is created"
+- tapOn:
+    id: "budgetEditor.limit"
+- eraseText: 20
+- inputText: "7000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible: ".*7,000.00.*"
+    timeout: 15000
+# Archive it: it moves to Archived and leaves the active list.
+- tapOn:
+    id: "budgets.active.0"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.archive"
+    timeout: 15000
+- tapOn:
+    id: "budgetEditor.archive"
+- tapOn: "Yes, archive it"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.archivedHeader"
+    timeout: 15000
+# Delete the other one (now the only active budget).
+- tapOn:
+    id: "budgets.active.0"
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.delete"
+    timeout: 15000
+- tapOn:
+    id: "budgetEditor.delete"
+- tapOn: "Yes, delete it"
+- extendedWaitUntil:
+    notVisible:
+      id: "budgets.active.0"
+    timeout: 15000
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgets, SLOT: B }
+- assertTrue: ${output.budgetCount == 1}
+- assertTrue: ${output.budgets[0].amount_minor == 700000}
+- assertTrue: ${output.budgets[0].archived_at != null}

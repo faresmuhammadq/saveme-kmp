@@ -1,0 +1,34 @@
+# deferred: E2E on owner's device
+# US6-S1: Given budgets created through the API before the phone signs in, When the phone first reads the person's changes, Then they appear with their progress. (The update-from-v8 case is covered by Migration8To9Test and BudgetFeedReadTest: a fresh sign-in reads the same feed from the start.)
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "600000" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { AMOUNT: "900000" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "100000", NOTE: "Early shop", CATEGORY: "Food run" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.1"
+    timeout: 60000
+- assertVisible: "Food run"
+- assertVisible: "All expenses"
+- assertVisible: ".*1,000.00 of 6,000.00.*"

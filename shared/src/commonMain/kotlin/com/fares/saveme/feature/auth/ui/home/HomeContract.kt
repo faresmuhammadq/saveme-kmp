@@ -2,6 +2,7 @@ package com.fares.saveme.feature.auth.ui.home
 
 import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
+import com.fares.saveme.feature.auth.domain.BudgetGlimpse
 import com.fares.saveme.feature.auth.domain.DueGlimpse
 import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.auth.ui.verify.ResendChange
@@ -25,6 +26,8 @@ data class HomeState(
     /** Due and missed recurring occurrences in wallets the person can write to; the card shows when above zero (spec 010 FR-019). */
     val dueCount: Int = 0,
     val firstDue: DueGlimpse? = null,
+    /** Up to three active budgets of the current period, the highest share spent first; the card is hidden when empty (spec 012 FR-017). */
+    val budgets: List<BudgetGlimpse> = emptyList(),
 )
 
 /** What cancelling a pending deletion came to, as far as Home needs to know. */
@@ -43,6 +46,8 @@ sealed interface HomeIntent {
     data object ResendClicked : HomeIntent
     data object SyncNowClicked : HomeIntent
     data object DueClicked : HomeIntent
+    data object BudgetsClicked : HomeIntent
+    data class BudgetClicked(val id: String) : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -51,6 +56,8 @@ sealed interface HomeEffect {
     data object NavigateCategories : HomeEffect
     data object NavigateAddTransaction : HomeEffect
     data object OpenDue : HomeEffect
+    data object NavigateBudgets : HomeEffect
+    data class OpenBudget(val id: String) : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 
@@ -65,6 +72,7 @@ sealed interface HomeChange {
     data class Resend(val change: ResendChange) : HomeChange
     data class Sync(val status: SyncStatus) : HomeChange
     data class Due(val count: Int, val first: DueGlimpse?) : HomeChange
+    data class Budgets(val budgets: List<BudgetGlimpse>) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -82,4 +90,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.Resend -> state.copy(resend = reduceResend(state.resend, change.change))
     is HomeChange.Sync -> state.copy(sync = change.status)
     is HomeChange.Due -> state.copy(dueCount = change.count, firstDue = change.first)
+    is HomeChange.Budgets -> state.copy(budgets = change.budgets)
 }

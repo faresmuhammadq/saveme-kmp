@@ -1,0 +1,18 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the budget is sent unchanged and the figures are the same.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- assertVisible: ".*3,500.00 of 6,000.00.*"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listBudgets, SLOT: B }
+- assertTrue: ${output.budgetCount == 1}
+- assertTrue: ${output.budgets[0].amount_minor == 600000}
+- assertTrue: ${output.budgets[0].currency == 'EGP'}
+- assertTrue: ${output.budgets[0].period_type == 'monthly'}

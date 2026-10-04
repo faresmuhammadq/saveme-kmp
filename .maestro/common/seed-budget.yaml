@@ -1,0 +1,14 @@
+# Creates a budget from the second device (slot B, signed in already): CATEGORY (a name; leave it out for all expenses), AMOUNT (the limit in
+# minor units) and optionally CURRENCY. Copies it into output.budget and its id into output.budgetId.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: createBudget
+      SLOT: B
+      CATEGORY: "${typeof CATEGORY !== 'undefined' ? CATEGORY : ''}"
+      AMOUNT: ${AMOUNT}
+      CURRENCY: "${typeof CURRENCY !== 'undefined' ? CURRENCY : 'EGP'}"

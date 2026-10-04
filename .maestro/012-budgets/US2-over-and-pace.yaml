@@ -1,0 +1,32 @@
+# deferred: E2E on owner's device
+# US2-S2/S3: Given spending above a limit, When shown, Then the budget says how much it is over and its percentage above 100, with no alarm wording; "On pace for" appears while spending exists.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { CATEGORY: "Food run", AMOUNT: "100000" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Alpha", AMOUNT: "120000", NOTE: "Party", CATEGORY: "Food run" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- extendedWaitUntil:
+    visible:
+      id: "budgets.active.0"
+    timeout: 60000
+- assertVisible: "120%"
+- assertVisible: "EGP 200.00 over"
+- assertVisible: "On pace for .*"
+- assertNotVisible: ".*(Warning|Alert|Danger|Overspent).*"

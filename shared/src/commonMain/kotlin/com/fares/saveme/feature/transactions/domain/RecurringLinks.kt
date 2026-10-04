@@ -72,6 +72,12 @@ interface RecurringLinks {
 
     /** True while the recurring rule is on this phone, so a produced transaction can offer "Open the rule" (FR-038). */
     fun observeRuleOnPhone(ruleId: String): Flow<Boolean> = flowOf(false)
+
+    /**
+     * Who made the recurring rule, when it is on this phone: a confirmation waiting here counts for its rule's author
+     * (spec 012 R-05, backend ADR-0019). Null = the rule is not on the phone, or its author is not known yet.
+     */
+    suspend fun ruleAuthorOf(ruleId: String): String? = null
 }
 
 /** Until recurring is bound: nothing is due and nothing matches. */

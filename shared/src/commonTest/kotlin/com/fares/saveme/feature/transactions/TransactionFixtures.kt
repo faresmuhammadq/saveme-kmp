@@ -67,6 +67,12 @@ class FakeTransactionDao : TransactionDao {
     }
 
     override fun observe(id: String): Flow<TransactionEntity?> = rows.map { it[id] }
+    override fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>> = rows.map { all ->
+        all.values.filter {
+            it.accountId == accountId && it.deletedAt == null &&
+                ((it.kind == "expense" && it.date >= from && it.date <= to) || it.id in waitingIds || it.pendingConfirmation)
+        }
+    }
     override suspend fun get(id: String): TransactionEntity? = rows.value[id]
     override fun observeRelevant(ids: List<String>): Flow<List<TransactionEntity>> =
         rows.map { all -> all.values.filter { it.id in ids || it.carryConfirmedAt != null || it.pendingConfirmation } }

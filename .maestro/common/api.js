@@ -572,6 +572,100 @@ switch (arg('ACTION')) {
         output.transactionId = changes.transaction_id
         break
 
+    // Budgets (spec 012). Creates a budget from this slot: CATEGORY (a name, own or default) or CATEGORY_ID; neither (or CATEGORY="")
+    // means all expenses. AMOUNT is the limit in minor units (600000), CURRENCY (EGP). Copies it into output.budget and its id
+    // into output.budgetId.
+    case 'createBudget':
+        var newBudgetId = uuid7()
+        output.budget = expect(call('PUT', 'budgets/' + newBudgetId, {
+            category_id: resolveCategoryId(),
+            period_type: 'monthly',
+            amount_minor: parseInt(arg('AMOUNT', '600000')),
+            currency: arg('CURRENCY', 'EGP'),
+            version: 0,
+        }, token()), 201, 'createBudget').body.data
+        output.budgetId = newBudgetId
+        break
+
+    // Saves a budget's limit from this slot (the whole record, as the app does): ID or output.budgetId, NEW_AMOUNT in minor units.
+    case 'saveBudget':
+        var currentBudget = findBudget()
+        output.budget = expect(call('PUT', 'budgets/' + currentBudget.id, {
+            category_id: currentBudget.category_id,
+            period_type: currentBudget.period_type,
+            amount_minor: parseInt(arg('NEW_AMOUNT', String(currentBudget.amount_minor))),
+            currency: currentBudget.currency,
+            version: currentBudget.version,
+        }, token()), 200, 'saveBudget').body.data
+        break
+
+    // Archives a budget from this slot: ID or output.budgetId. Archiving is one-way.
+    case 'archiveBudget':
+        var toArchiveBudget = findBudget()
+        output.budget = expect(call('POST', 'budgets/' + toArchiveBudget.id + '/archive', { version: toArchiveBudget.version }, token()), 200, 'archiveBudget').body.data
+        break
+
+    // Deletes a budget from this slot (JSON body on DELETE): ID or output.budgetId.
+    case 'deleteBudget':
+        var toDeleteBudget = findBudget()
+        output.budget = expect(call('DELETE_WITH_BODY', 'budgets/' + toDeleteBudget.id, { version: toDeleteBudget.version }, token()), 200, 'deleteBudget').body.data
+        break
+
+    // Copies the caller's budgets into output.budgets and their number into output.budgetCount.
+    case 'listBudgets':
+        output.budgets = listAllBudgets()
+        output.budgetCount = output.budgets.length
+        break
+
+    // Copies the progress of the active budgets (today's period) into output.progress and their number into output.progressCount.
+    // With ID (or output.budgetId from a createBudget in this run) it also copies that budget's figures into output.spentMinor,
+    // output.limitMinor, output.remainingMinor, output.projectedMinor (-1 when null), output.overLimit and output.otherCurrencies.
+    case 'listBudgetProgress':
+        output.progress = expect(call('GET', 'budget-progress?limit=200', undefined, token()), 200, 'listBudgetProgress').body.data
+        output.progressCount = output.progress.length
+        var progressId = arg('ID', output.budgetId)
+        if (progressId) {
+            var one = output.progress.filter(function (p) { return p.budget_id === progressId })
+            if (one.length !== 1) throw new Error('listBudgetProgress: expected progress for ' + progressId + ', found ' + one.length)
+            output.spentMinor = one[0].spent.amount_minor
+            output.limitMinor = one[0].limit.amount_minor
+            output.remainingMinor = one[0].remaining.amount_minor
+            output.projectedMinor = one[0].projected_end === null ? -1 : one[0].projected_end.amount_minor
+            output.overLimit = one[0].over_limit
+            output.otherCurrencies = one[0].other_currencies.join(',')
+            output.periodStart = one[0].period.start
+            output.periodEnd = one[0].period.end
+        }
+        break
+
+    // Sets the budget start day (1 to 28) from this slot: DAY. Copies the answer into output.profile; the date the new day takes over
+    // is output.startDayFrom (null when it applies at once).
+    case 'setStartDay':
+        var profileNow = expect(call('GET', 'me', undefined, token()), 200, 'me').body.data.profile
+        output.profile = expect(call('PUT', 'me/profile', {
+            display_name: profileNow.display_name,
+            locale: profileNow.locale,
+            timezone: profileNow.timezone,
+            default_currency: profileNow.default_currency,
+            budget_period_start_day: parseInt(arg('DAY', '1')),
+            version: profileNow.version,
+        }, token()), 200, 'setStartDay').body.data
+        output.startDayFrom = output.profile.budget_period_start_day_from
+        break
+
     default:
         throw new Error('api.js: unknown ACTION ' + arg('ACTION'))
+}
+
+// Budgets (spec 012). A budget is found by ID, or output.budgetId from a createBudget in this run.
+function listAllBudgets() {
+    return expect(call('GET', 'budgets?limit=200', undefined, token()), 200, 'listBudgets').body.data
+}
+
+function findBudget() {
+    var id = arg('ID', output.budgetId)
+    if (!id) throw new Error('findBudget: no ID and no budget created by this script run')
+    var matches = listAllBudgets().filter(function (b) { return b.id === id })
+    if (matches.length !== 1) throw new Error('findBudget: no budget ' + id)
+    return matches[0]
 }

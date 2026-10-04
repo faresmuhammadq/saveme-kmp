@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,8 +64,11 @@ fun CategoryRow(
     selected: Boolean? = null,
     onClick: (() -> Unit)? = null,
     statusModifier: Modifier = Modifier,
+    /** False shows the row as unavailable: dimmed, announced as disabled and not selectable (spec 012 R-13). */
+    enabled: Boolean = true,
 ) {
     val interaction = when {
+        !enabled -> Modifier.semantics(mergeDescendants = true) { disabled() }
         selected != null && onClick != null -> Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
         onClick != null -> Modifier.clickable(role = Role.Button, onClick = onClick)
         else -> Modifier.semantics(mergeDescendants = true) {}
@@ -80,7 +84,7 @@ fun CategoryRow(
     ) {
         CategoryTile(iconKey, colorHex)
         Column(Modifier.weight(1f)) {
-            Text(name, style = AppTheme.type.itemTitle, color = AppTheme.colors.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(name, style = AppTheme.type.itemTitle, color = if (enabled) AppTheme.colors.ink else AppTheme.colors.ink2, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (caption != null) Text(caption, style = AppTheme.type.caption, color = AppTheme.colors.caption)
             if (status != null) {
                 WalletStatusLine(
@@ -108,6 +112,8 @@ data class CategoryChoiceItem(
     val iconKey: String?,
     val colorHex: String?,
     val caption: String? = null,
+    /** False for a choice that cannot be taken (for example "Already budgeted"); its caption says why. */
+    val enabled: Boolean = true,
 )
 
 /** A titled group of choices; each row is tagged `<tagPrefix>.<index>` (or just `<tagPrefix>` when [indexed] is false). */
@@ -158,6 +164,7 @@ fun CategoryChoiceList(
                     caption = item.caption,
                     selected = item.id == selectedId,
                     onClick = { onSelect(item.id) },
+                    enabled = item.enabled,
                     modifier = Modifier.testTag(if (group.indexed) "${group.tagPrefix}.$index" else group.tagPrefix),
                 )
             }

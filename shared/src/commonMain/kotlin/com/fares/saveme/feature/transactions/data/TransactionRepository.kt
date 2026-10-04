@@ -51,6 +51,10 @@ class TransactionRepository(
 
     fun observe(id: String): Flow<TransactionEntity?> = transactions.observe(id)
 
+    /** The rows budgets sum over: dated in the range, with a waiting change, or a phone-only confirmation (spec 012 R-05). */
+    fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>> =
+        transactions.observeForSpending(accountId, from, to, waitingIds)
+
     suspend fun get(id: String): TransactionEntity? = transactions.get(id)
 
     /** The rows of [ids] and every row still carrying a confirmed effect, from one read of the table. */
