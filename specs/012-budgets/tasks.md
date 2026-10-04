@@ -262,7 +262,7 @@ description: "Task list for 012-budgets"
 - [X] T098 Update README "On-device database" (Room v9; budgets and their stored progress; the user scope re-read once) and the C8 row of `specs/briefs/README.md`
 - [ ] T099 Run quickstart.md manual checks on the dev build — **deferred: E2E on owner's device**
 - [ ] T100 Run the full `/speckit-e2e 012-budgets` and write `specs/012-budgets/e2e-report.md` incl. the brief's checkpoint (SC-007) — **deferred: E2E on owner's device**
-- [ ] T101 Write specs/012-budgets/summary.md
+- [X] T101 Write specs/012-budgets/summary.md
 
 ---
 
