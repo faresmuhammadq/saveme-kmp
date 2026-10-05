@@ -55,7 +55,7 @@ class MigrationTest {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
         .build()
 
     @Test
@@ -99,12 +99,14 @@ class MigrationTest {
     }
 
     @Test
-    fun theWholeChainEndsAtV8WithNoFeedPositions() = runTest {
+    fun theWholeChainEndsAtV10WithNoFeedPositionsAndAnEmptyInvitationTable() = runTest {
         val db = open(v1Database(profileRow(pending = null, base = null)))
         db.syncScopeDao().markPushed("user:u1", "2026-10-02T10:00:00.000Z")
         assertNull(db.syncScopeDao().feedCursor("user:u1"))
         assertNull(db.syncScopeDao().feedPlace("user:u1")!!.position)
         assertNull(db.syncScopeDao().observeFeedReadAt("user:u1").first())
+        // Spec 013: the chain ends at v10, which holds invitations (empty after an upgrade; the first wallet reads fill it).
+        assertEquals(emptyList<com.fares.saveme.feature.sharing.data.local.InvitationEntity>(), db.invitationDao().getAll())
         db.close()
     }
 }

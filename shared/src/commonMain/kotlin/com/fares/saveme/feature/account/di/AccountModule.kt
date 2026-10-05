@@ -28,6 +28,7 @@ import com.fares.saveme.feature.account.ui.profile.ProfileViewModel
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.BudgetSummary
+import com.fares.saveme.feature.auth.domain.HeldInvitationGlimpse
 import com.fares.saveme.feature.auth.domain.DueSummary
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.auth.domain.usecase.ResendVerificationUseCase
@@ -83,6 +84,7 @@ val accountModule = module {
         val engine = get<SyncEngine>()
         val due = get<DueSummary>()
         val budgets = get<BudgetSummary>()
+        val held = get<HeldInvitationGlimpse>()
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -99,6 +101,8 @@ val accountModule = module {
             dueCount = due.observeDueCount(),
             firstDue = due.observeFirstDue(),
             budgets = budgets.observeTop(HOME_BUDGETS),
+            invitationHeld = held.observeHeld(),
+            invitationDeclined = held.observeDeclined(),
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's

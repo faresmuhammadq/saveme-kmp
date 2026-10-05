@@ -52,6 +52,7 @@ import saveme.shared.generated.resources.role_viewer
 import saveme.shared.generated.resources.wallet_status_clash
 import saveme.shared.generated.resources.wallet_status_not_saved
 import saveme.shared.generated.resources.wallet_status_waiting
+import saveme.shared.generated.resources.leave_done
 import saveme.shared.generated.resources.wallets_archived
 import saveme.shared.generated.resources.wallets_empty_action
 import saveme.shared.generated.resources.wallets_empty_body
@@ -111,6 +112,15 @@ private fun WalletsContent(state: WalletsState, onIntent: (WalletsIntent) -> Uni
                 modifier = Modifier.testTag("wallets.notEntitled"),
                 actionLabel = stringResource(Res.string.action_done),
                 onAction = { onIntent(WalletsIntent.DismissNotice) },
+            )
+        }
+        state.leftNotice?.let { name ->
+            InlineAlert(
+                tone = AlertTone.Info,
+                text = stringResource(Res.string.leave_done, name),
+                modifier = Modifier.testTag("wallets.leftNotice"),
+                actionLabel = stringResource(Res.string.action_done),
+                onAction = { onIntent(WalletsIntent.DismissLeftNotice) },
             )
         }
         if (state.refreshFailed) InlineAlert(AlertTone.Warning, stringResource(Res.string.wallets_refresh_failed))

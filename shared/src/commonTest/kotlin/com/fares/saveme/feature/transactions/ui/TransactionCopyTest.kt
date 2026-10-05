@@ -10,7 +10,7 @@ import kotlin.test.assertNotEquals
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.error_generic
 import saveme.shared.generated.resources.error_generic_reference
-import saveme.shared.generated.resources.tx_reason_no_right
+import saveme.shared.generated.resources.refusal_now_viewer
 import saveme.shared.generated.resources.tx_reason_no_right_other
 
 /** Refusal and field copy is chosen by kind and field, never by the server's text, and is always the transaction's own (P-02.4, P-06.5, FR-025). */
@@ -30,7 +30,7 @@ class TransactionCopyTest {
     @Test
     fun aForbiddenTransferReadsAsNoRightInTheOtherWalletAndOthersAsNoRightHere() {
         assertEquals(Res.string.tx_reason_no_right_other, RefusalKind.NoRightInOtherWallet.messageRes())
-        assertEquals(Res.string.tx_reason_no_right, RefusalKind.NoRightHere.messageRes())
+        assertEquals(Res.string.refusal_now_viewer, RefusalKind.NoRightHere.messageRes())
         assertNotEquals(RefusalKind.NoRightHere.messageRes(), RefusalKind.NoRightInOtherWallet.messageRes())
     }
 

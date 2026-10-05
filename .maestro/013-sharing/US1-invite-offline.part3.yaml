@@ -1,0 +1,11 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: back online; the invitation is sent and stops waiting.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- extendedWaitUntil:
+    notVisible: "Waiting to sync"
+    timeout: 60000
+- assertVisible: "Pending"

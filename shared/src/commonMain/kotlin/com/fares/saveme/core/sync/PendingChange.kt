@@ -27,7 +27,13 @@ data class SyncScope(val kind: ScopeKind, val id: String) {
  * [requestId] is the server's reference for support (P-13.2).
  */
 @Serializable
-data class Refusal(val code: String, val fields: Map<String, String> = emptyMap(), val requestId: String? = null)
+data class Refusal(
+    val code: String,
+    val fields: Map<String, String> = emptyMap(),
+    val requestId: String? = null,
+    /** `Problem.feature` of a `FEATURE_NOT_ENTITLED` answer (plain string: core names no feature type, spec 013 R-19). */
+    val feature: String? = null,
+)
 
 /** One record's unsent change (data-model §3). The payload is never printed (P-09.2). */
 data class PendingChange(

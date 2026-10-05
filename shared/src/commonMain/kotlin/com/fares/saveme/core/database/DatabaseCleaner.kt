@@ -10,6 +10,7 @@ class DatabaseCleaner(private val database: AppDatabase) : UserDataCleaner {
     override suspend fun clear() {
         database.profileDao().deleteAll()
         database.deviceSessionDao().deleteAll()
+        database.invitationDao().deleteAll()
         database.budgetProgressDao().deleteAll()
         database.budgetDao().deleteAll()
         database.occurrenceDao().deleteAll()

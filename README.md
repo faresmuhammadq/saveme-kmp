@@ -37,6 +37,9 @@ The value is `host:port` only (the build fails on a path or scheme). Pick the ho
 - Phone over Wi-Fi: your machine's LAN IP (`ip -4 addr show`); the container port must be
   published beyond `127.0.0.1`.
 
+For invitation links to open the dev build, set the backend's `SHARING_INVITATION_URL` to the same host and port with the
+`/invite` path (for example `SHARING_INVITATION_URL=http://localhost:<port>/invite`), as the mailed links of spec 003 do.
+
 Without it the app falls back to `10.0.2.2:8080`. Full validation steps:
 [specs/001-design-system-auth/quickstart.md](specs/001-design-system-auth/quickstart.md) and
 [specs/002-account-security/quickstart.md](specs/002-account-security/quickstart.md).
@@ -46,7 +49,7 @@ Without it the app falls back to `10.0.2.2:8080`. Full validation steps:
 Syncable data (profile, devices signed in; later wallets and transactions) lives in a Room
 database, `saveme.db`, which screens read from (constitution P-04). The schema is exported to
 `shared/schemas/` on every build — commit changes to it, and add a Room migration whenever the
-version in `AppDatabase` goes up (now v9: budgets and the progress figures read for them; the person's own feed place is forgotten once
+version in `AppDatabase` goes up (now v10: invitations, and every wallet's feed place is forgotten once so invitations created before the update are read; v9 added budgets and the progress figures read for them; the person's own feed place is forgotten once
 so budgets created earlier are read; v8 added an integer feed position stored beside each place; v7 added recurring rules and
 occurrences). Sign-out clears every table. Budgets are computed on the phone from its own transactions and shown with the server's figures once
 nothing has changed since they were read. Sync reads only what changed since the last position it stored per scope (the

@@ -12,6 +12,7 @@ import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.error_generic
 import saveme.shared.generated.resources.error_offline
 import saveme.shared.generated.resources.home_deletion_cancelled_done
+import saveme.shared.generated.resources.join_declined
 
 @Composable
 fun HomeRoute(
@@ -29,6 +30,7 @@ fun HomeRoute(
                             HomeMessage.DeletionCancelled -> Res.string.home_deletion_cancelled_done
                             HomeMessage.Offline -> Res.string.error_offline
                             HomeMessage.Failed -> Res.string.error_generic
+                            HomeMessage.InvitationDeclined -> Res.string.join_declined
                         },
                     ),
                 )

@@ -27,6 +27,8 @@ class HomeViewModel(
     dueCount: Flow<Int> = emptyFlow(),
     firstDue: Flow<DueGlimpse?> = emptyFlow(),
     budgets: Flow<List<BudgetGlimpse>> = emptyFlow(),
+    invitationHeld: Flow<Boolean> = emptyFlow(),
+    invitationDeclined: Flow<Unit> = emptyFlow(),
 ) : MviViewModel<HomeState, HomeIntent, HomeEffect>(HomeState()) {
 
     init {
@@ -38,6 +40,8 @@ class HomeViewModel(
             .onEach { (count, first) -> setState { reduce(it, HomeChange.Due(count, first)) } }
             .launchIn(viewModelScope)
         budgets.onEach { list -> setState { reduce(it, HomeChange.Budgets(list)) } }.launchIn(viewModelScope)
+        invitationDeclined.onEach { sendEffect(HomeEffect.ShowMessage(HomeMessage.InvitationDeclined)) }.launchIn(viewModelScope)
+        invitationHeld.onEach { held -> setState { reduce(it, HomeChange.InvitationHeld(held)) } }.launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: HomeIntent) {
@@ -50,6 +54,7 @@ class HomeViewModel(
             HomeIntent.DueClicked -> sendEffect(HomeEffect.OpenDue)
             HomeIntent.BudgetsClicked -> sendEffect(HomeEffect.NavigateBudgets)
             is HomeIntent.BudgetClicked -> sendEffect(HomeEffect.OpenBudget(intent.id))
+            HomeIntent.InvitationClicked -> sendEffect(HomeEffect.OpenInvitation)
             HomeIntent.CancelDeletion -> cancel()
             HomeIntent.SignOutClicked -> setState { reduce(it, HomeChange.SignOutConfirmVisible(true)) }
             HomeIntent.SignOutDismissed -> setState { reduce(it, HomeChange.SignOutConfirmVisible(false)) }

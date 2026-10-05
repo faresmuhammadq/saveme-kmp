@@ -52,6 +52,12 @@ interface WalletsService {
 
     fun observeMembers(id: String): Flow<List<Member>>
 
+    /**
+     * True while the person holds an own member row for the wallet and the wallet record has not yet been read (spec 013 R-10):
+     * the wallet screen says "Getting the wallet…" instead of "gone".
+     */
+    fun observeJoining(id: String): Flow<Boolean> = flowOf(false)
+
     suspend fun canCreateAnother(): Boolean
 
     suspend fun create(draft: WalletDraft): CreateResult
@@ -126,6 +132,12 @@ class DefaultWalletsService(
 
     override fun observeMembers(id: String): Flow<List<Member>> =
         repository.observeMembers(id).map { rows -> rows.map { it.toMember(accountId) } }
+
+    override fun observeJoining(id: String): Flow<Boolean> =
+        combine(repository.observe(id), repository.observeMembers(id)) { wallet, members ->
+            val me = accountId
+            wallet == null && me != null && members.any { it.memberUserId == me }
+        }
 
     private val emailVerified: Boolean get() = (authState.value as? AuthState.SignedIn)?.account?.emailVerified == true
 

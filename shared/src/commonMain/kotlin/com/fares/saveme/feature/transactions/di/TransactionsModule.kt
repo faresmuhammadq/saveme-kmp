@@ -34,6 +34,7 @@ import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorArgs
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorViewModel
 import com.fares.saveme.feature.transactions.ui.list.TransactionsViewModel
 import com.fares.saveme.feature.wallets.domain.PendingPostings
+import com.fares.saveme.feature.wallets.domain.SharingGlance
 import com.fares.saveme.feature.wallets.domain.WalletCopyParticipant
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
@@ -172,6 +173,7 @@ val transactionsModule = module {
             timeZoneId = profile.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
             due = get<RecurringLinks>().observeDue(walletId),
             confirmationStatus = { id -> get<RecurringLinks>().observeConfirmationStatus(id) },
+            planLimited = get<SharingGlance>().observePlanLimited(walletId),
         )
     }
     viewModel { params ->

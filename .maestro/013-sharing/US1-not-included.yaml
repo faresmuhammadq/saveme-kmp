@@ -1,0 +1,30 @@
+# deferred: E2E on owner's device
+# US1-S4: Given a Free owner, When they open the members screen, Then Invite is explained as not included in the plan and "See your plan" is offered.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- assertVisible:
+    id: "members.inviteReason"
+- assertVisible: "Sharing isn.t included in your plan\\."
+- assertVisible: "See your plan"

@@ -1,0 +1,20 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; send the invitation, it is saved and shown as waiting.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- tapOn:
+    id: "invite.email"
+- inputText: "${E2E_PARTNER_EMAIL}"
+- hideKeyboard
+- tapOn:
+    id: "invite.send"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Waiting to sync"
+    timeout: 15000

@@ -44,6 +44,16 @@ import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
 import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
 import com.fares.saveme.feature.budgets.ui.list.BudgetsRoute
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
+import com.fares.saveme.feature.sharing.domain.HeldInvitation
+import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
+import com.fares.saveme.feature.sharing.ui.activity.ActivityEffect
+import com.fares.saveme.feature.sharing.ui.activity.ActivityRoute
+import com.fares.saveme.feature.sharing.ui.invitation.InvitationEffect
+import com.fares.saveme.feature.sharing.ui.invitation.InvitationRoute
+import com.fares.saveme.feature.sharing.ui.invite.InviteEffect
+import com.fares.saveme.feature.sharing.ui.invite.InviteRoute
+import com.fares.saveme.feature.sharing.ui.members.MembersEffect
+import com.fares.saveme.feature.sharing.ui.members.MembersRoute
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorRoute
 import com.fares.saveme.feature.categories.ui.list.CategoriesEffect
 import com.fares.saveme.feature.categories.ui.list.CategoriesRoute
@@ -67,7 +77,6 @@ import com.fares.saveme.feature.wallets.ui.editor.WalletEditorRoute
 import com.fares.saveme.feature.wallets.ui.list.WalletsEffect
 import com.fares.saveme.feature.wallets.ui.list.WalletsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanRoute
-import com.fares.saveme.feature.auth.domain.AuthLink
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
 import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxEffect
 import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxKind
@@ -105,6 +114,8 @@ fun AppNavHost(
     apiEvents: ApiEvents = koinInject(),
     deepLinks: DeepLinkBus = koinInject(),
     linkParser: AuthLinkParser = koinInject(),
+    invitationParser: InvitationLinkParser = koinInject(),
+    heldInvitation: HeldInvitation = koinInject(),
 ) {
     val authState by sessionManager.state.collectAsStateWithLifecycle()
     val authStack = remember { mutableStateListOf<NavKey>(EntryKey) }
@@ -124,7 +135,11 @@ fun AppNavHost(
                 SignOutReason.UserSignedOut -> authStack.resetTo(EntryKey)
                 SignOutReason.None -> Unit
             }
-            is AuthState.SignedIn -> appStack.resetTo(HomeKey)
+            is AuthState.SignedIn -> {
+                appStack.resetTo(HomeKey)
+                // An invitation opened before sign-in is answered right after it, in the same app session (spec 013 FR-011).
+                heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
+            }
             AuthState.Unknown -> Unit
         }
     }
@@ -138,12 +153,13 @@ fun AppNavHost(
         if (sessionManager.state.value == AuthState.Unknown) return@LaunchedEffect
         deepLinks.links.collect { raw ->
             deepLinks.consume()
-            val key = when (val link = linkParser.parse(raw)) {
-                is AuthLink.VerifyEmail -> VerifyEmailKey(link.token)
-                is AuthLink.ResetPassword -> ResetPasswordKey(link.token)
-                null -> return@collect
-            }
-            if (sessionManager.state.value is AuthState.SignedIn) {
+            val isSignedIn = sessionManager.state.value is AuthState.SignedIn
+            val route = routeLink(raw, isSignedIn, linkParser, invitationParser)
+            val key = (route as? LinkRoute.Open)?.key ?: return@collect
+            route.hold?.let(heldInvitation::hold)
+            if (isSignedIn) {
+                // A link opened while an invitation is showing replaces it (spec 013 edge cases).
+                if (key is InvitationKey && appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
                 appStack.add(key)
             } else {
                 // Replace a half-filled form on top, but keep the entry screen underneath.
@@ -237,6 +253,7 @@ fun AppNavHost(
                         HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
                         HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
                         HomeEffect.NavigateBudgets -> appStack.add(BudgetsKey)
+                        HomeEffect.OpenInvitation -> heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
                         is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
                         is HomeEffect.ShowMessage -> Unit // shown by the route
                     }
@@ -318,6 +335,8 @@ fun AppNavHost(
                             is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
                             is WalletDetailEffect.OpenTransactions -> appStack.add(TransactionsKey(effect.walletId))
                             is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
+                            is WalletDetailEffect.NavigateMembers -> appStack.add(WalletMembersKey(effect.walletId))
+                            is WalletDetailEffect.NavigateActivity -> appStack.add(WalletActivityKey(effect.walletId))
                             is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
                             WalletDetailEffect.NavigateBack -> appStack.pop()
                             is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
@@ -501,6 +520,63 @@ fun AppNavHost(
                     onRequireVerification = { emailNotVerifiedVisible = true },
                 )
             }
+            entry<WalletMembersKey> { key ->
+                MembersRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is MembersEffect.OpenInvite -> appStack.add(InviteKey(effect.walletId, effect.replacing))
+                            MembersEffect.OpenPlan -> appStack.add(PlanKey)
+                            // The wallet is gone from the phone: back to the wallet list, which says "You left <wallet>" (FR-019).
+                            is MembersEffect.Left -> appStack.backToWallets()
+                            MembersEffect.NavigateBack -> appStack.pop()
+                            is MembersEffect.Share, is MembersEffect.Copy, is MembersEffect.ShowMessage, MembersEffect.ShowVerifyPrompt -> Unit // handled by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<InviteKey> { key ->
+                InviteRoute(
+                    walletId = key.walletId,
+                    replacing = key.replacing,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is InviteEffect.Close -> appStack.pop()
+                            InviteEffect.OpenPlan -> appStack.add(PlanKey)
+                            is InviteEffect.Share, is InviteEffect.Copy, InviteEffect.Copied, InviteEffect.ShowVerifyPrompt -> Unit // handled by the route
+                        }
+                    },
+                    onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<InvitationKey> { key ->
+                InvitationRoute(
+                    token = key.token,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is InvitationEffect.OpenWallet -> {
+                                if (appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
+                                appStack.add(WalletDetailKey(effect.walletId))
+                            }
+                            InvitationEffect.NavigateSignIn -> authStack.add(SignInKey())
+                            InvitationEffect.NavigateRegister -> authStack.add(RegisterKey())
+                            is InvitationEffect.Close -> activeStack.pop()
+                        }
+                    },
+                )
+            }
+            entry<WalletActivityKey> { key ->
+                ActivityRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is ActivityEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                            ActivityEffect.NavigateBack -> appStack.pop()
+                        }
+                    },
+                )
+            }
             entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
             entry<DevToolsKey> {
                 DevToolsRoute(onEffect = { effect ->
@@ -564,6 +640,17 @@ fun AppNavHost(
 
 private fun SnapshotStateList<NavKey>.pop() {
     if (size > 1) removeAt(lastIndex)
+}
+
+/** Back to the wallet list, adding it when the wallet was reached another way (spec 013 FR-019). */
+private fun SnapshotStateList<NavKey>.backToWallets() {
+    val index = indexOfLast { it is WalletsKey }
+    if (index >= 0) {
+        while (lastIndex > index) removeAt(lastIndex)
+    } else {
+        while (size > 1) removeAt(lastIndex)
+        add(WalletsKey)
+    }
 }
 
 private fun SnapshotStateList<NavKey>.resetTo(vararg keys: NavKey) {

@@ -22,7 +22,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Mailed verification and reset links (spec 003, contracts/deep-links.md). -->
+            <!-- Mailed verification and reset links (spec 003, contracts/deep-links.md) and invitation links (spec 013). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -33,6 +33,7 @@
                 <data android:host="${linkHost}" />
                 <data android:path="/verify-email" />
                 <data android:path="/reset-password" />
+                <data android:path="/invite" />
             </intent-filter>
         </activity>
     </application>

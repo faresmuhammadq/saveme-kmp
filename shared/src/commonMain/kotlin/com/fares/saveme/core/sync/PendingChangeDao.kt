@@ -16,6 +16,10 @@ interface PendingChangeDao {
     @Query("SELECT * FROM pending_change WHERE record_type = :type AND record_id = :id")
     fun observe(type: String, id: String): Flow<PendingChangeEntity?>
 
+    /** Every row of one scope, in any state, oldest first (spec 013: the count a leave confirmation names). */
+    @Query("SELECT * FROM pending_change WHERE scope_kind = :kind AND scope_id = :id ORDER BY created_order")
+    suspend fun forScope(kind: String, id: String): List<PendingChangeEntity>
+
     /** Every row of one record type, in any state (research R-21 of spec 008). */
     @Query("SELECT * FROM pending_change WHERE record_type = :type ORDER BY created_order")
     fun observeByType(type: String): Flow<List<PendingChangeEntity>>

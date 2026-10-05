@@ -47,7 +47,10 @@ class SignOutWipeTest {
             if (!signedIn) { signedIn = true; jsonResponse(200, signInSuccessBody()) } else respond("", HttpStatusCode.NoContent)
         }
         val languages = AppLanguageStore(env.keyValues, com.fares.saveme.core.network.FakeClientInfo(language = "en"))
-        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(com.fares.saveme.core.sync.SyncSignOutCleaner { runner }, DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
+        val heldInvitation = com.fares.saveme.feature.sharing.domain.HeldInvitation()
+        val shareLinks = com.fares.saveme.feature.sharing.domain.ShareLinks()
+        val planNotes = com.fares.saveme.feature.sharing.domain.PlanDemotionNotes()
+        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(heldInvitation, shareLinks, planNotes, com.fares.saveme.core.sync.SyncSignOutCleaner { runner }, DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, sessions)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
@@ -116,6 +119,18 @@ class SignOutWipeTest {
                 "budget", "b1", "u1", "user", "u1", 1, "{}", false, false, 0, 2, "Waiting", 0, null, null, null, stamp,
             ),
         )
+        // Invitations, their waiting changes and the memory-only secrets are wiped too (spec 013 FR-031).
+        db.invitationDao().upsert(
+            com.fares.saveme.feature.sharing.data.local.InvitationEntity("i1", "u1", "w1", "editor", "email", "karim@example.com", "u1", "pending", "2026-10-09T10:00:00Z", 1, 1, stamp, stamp, stamp),
+        )
+        db.pendingChangeDao().upsert(
+            com.fares.saveme.core.sync.PendingChangeEntity(
+                "invitation", "i2", "u1", "wallet", "w1", 0, "{}", false, false, 0, 3, "Waiting", 0, null, null, null, stamp,
+            ),
+        )
+        heldInvitation.hold(com.fares.saveme.feature.sharing.domain.InvitationLink.Valid("t".repeat(43)))
+        shareLinks.offer("i1", "https://app.example/invite?token=" + "t".repeat(43))
+        planNotes.record("w1", true)
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         // Feed positions and read stamps are the account's too (spec 009 FR-028).
@@ -136,6 +151,11 @@ class SignOutWipeTest {
         assertEquals(emptyList<com.fares.saveme.feature.budgets.data.local.BudgetEntity>(), db.budgetDao().getAll())
         assertEquals(emptyList<com.fares.saveme.feature.budgets.data.local.BudgetProgressEntity>(), db.budgetProgressDao().getAll())
         assertNull(db.pendingChangeDao().get("budget", "b1"))
+        assertEquals(emptyList<com.fares.saveme.feature.sharing.data.local.InvitationEntity>(), db.invitationDao().getAll())
+        assertNull(db.pendingChangeDao().get("invitation", "i2"))
+        assertNull(heldInvitation.held.value)
+        assertNull(shareLinks.get("i1"))
+        assertEquals(false, planNotes.observe("w1").first())
         assertNull(db.recurringRuleDao().get("r1"))
         assertEquals(emptyList<com.fares.saveme.feature.recurring.data.local.OccurrenceEntity>(), db.occurrenceDao().getForWallet("w1"))
         assertEquals(emptyList<com.fares.saveme.feature.categories.data.local.PlatformCategoryEntity>(), db.platformCategoryDao().getAll())

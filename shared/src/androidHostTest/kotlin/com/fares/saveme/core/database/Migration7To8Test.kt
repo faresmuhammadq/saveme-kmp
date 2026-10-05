@@ -65,7 +65,7 @@ class Migration7To8Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_7_8, MIGRATION_8_9)
+        .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
         .build()
 
     @Test
@@ -78,12 +78,13 @@ class Migration7To8Test {
         assertEquals("2026-10-01T09:00:00Z", user.lastPushedAt)
         assertNull(user.feedPosition)
         val wallet = db.syncScopeDao().observe("wallet:w1").first()!!
-        assertEquals("wallet-cursor", wallet.feedCursor)
-        assertEquals("2026-10-02T08:30:00.000Z", wallet.feedReadAt)
+        // 9 -> 10 also ran: it forgets every wallet scope's place once (spec 013); its push stamp and refresh stamp stay.
+        assertNull(wallet.feedCursor)
+        assertNull(wallet.feedReadAt)
         assertEquals("2026-10-01T09:30:00Z", wallet.lastPushedAt)
         assertEquals("2026-10-01T10:00:00Z", wallet.refreshedAt)
         assertNull(wallet.feedPosition)
-        assertEquals(FeedPlace("wallet-cursor", null), db.syncScopeDao().feedPlace("wallet:w1"))
+        assertEquals(FeedPlace(null, null), db.syncScopeDao().feedPlace("wallet:w1"))
         assertNull(db.syncScopeDao().feedPlace("wallet:none"))
 
         assertEquals("Sara", db.profileDao().get()!!.displayName)

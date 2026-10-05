@@ -22,6 +22,10 @@ class FakePendingChangeDao : PendingChangeDao {
 
     override fun observe(type: String, id: String): Flow<PendingChangeEntity?> = rows.map { it[type to id] }
 
+    override suspend fun forScope(kind: String, id: String) = rows.value.values
+        .filter { it.scopeKind == kind && it.scopeId == id }
+        .sortedBy { it.createdOrder }
+
     override fun observeByType(type: String): Flow<List<PendingChangeEntity>> =
         rows.map { r -> r.values.filter { it.recordType == type }.sortedBy { it.createdOrder } }
 

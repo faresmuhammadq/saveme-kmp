@@ -54,6 +54,7 @@ class FakeWalletDao : WalletDao {
     override fun observeOldestFeedRead(): Flow<String?> = MutableStateFlow(null)
     override suspend fun upsert(entity: WalletEntity) { rows.value = rows.value + (entity.id to entity) }
     override suspend fun upsertAll(entities: List<WalletEntity>) { rows.value = rows.value + entities.associateBy { it.id } }
+    override suspend fun updateRole(id: String, role: String) { rows.value[id]?.let { rows.value = rows.value + (id to it.copy(myRole = role)) } }
     override suspend fun delete(id: String) { rows.value = rows.value - id }
     override suspend fun deleteAll() { rows.value = emptyMap() }
 }

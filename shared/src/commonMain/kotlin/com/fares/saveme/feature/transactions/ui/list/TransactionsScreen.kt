@@ -78,6 +78,8 @@ import saveme.shared.generated.resources.tx_status_not_saved
 import saveme.shared.generated.resources.tx_transfer_from
 import saveme.shared.generated.resources.tx_transfer_to
 import saveme.shared.generated.resources.transactions_add
+import saveme.shared.generated.resources.viewer_note
+import saveme.shared.generated.resources.viewer_note_plan
 import saveme.shared.generated.resources.transactions_empty
 import saveme.shared.generated.resources.transactions_empty_viewer
 import saveme.shared.generated.resources.transactions_filters
@@ -133,6 +135,15 @@ private fun TransactionsContent(state: TransactionsState, onIntent: (Transaction
         contentPadding = PaddingValues(bottom = 88.dp),
     ) {
         item { Balance(state) }
+        if (state.isViewer) {
+            item {
+                InlineAlert(
+                    AlertTone.Info,
+                    stringResource(if (state.planLimited) Res.string.viewer_note_plan else Res.string.viewer_note),
+                    Modifier.testTag("transactions.viewerNote"),
+                )
+            }
+        }
         if (state.offline && state.waitingCount > 0) item { SyncBanner(SyncBannerState.Offline(state.waitingCount)) }
         if (state.offline && state.updatedAt != null) {
             item {

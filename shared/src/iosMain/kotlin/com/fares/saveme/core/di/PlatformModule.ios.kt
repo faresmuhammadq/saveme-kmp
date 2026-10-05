@@ -11,6 +11,8 @@ import com.fares.saveme.core.storage.SecureStore
 import com.fares.saveme.core.storage.StubSecureStore
 import com.fares.saveme.core.sync.NoopSyncScheduler
 import com.fares.saveme.core.sync.SyncScheduler
+import com.fares.saveme.feature.sharing.NoLinkSharer
+import com.fares.saveme.feature.sharing.domain.LinkSharer
 import org.koin.dsl.module
 
 fun iosPlatformModule() = module {
@@ -19,4 +21,5 @@ fun iosPlatformModule() = module {
     single<KeyValueStore> { InMemoryKeyValueStore() }
     single<AppDatabase> { buildAppDatabase(databaseBuilder()) }
     single<SyncScheduler> { NoopSyncScheduler() }
+    single<LinkSharer> { NoLinkSharer() }
 }

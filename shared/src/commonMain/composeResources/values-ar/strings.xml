@@ -1037,4 +1037,153 @@
 
     <!-- Catalogue -->
     <string name="budgets_catalog_all">كل المصروفات</string>
+
+    <!-- Sharing (spec 013) -->
+    <string name="role_member">عضو</string>
+    <!-- Members -->
+    <string name="members_title">الأعضاء</string>
+    <string name="members_manage">إدارة الأعضاء</string>
+    <string name="members_see">عرض الأعضاء</string>
+    <string name="members_pending_count">%1$d معلّقة</string>
+    <string name="members_section_invitations">الدعوات المعلّقة</string>
+    <string name="members_alone">أنت الشخص الوحيد هنا. ادعُ شخصًا لمشاركة هذه المحفظة.</string>
+    <string name="members_cd_actions">إجراءات %1$s</string>
+    <string name="members_cd_invitation">دعوة، %1$s</string>
+    <string name="members_cd_back">العودة إلى المحفظة</string>
+
+    <!-- Invite -->
+    <string name="invite_action">دعوة</string>
+    <string name="invite_title">دعوة شخص</string>
+    <string name="invite_by_email">بالبريد الإلكتروني</string>
+    <string name="invite_by_link">مشاركة رابط</string>
+    <string name="invite_role_label">الدور</string>
+    <string name="invite_role_editor_hint">يمكنه إضافة المعاملات وتعديلها</string>
+    <string name="invite_role_viewer_hint">يمكنه العرض فقط</string>
+    <string name="invite_email_label">عنوان البريد الإلكتروني</string>
+    <string name="invite_send">إرسال الدعوة</string>
+    <string name="invite_create_link">إنشاء الرابط</string>
+    <string name="invite_sent">أُرسلت الدعوة.</string>
+    <string name="invite_saved_offline">حُفظت الدعوة وستُرسل عند الاتصال.</string>
+    <string name="invite_link_wait">جارٍ تجهيز الرابط…</string>
+    <string name="invite_link_wait_offline">سيكون الرابط جاهزًا عند عودة الاتصال، ويمكنك مشاركته من صفحة الأعضاء.</string>
+    <string name="invite_link_ready">الرابط جاهز. شاركه أو انسخه.</string>
+    <string name="invite_share">مشاركة</string>
+    <string name="invite_copy">نسخ</string>
+    <string name="invite_copied">تم النسخ</string>
+    <string name="invite_done">تم</string>
+    <string name="invite_share_text">%1$s: أود مشاركة محفظة معك. افتح هذا الرابط للانضمام: %2$s</string>
+    <string name="invite_supersede">لدى %1$s دعوة معلّقة بالفعل. هل ترسل دعوة جديدة؟ ستتوقف الدعوة السابقة.</string>
+    <string name="invite_supersede_confirm">إرسال دعوة جديدة</string>
+    <string name="invite_own_address">هذا عنوانك أنت.</string>
+    <string name="invite_email_invalid">أدخل عنوان بريد إلكتروني صحيحًا.</string>
+    <string name="invite_not_owner">المالك وحده يمكنه الدعوة.</string>
+    <string name="invite_wallet_archived">لا تقبل المحفظة المؤرشفة دعوات جديدة.</string>
+    <string name="invite_not_verified">تحقق من بريدك الإلكتروني ثم أرسل الدعوة.</string>
+    <string name="invite_failed">تعذّر حفظ الدعوة. حاول مرة أخرى.</string>
+    <string name="gate_not_included">المشاركة غير متاحة في خطتك.</string>
+    <string name="gate_full">وصلت هذه المحفظة إلى %1$d أشخاص تسمح بهم خطتك. سحب دعوة معلّقة يُفرغ مكانًا.</string>
+    <string name="gate_see_plan">عرض خطتك</string>
+
+    <!-- Pending invitations -->
+    <string name="invitation_pending">معلّقة</string>
+    <string name="invitation_expires">تنتهي في %1$s</string>
+    <string name="invitation_expired">منتهية</string>
+    <string name="invitation_link">رابط</string>
+    <string name="invitation_waiting">بانتظار المزامنة</string>
+    <string name="invitation_withdraw">سحب الدعوة</string>
+    <string name="invitation_withdraw_confirm">هل تسحب هذه الدعوة؟ سيتوقف رابطها عن العمل.</string>
+    <string name="invitation_link_gone">لا يمكن عرض هذا الرابط مرة أخرى.</string>
+    <string name="invitation_replace_link">استبدال الرابط</string>
+    <string name="invitation_not_sent">لم تُرسل</string>
+    <string name="invitation_withdrawal_failed">تعذّر سحب الدعوة</string>
+    <string name="invitation_refusal_not_verified">تحقق من بريدك الإلكتروني ثم حاول مرة أخرى.</string>
+    <string name="invitation_refusal_full">وصلت هذه المحفظة إلى عدد الأشخاص الذي تسمح به خطتك.</string>
+    <string name="invitation_refusal_plan">خطتك لا تسمح بذلك حاليًا.</string>
+    <string name="invitation_refusal_not_owner">المالك وحده يمكنه الدعوة.</string>
+    <string name="invitation_refusal_gone">لم تعد هذه المحفظة متاحة.</string>
+    <string name="invitation_refusal_invalid">الدعوة غير صالحة. تجاهلها وحاول مرة أخرى.</string>
+    <string name="invitation_refusal_other">حدث خطأ ما. المرجع: %1$s</string>
+    <string name="invitation_refusal_other_plain">حدث خطأ ما.</string>
+
+    <!-- Answering an invitation -->
+    <string name="join_title">دعاك %1$s إلى %2$s</string>
+    <string name="join_someone">شخص ما</string>
+    <string name="join_until">حتى %1$s</string>
+    <string name="join_action">انضمام</string>
+    <string name="join_decline">رفض</string>
+    <string name="join_decline_confirm">هل ترفض هذه الدعوة؟</string>
+    <string name="join_later">ليس الآن</string>
+    <string name="join_declined">رُفضت الدعوة</string>
+    <string name="join_already">أنت عضو في هذه المحفظة بالفعل.</string>
+    <string name="join_open_wallet">فتح المحفظة</string>
+    <string name="join_signed_out">سجّل الدخول أو أنشئ حسابًا للرد على هذه الدعوة.</string>
+    <string name="join_unavailable">لا يمكن فتح هذه الدعوة. ربما انتهت أو استُخدمت أو سُحبت، أو أنها لحساب آخر.</string>
+    <string name="join_invalid_link">هذا الرابط ليس دعوة صالحة.</string>
+    <string name="join_owner_plan_full">خطة مالك المحفظة لا تسمح بشخص آخر في هذه المحفظة حاليًا.</string>
+    <string name="join_too_many">محاولات كثيرة. حاول مرة أخرى بعد %1$d دقيقة.</string>
+    <string name="join_failed">حدث خطأ ما. المرجع: %1$s</string>
+    <string name="join_failed_plain">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="needs_connection">يتطلب اتصالًا بالإنترنت.</string>
+    <string name="home_invitation">لديك دعوة بانتظار ردك</string>
+    <string name="home_invitation_open">فتح</string>
+    <string name="wallet_joining">جارٍ جلب المحفظة…</string>
+
+    <!-- Member actions -->
+    <string name="member_make_editor">اجعله محررًا</string>
+    <string name="member_make_viewer">اجعله مشاهدًا</string>
+    <string name="member_remove">إزالة من المحفظة</string>
+    <string name="member_remove_confirm">هل تزيل %1$s؟ سيفقد الوصول إلى هذه المحفظة، وقد يبقى على هاتفه ما نزّله من قبل.</string>
+    <string name="member_changed">تغيّر هذا العضو. راجع مرة أخرى.</string>
+    <string name="member_only_owner">المالك وحده يمكنه ذلك.</string>
+    <string name="member_gone">لم يعد هذا العضو في المحفظة.</string>
+    <string name="member_owner_role">لا تنتقل الملكية إلا بالنقل.</string>
+    <string name="member_plan_full">في هذه المحفظة أشخاص أكثر مما تسمح به خطتك.</string>
+    <string name="member_plan_other">خطتك لا تسمح بذلك حاليًا.</string>
+    <string name="member_failed">حدث خطأ ما. المرجع: %1$s</string>
+    <string name="member_failed_plain">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="leave_action">مغادرة المحفظة</string>
+    <string name="leave_confirm">هل تغادر %1$s؟ ستُحذف من هذا الهاتف.</string>
+    <string name="leave_confirm_waiting">لم تتم مزامنة %1$d من التغييرات في هذه المحفظة وستُتجاهل.</string>
+    <string name="leave_owner_note">لمغادرة المحفظة، انقل ملكيتها أولًا.</string>
+    <string name="leave_owner_cannot">لا يمكن للمالك المغادرة.</string>
+    <string name="leave_done">غادرت %1$s</string>
+    <string name="access_lost">لم يعد لديك وصول إلى هذه المحفظة.</string>
+
+    <!-- Roles everywhere -->
+    <string name="viewer_note">يمكنك عرض هذه المحفظة دون تعديلها. المالك وحده يمكنه تغيير دورك.</string>
+    <string name="viewer_note_plan">تغيّرت خطة المالك، لذا يمكنك الآن عرض هذه المحفظة دون تعديلها.</string>
+    <string name="refusal_now_viewer">يمكنك الآن عرض هذه المحفظة فقط.</string>
+    <string name="plan_note">تسمح خطتك بـ%1$d أشخاص في المحفظة. يمكن للباقين عرضها دون تعديلها.</string>
+
+    <!-- Activity -->
+    <string name="activity_title">النشاط</string>
+    <string name="activity_window">يشمل النشاط آخر 90 يومًا.</string>
+    <string name="activity_offline">يتطلب النشاط اتصالًا بالإنترنت.</string>
+    <string name="activity_empty">لم يحدث شيء في هذه المحفظة بعد.</string>
+    <string name="activity_failed">تعذّر تحميل النشاط. المرجع: %1$s</string>
+    <string name="activity_failed_plain">تعذّر تحميل النشاط.</string>
+    <string name="activity_loading_more">جارٍ تحميل المزيد</string>
+    <string name="activity_automatic">تلقائيًا</string>
+    <string name="activity_former_member">عضو سابق</string>
+    <string name="activity_created">%1$s أضاف %2$s</string>
+    <string name="activity_edited">%1$s عدّل %2$s</string>
+    <string name="activity_deleted">%1$s حذف %2$s</string>
+    <string name="activity_restored">%1$s استعاد %2$s</string>
+    <string name="activity_archived">%1$s أرشف %2$s</string>
+    <string name="activity_ownership_transferred">%1$s نقل ملكية %2$s</string>
+    <string name="activity_confirmed">%1$s أكّد %2$s</string>
+    <string name="activity_skipped">%1$s تخطّى %2$s</string>
+    <string name="activity_joined">%1$s انضم بصفة %3$s</string>
+    <string name="activity_left">%1$s غادر</string>
+    <string name="activity_removed">%1$s أزال %2$s</string>
+    <string name="activity_role_changed">%1$s غيّر دور %2$s إلى %3$s</string>
+    <string name="activity_role_limited_by_plan">%2$s أصبح مشاهدًا بسبب خطة المالك</string>
+    <string name="activity_invited">%1$s دعا شخصًا بصفة %3$s</string>
+    <string name="activity_invitation_revoked">%1$s سحب دعوة</string>
+    <string name="activity_subject_transaction">معاملة</string>
+    <string name="activity_subject_rule">قاعدة متكررة</string>
+    <string name="activity_subject_occurrence">دفعة</string>
+    <string name="activity_subject_member">عضو</string>
+    <string name="activity_subject_invitation">دعوة بصفة %1$s</string>
+    <string name="activity_subject_wallet">المحفظة</string>
 </resources>

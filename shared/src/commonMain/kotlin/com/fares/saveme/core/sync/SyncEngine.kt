@@ -63,6 +63,9 @@ class SyncEngine(
 
     suspend fun get(recordType: String, recordId: String): PendingChange? = dao.get(recordType, recordId)?.toDomain()
 
+    /** Every change of one scope in any state, oldest first; read-only (spec 013: what leaving a wallet would discard). */
+    suspend fun pendingIn(scope: SyncScope): List<PendingChange> = dao.forScope(scope.kind.wire, scope.id).map { it.toDomain() }
+
     /**
      * Saves a change locally. A record already waiting keeps its oldest base version and takes the
      * new content (FR-003); an edit after a refusal or clash makes it waiting again.
@@ -430,7 +433,7 @@ class SyncEngine(
                         return false
                     }
                     else -> {
-                        val refusal = Refusal(result.problem.code, handler.refusalFields(result.problem), result.problem.requestId)
+                        val refusal = Refusal(result.problem.code, handler.refusalFields(result.problem), result.problem.requestId, result.problem.feature)
                         dao.upsert(
                             row.copy(
                                 state = ChangeState.Refused.name,

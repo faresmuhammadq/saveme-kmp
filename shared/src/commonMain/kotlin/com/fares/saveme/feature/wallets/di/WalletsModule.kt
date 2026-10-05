@@ -2,6 +2,7 @@ package com.fares.saveme.feature.wallets.di
 
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
+import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
@@ -15,7 +16,12 @@ import com.fares.saveme.feature.wallets.data.WalletFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletMemberFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletRepository
 import com.fares.saveme.feature.wallets.data.WalletSyncHandler
+import com.fares.saveme.feature.wallets.domain.DefaultWalletMemberships
 import com.fares.saveme.feature.wallets.domain.DefaultWalletScopes
+import com.fares.saveme.feature.wallets.domain.LeftWallets
+import com.fares.saveme.feature.wallets.domain.NoSharingGlance
+import com.fares.saveme.feature.wallets.domain.SharingGlance
+import com.fares.saveme.feature.wallets.domain.WalletMemberships
 import com.fares.saveme.feature.wallets.domain.DefaultWalletsService
 import com.fares.saveme.feature.wallets.domain.WalletCopyParticipant
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
@@ -64,6 +70,13 @@ val walletsModule = module {
         val sessions = get<SessionManager>()
         DefaultWalletScopes(get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
     } bind WalletScopes::class
+    single { LeftWallets() } bind UserDataCleaner::class
+    single<WalletMemberships> {
+        val sessions = get<SessionManager>()
+        DefaultWalletMemberships(get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId }, left = get())
+    }
+    // Default until the sharing module rebinds it (spec 013 R-15).
+    single<SharingGlance> { NoSharingGlance }
     single<WalletsService> {
         val sessions = get<SessionManager>()
         DefaultWalletsService(
@@ -97,6 +110,8 @@ val walletsModule = module {
             isEmailVerified = { (sessions.state.value as? AuthState.SignedIn)?.account?.emailVerified == true },
             // Times show in the profile timezone (P-05); the device's until the profile is known.
             timeZoneId = profile.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
+            leftNotice = get<LeftWallets>().notice,
+            dismissLeftNotice = { get<LeftWallets>().dismissNotice() },
         )
     }
     viewModel { params ->
@@ -104,6 +119,8 @@ val walletsModule = module {
         val wallets = get<WalletsService>()
         val profile = get<ProfileSyncer>()
         val clientInfo = get<ClientInfo>()
+        val sharing = get<SharingGlance>()
+        val left = get<LeftWallets>()
         WalletDetailViewModel(
             walletId = id,
             wallet = wallets.observeWallet(id),
@@ -117,6 +134,10 @@ val walletsModule = module {
             discard = { wallets.discard(id) },
             transfer = { userId -> wallets.transferOwnership(id, userId) },
             timeZoneId = profile.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
+            pendingInvitations = sharing.observePendingCount(id),
+            planLimited = sharing.observePlanLimited(id),
+            joining = wallets.observeJoining(id),
+            leftByPerson = left.observe(id),
         )
     }
     viewModel { params ->

@@ -1,0 +1,37 @@
+# deferred: E2E on owner's device
+# US7-S1: Given a member made viewer by the owner, When they open the wallet, Then the note explains it and no add control is offered.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US7
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: C, NAME: "Shared Home", OPENING: "50000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: C, ROLE: viewer }
+- runFlow: ../common/sign-in.yaml
+- openLink:
+    link: ${output.shareUrl}
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "invitation.join"
+    timeout: 30000
+- tapOn:
+    id: "invitation.join"
+- extendedWaitUntil:
+    visible: "Shared Home"
+    timeout: 60000
+- tapOn: "Shared Home"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.viewerNote"
+    timeout: 30000
+- assertNotVisible:
+    id: "walletDetail.addTransaction"

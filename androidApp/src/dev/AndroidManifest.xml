@@ -15,6 +15,7 @@
                 <data android:port="${linkPort}" />
                 <data android:path="/verify-email" />
                 <data android:path="/reset-password" />
+                <data android:path="/invite" />
             </intent-filter>
         </activity>
     </application>

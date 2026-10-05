@@ -1,0 +1,32 @@
+# deferred: E2E on owner's device
+# US5-S3 (the brief's second checkpoint): Given a member of a shared wallet, When the owner removes them elsewhere, Then the wallet disappears from the phone after the next refresh. Part 1: the phone joins and sees the wallet.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: C, NAME: "Shared Home", OPENING: "50000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: C, ROLE: editor }
+- runFlow: ../common/sign-in.yaml
+- openLink:
+    link: ${output.shareUrl}
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "invitation.join"
+    timeout: 30000
+- tapOn:
+    id: "invitation.join"
+- extendedWaitUntil:
+    visible: "Shared Home"
+    timeout: 60000
+- runFlow: ../common/open-wallets.yaml
+- assertVisible: "Shared Home"

@@ -67,6 +67,7 @@ import saveme.shared.generated.resources.recurring_state_unknown
 import saveme.shared.generated.resources.recurring_state_upcoming
 import saveme.shared.generated.resources.recurring_status_active
 import saveme.shared.generated.resources.recurring_status_clash
+import saveme.shared.generated.resources.refusal_now_viewer
 import saveme.shared.generated.resources.recurring_status_deleted
 import saveme.shared.generated.resources.recurring_status_ended
 import saveme.shared.generated.resources.recurring_status_not_saved
@@ -108,7 +109,7 @@ fun recurringRefusalKind(code: String?, fields: Map<String, String>, isTransfer:
 fun RecurringRefusalKind.messageRes(): StringResource = when (this) {
     RecurringRefusalKind.NotVerified -> Res.string.recurring_reason_not_verified
     RecurringRefusalKind.NoLongerAvailable -> Res.string.recurring_reason_gone
-    RecurringRefusalKind.NoRight -> Res.string.recurring_reason_no_right
+    RecurringRefusalKind.NoRight -> Res.string.refusal_now_viewer
     RecurringRefusalKind.NoRightInOtherWallet -> Res.string.recurring_reason_no_right_other
     RecurringRefusalKind.CategoryUnusable -> Res.string.recurring_reason_category
     RecurringRefusalKind.DestinationUnavailable -> Res.string.recurring_reason_destination

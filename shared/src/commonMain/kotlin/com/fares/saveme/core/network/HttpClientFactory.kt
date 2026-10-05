@@ -84,6 +84,13 @@ class ApiClient(
             if (T::class == Unit::class) Unit as T else response.body<Envelope<T>>().data
         }
 
+    /**
+     * Like [call], but keeps the envelope's `meta` (a created link invitation answers `meta.share_url`, spec 013 R-04).
+     * [call] is unchanged.
+     */
+    suspend inline fun <reified T> callWithMeta(noinline block: HttpRequestBuilder.() -> Unit): ApiResult<Envelope<T>> =
+        execute(block) { response -> response.body<Envelope<T>>() }
+
     /** A collection page: `data` plus the cursor from `meta` (CollectionMeta). */
     suspend inline fun <reified T> callPage(noinline block: HttpRequestBuilder.() -> Unit): ApiResult<Page<T>> =
         execute(block) { response ->

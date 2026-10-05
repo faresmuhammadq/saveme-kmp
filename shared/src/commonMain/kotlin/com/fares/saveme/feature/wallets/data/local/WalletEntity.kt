@@ -67,6 +67,10 @@ interface WalletDao {
     @Upsert
     suspend fun upsertAll(entities: List<WalletEntity>)
 
+    /** The person's own member row decides their role at once; the wallet record brings the same value (spec 013 R-12). */
+    @Query("UPDATE wallet SET my_role = :role WHERE id = :id")
+    suspend fun updateRole(id: String, role: String)
+
     @Query("DELETE FROM wallet WHERE id = :id")
     suspend fun delete(id: String)
 

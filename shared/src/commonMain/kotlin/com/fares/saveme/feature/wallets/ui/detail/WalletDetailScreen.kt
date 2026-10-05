@@ -65,7 +65,14 @@ import saveme.shared.generated.resources.cd_wallet_icon_cash
 import saveme.shared.generated.resources.cd_wallet_icon_investment
 import saveme.shared.generated.resources.cd_wallet_icon_loan
 import saveme.shared.generated.resources.cd_wallet_icon_savings
+import saveme.shared.generated.resources.activity_title
 import saveme.shared.generated.resources.member_unnamed
+import saveme.shared.generated.resources.members_manage
+import saveme.shared.generated.resources.members_pending_count
+import saveme.shared.generated.resources.members_see
+import saveme.shared.generated.resources.viewer_note
+import saveme.shared.generated.resources.viewer_note_plan
+import saveme.shared.generated.resources.wallet_joining
 import saveme.shared.generated.resources.role_editor
 import saveme.shared.generated.resources.role_owner
 import saveme.shared.generated.resources.role_viewer
@@ -115,14 +122,21 @@ fun WalletDetailScreen(
         topBar = { WalletsBackBar(view?.shown?.name.orEmpty()) { onIntent(WalletDetailIntent.Back) } },
     ) {
         if (view == null) {
-            Skeleton(Modifier.fillMaxWidth().padding(vertical = AppTheme.spacing.xl))
+            if (state.joining) Joining(state, onIntent) else Skeleton(Modifier.fillMaxWidth().padding(vertical = AppTheme.spacing.xl))
             return@AppScreen
         }
         StatusArea(view, state.busy, onIntent)
         Balance(view)
         if (view.archived) ArchivedPill()
+        if (state.isViewer) {
+            InlineAlert(
+                AlertTone.Info,
+                stringResource(if (state.planLimited) Res.string.viewer_note_plan else Res.string.viewer_note),
+                Modifier.testTag("walletDetail.viewerNote"),
+            )
+        }
         TransactionsSection(state, onIntent)
-        MembersSection(state)
+        MembersSection(state, onIntent)
         if (state.canEdit) OwnerActions(state, view, onIntent)
     }
     Confirmations(state, onIntent)
@@ -181,8 +195,24 @@ private fun ArchivedPill() {
     )
 }
 
+/** The person joined and the wallet is on its way (spec 013 FR-013): never "gone" meanwhile. */
 @Composable
-private fun MembersSection(state: WalletDetailState) {
+private fun Joining(state: WalletDetailState, onIntent: (WalletDetailIntent) -> Unit) {
+    Text(
+        stringResource(Res.string.wallet_joining),
+        style = AppTheme.type.title,
+        color = AppTheme.colors.ink,
+        modifier = Modifier.padding(vertical = AppTheme.spacing.xl).testTag("walletDetail.joining"),
+    )
+    if (state.joiningFailed) {
+        PrimaryButton(stringResource(Res.string.action_retry), { onIntent(WalletDetailIntent.JoiningRetryClicked) }, Modifier.testTag("walletDetail.joiningRetry"))
+    } else {
+        Skeleton(Modifier.fillMaxWidth().padding(vertical = AppTheme.spacing.xs))
+    }
+}
+
+@Composable
+private fun MembersSection(state: WalletDetailState, onIntent: (WalletDetailIntent) -> Unit) {
     if (state.members.isEmpty()) return
     Text(
         stringResource(Res.string.wallet_members),
@@ -207,6 +237,19 @@ private fun MembersSection(state: WalletDetailState) {
                 modifier = Modifier.testTag("walletDetail.member.$index"),
             )
         }
+        AppListItem(
+            stringResource(if (state.canEdit) Res.string.members_manage else Res.string.members_see),
+            modifier = Modifier.testTag("walletDetail.manageMembers"),
+            supporting = if (state.pendingInvitations > 0) stringResource(Res.string.members_pending_count, state.pendingInvitations) else null,
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(WalletDetailIntent.MembersClicked) },
+        )
+        AppListItem(
+            stringResource(Res.string.activity_title),
+            modifier = Modifier.testTag("walletDetail.activity"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(WalletDetailIntent.ActivityClicked) },
+        )
     }
 }
 

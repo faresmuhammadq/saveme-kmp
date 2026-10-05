@@ -64,6 +64,8 @@ import saveme.shared.generated.resources.budgets_home_see_all
 import saveme.shared.generated.resources.budgets_limit_line
 import saveme.shared.generated.resources.budgets_status_waiting
 import saveme.shared.generated.resources.budgets_unknown_progress
+import saveme.shared.generated.resources.home_invitation
+import saveme.shared.generated.resources.home_invitation_open
 import saveme.shared.generated.resources.home_wallets
 import saveme.shared.generated.resources.sign_out_action
 import kotlin.time.Instant
@@ -109,6 +111,15 @@ fun HomeScreen(
             InlineAlert(
                 tone = AlertTone.Info,
                 text = stringResource(Res.string.home_deletion_cancelled),
+            )
+        }
+        if (state.invitationHeld) {
+            InlineAlert(
+                tone = AlertTone.Info,
+                text = stringResource(Res.string.home_invitation),
+                modifier = Modifier.testTag("home.invitation"),
+                actionLabel = stringResource(Res.string.home_invitation_open),
+                onAction = { onIntent(HomeIntent.InvitationClicked) },
             )
         }
         if (state.dueCount > 0) {

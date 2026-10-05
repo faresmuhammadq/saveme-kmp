@@ -38,6 +38,8 @@ data class WalletsState(
     val loaded: Boolean = false,
     val waitingCount: Int = 0,
     val timeZoneId: String = "UTC",
+    /** The name of the wallet the person just left, until they dismiss the line (spec 013 FR-019). */
+    val leftNotice: String? = null,
 ) {
     val isEmpty: Boolean get() = active.isEmpty() && archived.isEmpty()
 }
@@ -48,6 +50,7 @@ sealed interface WalletsIntent {
     data object CreateClicked : WalletsIntent
     data class WalletClicked(val id: String) : WalletsIntent
     data object DismissNotice : WalletsIntent
+    data object DismissLeftNotice : WalletsIntent
     data object Back : WalletsIntent
 }
 
@@ -64,6 +67,7 @@ sealed interface WalletsChange {
     data class Refreshing(val busy: Boolean) : WalletsChange
     data class RefreshDone(val offline: Boolean, val failed: Boolean) : WalletsChange
     data class NotEntitled(val visible: Boolean) : WalletsChange
+    data class LeftNotice(val walletName: String?) : WalletsChange
 }
 
 fun reduce(state: WalletsState, change: WalletsChange): WalletsState = when (change) {
@@ -82,6 +86,7 @@ fun reduce(state: WalletsState, change: WalletsChange): WalletsState = when (cha
     is WalletsChange.Refreshing -> state.copy(refreshing = change.busy)
     is WalletsChange.RefreshDone -> state.copy(refreshing = false, loaded = true, offline = change.offline, refreshFailed = change.failed)
     is WalletsChange.NotEntitled -> state.copy(notEntitledNotice = change.visible)
+    is WalletsChange.LeftNotice -> state.copy(leftNotice = change.walletName)
 }
 
 internal fun WalletView.toCard() = WalletCardUi(

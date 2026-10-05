@@ -1,0 +1,33 @@
+# deferred: E2E on owner's device
+# US1-S3: Given the phone is offline, When the owner invites an address, Then the invitation is saved and waits, then is sent on reconnect. Part 1: online, the invite form is open.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- tapOn:
+    id: "members.invite"
+- extendedWaitUntil:
+    visible:
+      id: "invite.email"
+    timeout: 15000

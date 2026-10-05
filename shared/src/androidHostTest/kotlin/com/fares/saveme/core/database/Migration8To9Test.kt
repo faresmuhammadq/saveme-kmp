@@ -69,11 +69,11 @@ class Migration8To9Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_8_9)
+        .addMigrations(MIGRATION_8_9, MIGRATION_9_10)
         .build()
 
     @Test
-    fun theUserScopesPlaceIsForgottenAndTheWalletScopesKeepTheirs() = runTest {
+    fun theUserScopesPlaceIsForgottenAndTheWalletScopesLoseTheirsOnlyToTheNextMigration() = runTest {
         val db = open(v8Database())
         val dao = db.syncScopeDao()
         val user = dao.observe("user:u1").first()!!
@@ -83,10 +83,10 @@ class Migration8To9Test {
         assertEquals("2026-10-01T09:00:00Z", user.lastPushedAt)
         assertEquals("2026-10-01T10:00:00Z", user.refreshedAt)
         assertNull(dao.feedPlace("user:u1")?.cursor)
-        for ((scope, cursor, position) in listOf(Triple("wallet:w1", "wallet-cursor", 812L), Triple("wallet:w2", "wallet-two", 133L))) {
-            assertEquals(FeedPlace(cursor, position), dao.feedPlace(scope))
-        }
-        assertNotNull(dao.observe("wallet:w1").first()!!.feedReadAt)
+        // The database opens at the current version, so 9 -> 10 also ran and forgot the wallet scopes' places (spec 013); Migration9To10Test
+        // proves that step alone. 8 -> 9 itself leaves wallet scopes alone: its SQL names only `user:%`.
+        for (scope in listOf("wallet:w1", "wallet:w2")) assertEquals(FeedPlace(null, null), dao.feedPlace(scope))
+        assertEquals("2026-10-01T09:30:00Z", dao.observe("wallet:w1").first()!!.lastPushedAt)
         assertNotNull("a scope that is not a feed scope is untouched", dao.observe("profile").first())
         db.close()
     }

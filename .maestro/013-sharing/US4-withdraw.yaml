@@ -1,0 +1,42 @@
+# deferred: E2E on owner's device
+# US4-S3: Given a pending invitation, When the owner withdraws it, Then it leaves the list and its link stops working.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: viewer, INVITEE_EMAIL: "${E2E_PARTNER_EMAIL}" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: "members.invitation.${output.invitationId}"
+    timeout: 30000
+- tapOn:
+    id: "members.invitation.${output.invitationId}.withdraw"
+- tapOn:
+    id: "members.confirm"
+- extendedWaitUntil:
+    notVisible:
+      id: "members.invitation.${output.invitationId}"
+    timeout: 20000

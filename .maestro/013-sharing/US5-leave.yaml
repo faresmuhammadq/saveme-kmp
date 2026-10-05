@@ -1,0 +1,44 @@
+# deferred: E2E on owner's device
+# US5-S1: Given a member of a shared wallet, When they leave it, Then the wallet is gone from the phone and the list says "You left".
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: C, NAME: "Shared Home", OPENING: "50000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: C, ROLE: editor }
+- runFlow: ../common/sign-in.yaml
+- openLink:
+    link: ${output.shareUrl}
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "invitation.join"
+    timeout: 30000
+- tapOn:
+    id: "invitation.join"
+- extendedWaitUntil:
+    visible: "Shared Home"
+    timeout: 60000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.leave"
+    timeout: 15000
+- tapOn:
+    id: "members.leave"
+- tapOn:
+    id: "members.confirm"
+- extendedWaitUntil:
+    visible: "You left .*"
+    timeout: 30000
+- assertNotVisible: "Shared Home"
