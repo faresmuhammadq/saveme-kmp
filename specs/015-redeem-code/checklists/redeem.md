@@ -64,8 +64,8 @@
 ## Dependencies & Assumptions
 
 - [x] CHK035 Are the backend gaps (no id on `MySubscription`, no repeat flag, no code re-issue, mail-only code, untested O fold) recorded as non-blocking? [Assumption, Assumptions "Backend gaps"]
-- [ ] CHK036 Is the E2E dependency on the dev mail catcher's API (address, search syntax) confirmed against the running Mailpit version? [Dependency, research R-12 — verify at implementation]
-- [ ] CHK037 Is `ClaimService::approve` accepting the fixed E2E operator id confirmed? [Dependency, research R-12 — verify at implementation]
+- [X] CHK036 Is the E2E dependency on the dev mail catcher's API (address, search syntax) confirmed against the running Mailpit version? [Dependency, research R-12 — verified in QA, see qa-report.md 3.5]
+- [X] CHK037 Is `ClaimService::approve` accepting the fixed E2E operator id confirmed? [Dependency, research R-12 — verified in QA, see qa-report.md 3.5]
 
 ## Notes
 

@@ -58,4 +58,18 @@ class BillingLayeringTest {
         val offenders = main.walkTopDown().filter { it.isFile && it.extension == "kt" && it.readText().contains("instapay/claims") }.map { it.name }.toList()
         assertTrue(offenders.isEmpty(), "builds the claim URL: $offenders")
     }
+
+    /** FR-011, FR-029: the typed code and the attempt key are never saved, restored, stored or put on the clipboard. */
+    @Test
+    fun theRedeemCodePathSavesNothingStoresNothingAndWritesNoClipboard() {
+        val redeemFiles = billing.walkTopDown().filter { it.isFile && it.extension == "kt" && it.name.startsWith("Redeem") }.toList() +
+            File(main, "designsystem/component/Fields.kt")
+        assertTrue(redeemFiles.size >= 6, "found ${redeemFiles.map { it.name }}")
+        val forbidden = listOf("rememberSaveable", "SavedStateHandle", "KeyValueStore", "Clipboard", "setText(", "println(")
+        val offenders = redeemFiles.flatMap { file ->
+            val lines = file.readLines().filterNot { it.trimStart().startsWith("*") || it.trimStart().startsWith("//") || it.trimStart().startsWith("/*") }
+            forbidden.filter { token -> lines.any { token in it } }.map { file.name to it }
+        }
+        assertTrue(offenders.isEmpty(), "the redeem path persists or copies: $offenders")
+    }
 }
