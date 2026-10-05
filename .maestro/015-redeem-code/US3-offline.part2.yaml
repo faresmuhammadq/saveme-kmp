@@ -1,0 +1,14 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# e2e-between: network-off
+# Part 2: offline; Redeem shows the connection message and offers Try again. Nothing is queued.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.retry"
+    timeout: 45000
+- assertVisible: "You need a connection to redeem a code."

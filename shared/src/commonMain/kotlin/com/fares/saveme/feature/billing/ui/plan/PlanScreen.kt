@@ -22,6 +22,7 @@ import com.fares.saveme.designsystem.component.EmptyState
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.PlanCapability
 import com.fares.saveme.designsystem.component.PlanCard
+import com.fares.saveme.designsystem.component.SecondaryButton
 import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.icon.AppIcons
@@ -37,6 +38,7 @@ import saveme.shared.generated.resources.plan_catalogue_unavailable
 import saveme.shared.generated.resources.plan_catalogue_unavailable_body
 import saveme.shared.generated.resources.plan_current_heading
 import saveme.shared.generated.resources.plan_current_label
+import saveme.shared.generated.resources.plan_enter_code
 import saveme.shared.generated.resources.plan_period_every_days
 import saveme.shared.generated.resources.plan_period_lifetime
 import saveme.shared.generated.resources.plan_period_monthly
@@ -73,8 +75,14 @@ fun PlanScreen(state: PlanState, onIntent: (PlanIntent) -> Unit) {
         }
         state.current?.let { CurrentSection(it, state.timeZoneId) }
         CatalogueSection(state, onIntent)
-        // Reserved for the billing actions of C10 and C11 (Google Play, redeem code); empty here by design.
-        Column {}
+        // The billing actions: "Enter code" (C11); Google Play (C10) takes its place here later. Nothing else (P-12.3).
+        Column {
+            SecondaryButton(
+                stringResource(Res.string.plan_enter_code),
+                { onIntent(PlanIntent.EnterCode) },
+                Modifier.testTag("plan.enterCode"),
+            )
+        }
     }
 }
 

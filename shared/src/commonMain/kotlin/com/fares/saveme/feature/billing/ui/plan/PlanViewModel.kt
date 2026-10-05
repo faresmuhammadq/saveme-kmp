@@ -45,6 +45,7 @@ class PlanViewModel(
             }
             PlanIntent.Refresh -> if (!currentState.refreshing) viewModelScope.launch { pull() }
             PlanIntent.Back -> sendEffect(PlanEffect.NavigateBack)
+            PlanIntent.EnterCode -> sendEffect(PlanEffect.OpenRedeem)
         }
     }
 

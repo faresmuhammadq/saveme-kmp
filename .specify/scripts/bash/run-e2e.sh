@@ -6,6 +6,7 @@
 #   # e2e-seed: none | verified-user | unverified-user
 #   #           | unverified-user+verify-link | verified-user+reset-link
 #   #           | verified-user+plus | verified-user+plus-grace | verified-user+plus-lifetime
+#   #           | verified-user+plus-lifetime+redeem-code ...  (a redeem suffix, see below)
 #   # Any seed above may end in +partner (e.g. verified-user+plus+partner, spec 013 sharing): the runner also
 #   # creates a second VERIFIED account on Plus (E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD), the invitee.
 # The runner creates a fresh account per flow (unique address, so the shared dev database needs no
@@ -13,6 +14,16 @@
 # as seen from this machine, for .maestro/common/api.js). Accounts are created through the
 # backend's RegisterAccount use case with artisan, not over HTTP: auth/register is throttled to
 # 10 an hour.
+# Redeem seeds (spec 015, client C11) are suffixes after the base seed and before +partner; each ends by
+# exporting E2E_CODE, the mailed Redeem Code, to the flow. The runner submits a claim for the plan Plus · Monthly at
+# its own price and approves it through ClaimService (as the back office would), then reads the code from the
+# approval mail in the dev mail catcher (MAILPIT_API, default http://mailpit.test/api/v1; up to 30 s):
+#   +redeem-code          the code was sent to the flow's own account address
+#   +redeem-code-other    the code was sent to a different address (e2e+<run>-<flow>-other@example.com)
+#   +redeem-code-used     as +redeem-code, then the code row is marked redeemed by someone else
+#   +redeem-code-expired  as +redeem-code, then the code row's expiry is moved into the past
+# The seeds never run in CI; they are written for the device run the owner schedules.
+#
 # The +…-link seeds also issue two mailed links through the backend's LinkRepository (the same
 # secret a mail would carry, no mail reading): E2E_OLD_LINK, already superseded, and E2E_LINK,
 # live. Both use the app's dev link host (http://localhost:<port>) so Maestro's openLink goes
@@ -39,6 +50,7 @@
 # Usage: run-e2e.sh <feature-dir-name> [--skip-install] [--flow <name>]
 # Env:   E2E_BACKEND_CONTAINER (default: saveme-backend-main)
 #        E2E_BACKEND_PORT      (default: 43871)
+#        MAILPIT_API           (default: http://mailpit.test/api/v1; only the +redeem-code* seeds read it)
 # Exit:  0 all flows passed (or none exist), 1 a flow failed, 2 preflight failed.
 
 set -euo pipefail
@@ -54,7 +66,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --skip-install) skip_install=1; shift ;;
         --flow) only_flow="$2"; shift 2 ;;
-        -h|--help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) feature="$1"; shift ;;
     esac
 done
@@ -207,6 +219,69 @@ grant_plus() {
     " 2>&1 | grep -q granted
 }
 
+# Spec 015: submits a claim for <address> (Plus · Monthly at its own price) and approves it through ClaimService, then
+# prints the claim id. Approval queues the mail that carries the code (run by the container's worker).
+approve_claim_for() {
+    local address="$1"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \$planId = \App\Modules\Billing\Infrastructure\Models\Plan::where('code', 'plus_monthly')->value('id');
+        \$price = \App\Modules\Billing\Domain\Claims\ClaimPrice::of(app(\App\Modules\Billing\Domain\Ports\PlanRepository::class)->find(\$planId));
+        \$service = app(\App\Modules\Billing\Application\Claims\ClaimService::class);
+        \$claim = \$service->submit(new \App\Modules\Billing\Application\Claims\SubmitClaim('$address', \$planId, \$price['amount_minor'], \$price['currency'], 'E2E' . random_int(1000000000, 9999999999), 'en'));
+        \$service->approve('$E2E_OPERATOR_ID', \$claim->id);
+        echo 'claim=' . \$claim->id;
+    " 2>&1 | grep -oE 'claim=[0-9a-f-]+' | head -1 | cut -d= -f2-
+}
+
+# Spec 015: waits up to 30 s for the approval mail to <address> in the dev mail catcher and prints the code in it
+# (XXXX-XXXX-XXXX-XXXX). The code is stored only as a hash, so the mail is the one place to read it.
+read_mailed_code() {
+    local address="$1" api="${MAILPIT_API:-http://mailpit.test/api/v1}" code="" id="" i
+    for i in $(seq 1 30); do
+        id=$(curl -fs --max-time 5 --get --data-urlencode "query=to:$address" "$api/search" \
+            | python3 -c 'import sys, json; m = json.load(sys.stdin).get("messages") or []; print(m[0]["ID"] if m else "")' 2>/dev/null || true)
+        if [[ -n "$id" ]]; then
+            code=$(curl -fs --max-time 5 "$api/message/$id" \
+                | python3 -c 'import sys, json, re; m = re.search(r"[0-9A-Z]{4}(?:-[0-9A-Z]{4}){3}", json.load(sys.stdin).get("Text", "")); print(m.group(0) if m else "")' 2>/dev/null || true)
+            [[ -n "$code" ]] && break
+        fi
+        sleep 1
+    done
+    printf '%s' "$code"
+}
+
+# Spec 015: <kind> is redeem-code | redeem-code-other | redeem-code-used | redeem-code-expired. Prints the mailed code.
+# -used: the code row is marked redeemed by someone else (an address is unique to one account, so no real second
+# redeemer can exist; this row edit is the only way to reach REDEEM_CODE_USED end to end). -expired: expiry in the past,
+# status left issued as before the daily sweep.
+seed_redeem_code() {
+    local email="$1" kind="$2" run="$3" name="$4" address claim_id code
+    address="$email"
+    [[ "$kind" == redeem-code-other ]] && address="e2e+$run-$(tr '[:upper:]' '[:lower:]' <<< "$name")-other@example.com"
+    claim_id=$(approve_claim_for "$address")
+    [[ -n "$claim_id" ]] || return 1
+    code=$(read_mailed_code "$address")
+    [[ -n "$code" ]] || return 1
+    case "$kind" in
+        redeem-code-used)
+            docker exec "$CONTAINER" php artisan tinker --execute="
+                \App\Modules\Billing\Infrastructure\Models\RedeemCode::where('claim_id', '$claim_id')->update([
+                    'status' => 'redeemed', 'redeemed_by' => (string) \Illuminate\Support\Str::uuid7(),
+                    'subscription_id' => (string) \Illuminate\Support\Str::uuid7(), 'redeemed_at' => now(),
+                ]);
+                echo 'marked';
+            " 2>&1 | grep -q marked || return 1
+            ;;
+        redeem-code-expired)
+            docker exec "$CONTAINER" php artisan tinker --execute="
+                \App\Modules\Billing\Infrastructure\Models\RedeemCode::where('claim_id', '$claim_id')->update(['expires_at' => now()->subDay()]);
+                echo 'marked';
+            " 2>&1 | grep -q marked || return 1
+            ;;
+    esac
+    printf '%s' "$code"
+}
+
 # Runs one Maestro file with the current env_args; <label> names its report and log.
 run_maestro() {
     local file="$1" label="$2"
@@ -261,6 +336,8 @@ for flow in "${flows[@]}"; do
     seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
     want_partner=false
     if [[ "$seed" == *+partner ]]; then want_partner=true; seed="${seed%+partner}"; fi
+    redeem_kind=""
+    if [[ "$seed" =~ ^(.*)\+(redeem-code(-other|-used|-expired)?)$ ]]; then seed="${BASH_REMATCH[1]}"; redeem_kind="${BASH_REMATCH[2]}"; fi
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
     case "${seed:-none}" in
         none) ;;
@@ -279,6 +356,12 @@ for flow in "${flows[@]}"; do
             esac
             if [[ ${#grant_args[@]} -gt 0 ]] && ! grant_plus "$email" "${grant_args[@]}"; then
                 echo "FAIL $name (granting Plus failed)"; failed=1; continue
+            fi
+            if [[ -n "$redeem_kind" ]]; then
+                if ! code=$(seed_redeem_code "$email" "$redeem_kind" "$run_id" "$name") || [[ -z "$code" ]]; then
+                    echo "FAIL $name (seeding $redeem_kind failed)"; failed=1; continue
+                fi
+                env_args+=(-e "E2E_CODE=$code")
             fi
             if [[ "$want_partner" == true ]]; then
                 partner_email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")-partner@example.com"

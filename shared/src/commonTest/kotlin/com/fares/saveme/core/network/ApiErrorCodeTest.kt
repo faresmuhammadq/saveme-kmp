@@ -20,4 +20,20 @@ class ApiErrorCodeTest {
         assertNotEquals(RetryClass.Automatic, ApiErrorCode.INVALID_CURSOR.retryClass)
         assertNotEquals(RetryClass.Automatic, ApiErrorCode.SYNC_CURSOR_EXPIRED.retryClass)
     }
+
+    @Test
+    fun theRedeemAndIdempotencyCodesDecodeWithTheirRetryClasses() {
+        mapOf(
+            "REDEEM_CODE_EMAIL_MISMATCH" to RetryClass.AfterChange,
+            "REDEEM_CODE_USED" to RetryClass.Never,
+            "REDEEM_CODE_EXPIRED" to RetryClass.Never,
+            "IDEMPOTENCY_REQUEST_IN_PROGRESS" to RetryClass.Automatic,
+            "IDEMPOTENCY_KEY_REUSED" to RetryClass.Never,
+        ).forEach { (wire, retry) ->
+            val code = ApiErrorCode.from(wire)
+            assertNotEquals(ApiErrorCode.UNKNOWN, code, wire)
+            assertEquals(wire, code.name)
+            assertEquals(retry, code.retryClass, wire)
+        }
+    }
 }

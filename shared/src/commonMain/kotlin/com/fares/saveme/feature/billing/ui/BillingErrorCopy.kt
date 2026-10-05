@@ -4,6 +4,9 @@ import com.fares.saveme.core.network.ApiErrorCode
 import org.jetbrains.compose.resources.StringResource
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.error_feature_not_entitled
+import saveme.shared.generated.resources.error_redeem_code_email_mismatch
+import saveme.shared.generated.resources.error_redeem_code_expired
+import saveme.shared.generated.resources.error_redeem_code_used
 
 /**
  * Copy for a refusal because of the plan, for later features to reuse (spec 005 FR-007). Chosen by
@@ -11,3 +14,11 @@ import saveme.shared.generated.resources.error_feature_not_entitled
  */
 fun ApiErrorCode.entitlementMessage(): StringResource? =
     if (this == ApiErrorCode.FEATURE_NOT_ENTITLED) Res.string.error_feature_not_entitled else null
+
+/** Copy for a redeem refusal that has its own catalogue code (spec 015 FR-028); null for any other code. */
+fun ApiErrorCode.redeemMessage(): StringResource? = when (this) {
+    ApiErrorCode.REDEEM_CODE_EMAIL_MISMATCH -> Res.string.error_redeem_code_email_mismatch
+    ApiErrorCode.REDEEM_CODE_USED -> Res.string.error_redeem_code_used
+    ApiErrorCode.REDEEM_CODE_EXPIRED -> Res.string.error_redeem_code_expired
+    else -> null
+}

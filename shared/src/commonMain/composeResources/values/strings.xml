@@ -1130,4 +1130,34 @@
     <string name="activity_subject_member">a member</string>
     <string name="activity_subject_invitation">an invitation as %1$s</string>
     <string name="activity_subject_wallet">the wallet</string>
+    <!-- Redeem code (spec 015) -->
+    <string name="plan_enter_code">Enter code</string>
+    <string name="redeem_title">Enter code</string>
+    <string name="redeem_intro">Enter the code from your email. It works only on the account with the email address it was sent to.</string>
+    <string name="redeem_field_label">Redeem code</string>
+    <string name="redeem_field_hint">16 letters and digits, as in your email</string>
+    <string name="redeem_verify_note">Verify your email address first. Codes work only on verified accounts.</string>
+    <string name="redeem_submit">Redeem</string>
+    <string name="redeem_retry">Try again</string>
+    <string name="redeem_offline">You need a connection to redeem a code.</string>
+    <string name="redeem_not_valid">This code isn’t valid. Check it and try again.</string>
+    <string name="redeem_invalid_format">This isn’t a valid code. Codes have 16 letters and digits.</string>
+    <string name="redeem_signed_in_as">You’re signed in as %1$s.</string>
+    <string name="redeem_rate_limited_minutes">Too many attempts. Try again in %1$d minutes.</string>
+    <string name="redeem_rate_limited_minute">Too many attempts. Try again in a minute.</string>
+    <string name="redeem_rate_limited_later">Too many attempts. Try again later.</string>
+    <string name="redeem_in_progress">Still checking this code. Try again in a moment.</string>
+    <string name="redeem_done_title">Code redeemed</string>
+    <string name="redeem_done_now_on_until">You’re now on %1$s until %2$s.</string>
+    <string name="redeem_done_now_on_no_end">You’re now on %1$s, with no end date.</string>
+    <string name="redeem_done_current_stays_until">Your current plan, %1$s, stays in place because it ends later, on %2$s.</string>
+    <string name="redeem_done_current_stays_no_end">Your current plan, %1$s, stays in place because it has no end date.</string>
+    <string name="redeem_done_redeemed_until">The redeemed plan, %1$s, runs until %2$s.</string>
+    <string name="redeem_done_redeemed_no_end">The redeemed plan, %1$s, has no end date.</string>
+    <string name="redeem_done_starts_on">Its billing period starts on %1$s.</string>
+    <string name="redeem_done_play_renews">Google Play will keep charging for your subscription until you cancel it in Google Play.</string>
+    <string name="redeem_done_button">Done</string>
+    <string name="error_redeem_code_email_mismatch">This code was sent to a different email address. Sign in with that address to use it.</string>
+    <string name="error_redeem_code_used">This code has already been used.</string>
+    <string name="error_redeem_code_expired">This code has expired. Contact support for help.</string>
 </resources>

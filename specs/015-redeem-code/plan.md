@@ -148,4 +148,17 @@ None.
 
 ## Implementation notes (filled during implementation)
 
-_Empty until `/speckit-implement`._
+Choices made during implementation (owner away, full delegated authority); each is consistent with spec, plan and research.
+
+1. **Code text style**: no new `code` typography token. Every `AppTypography` style already carries tabular digits (`tnum`), so `CodeField` uses `numeralL` (Latin face, 24 sp) with `TextDirection.Ltr`; this keeps the design-system token set unchanged (research R-03's "only if none exists").
+2. **Paste-only menu**: used `Modifier.filterTextContextMenuComponents` (Compose MP 1.12.1, the research R-03 fallback) as the single mechanism instead of a `LocalTextToolbar` wrapper: it is the supported API for the new text context menu and is one line. The predicate (`isAllowedInCodeMenu`) is unit-tested; that the Android system menu honours it is a device spot check (quickstart §3, T051, deferred).
+3. **Normalisation of typed and pasted text**: one function, `RedeemCode.fromPaste`, for both (typed text has no separators so it falls through to `normalise`); `CodeField` therefore needs no paste detection and stays free of billing imports. `fromPaste` tries hyphen-separated groups first and space-separated groups second, so ordinary words in a pasted line are never taken for a code.
+4. **Message for `EMAIL_NOT_VERIFIED`**: the screen shows the verify note (set by the outcome flipping `verified` to false), not a second alert; the app-wide sheet is raised by `ApiClient`.
+5. **`redeem_done_*` wording** follows contracts/ui-and-e2e.md; Arabic minutes use the sentence form (no plural resource), as the contract allowed.
+6. **Mismatch copy**: the own address goes on a second line of the same alert (one live region, one `redeem.message` tag).
+7. **Error copy tables**: `AuthErrorCopy.message()` is exhaustive over `ApiErrorCode`, so the five new codes were added there too (the three redeem codes and `IDEMPOTENCY_REQUEST_IN_PROGRESS` map to their keys, `IDEMPOTENCY_KEY_REUSED` to the generic reference copy); `BillingErrorCopy.redeemMessage()` covers the three catalogue codes as planned.
+8. **Service robustness**: an unreadable 200 body is `Failed(null)` (no crash), request and apply run in one `scope.async` with the exception caught inside.
+9. **Layering test**: added a billing-specific `BillingLayeringTest` (the existing layering tests are per feature) covering data -> no auth data/domain, billing -> auth only through domain/ui, core and designsystem importing no feature (the Room registry excepted, as in `SharingLayeringTest`), and no source building the claim URL (that last check lives here, not in `commonTest`, because it reads files).
+10. **T048 dry run**: the +redeem-code* seeds are written and `bash -n` clean; per the run instructions neither the runner nor the seeding functions were executed (CHK036/CHK037 stay open for the QA step).
+11. **Screenshots**: new goldens for `CodeField` (empty, partial, complete, error x EN/AR/2.0) and the redeem screen (15 states x 3); changed goldens: Plan screen (Enter code row) and the catalogue `fields` section (CodeField entry).
+

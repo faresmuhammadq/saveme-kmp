@@ -36,6 +36,10 @@ data object DeviceSessionsKey : NavKey
 @Serializable
 data object PlanKey : NavKey
 
+/** Enter a mailed redeem code (spec 015). Nothing is carried: the code lives only in the screen's store (FR-011). */
+@Serializable
+data object RedeemCodeKey : NavKey
+
 @Serializable
 data object WalletsKey : NavKey
 

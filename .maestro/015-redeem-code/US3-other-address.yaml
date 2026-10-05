@@ -1,0 +1,29 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S1: Given a code mailed to a different address, When it is redeemed, Then the message says so, shows only the signed-in address, and keeps the screen open.
+# e2e-seed: verified-user+redeem-code-other
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- evalScript: ${output.typed = E2E_CODE.replace(/-/g, '').toLowerCase()}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- tapOn:
+    id: "redeem.code"
+- inputText: "${output.typed}"
+- hideKeyboard
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.message"
+    timeout: 20000
+- assertVisible:
+    id: "redeem.message"
+    text: "(?s).*different email address.*"
+- assertVisible:
+    id: "redeem.message"
+    text: "(?s).*signed in as ${E2E_EMAIL}.*"
+- assertNotVisible: ".*-other@example.com.*"
+- assertVisible:
+    id: "redeem.submit"

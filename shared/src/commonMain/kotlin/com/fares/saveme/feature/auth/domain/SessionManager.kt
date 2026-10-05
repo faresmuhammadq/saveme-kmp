@@ -10,6 +10,8 @@ import com.fares.saveme.core.network.ApiResult
 import co.touchlab.kermit.Logger
 import com.fares.saveme.feature.auth.data.dto.AccountDto
 import com.fares.saveme.feature.auth.data.dto.AccountSnapshotDto
+import com.fares.saveme.feature.auth.data.dto.EntitlementSummaryDto
+import com.fares.saveme.feature.auth.data.dto.PlanRefDto
 import com.fares.saveme.feature.auth.data.dto.SignInResultDto
 import com.fares.saveme.feature.auth.domain.model.AccountSnapshot
 import com.fares.saveme.feature.auth.domain.model.AccountState
@@ -125,6 +127,29 @@ class SessionManager(
             ApiResult.Offline, ApiResult.Timeout -> RefreshOutcome.Offline
             is ApiResult.Failure -> RefreshOutcome.Failed
         }
+    }
+
+    /**
+     * Replaces the cached entitlements with an answer the caller already holds (C11 redeem), under the
+     * same guards as [refreshEntitlements]: only for the person it was asked for. Returns false and
+     * writes nothing when signed out or another person is signed in.
+     */
+    suspend fun applyEntitlements(
+        forUserId: String,
+        planId: String,
+        planName: String,
+        features: Map<String, JsonPrimitive>,
+    ): Boolean {
+        val current = mutableState.value as? AuthState.SignedIn
+        val snapshot = repository.readSnapshot()
+        if (current == null || current.account.userId != forUserId || snapshot == null || snapshot.account.id != forUserId) return false
+        val updated = snapshot.copy(entitlements = EntitlementSummaryDto(PlanRefDto(planId, planName), features))
+        repository.saveSnapshot(updated)
+        val latest = mutableState.value as? AuthState.SignedIn
+        if (latest != null && latest.account.userId == forUserId) {
+            mutableState.value = latest.copy(account = latest.account.withEntitlements(updated.toDomain()))
+        }
+        return true
     }
 
     suspend fun markEmailVerified() {

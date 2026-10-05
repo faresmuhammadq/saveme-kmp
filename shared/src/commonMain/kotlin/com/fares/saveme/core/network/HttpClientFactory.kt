@@ -32,6 +32,14 @@ fun HttpRequestBuilder.publicEndpoint() {
     attributes.put(PublicEndpointKey, true)
 }
 
+/**
+ * Sets the `Idempotency-Key` of one attempt (api-conventions: Idempotency). The value is a secret-adjacent
+ * identifier: it is never logged, and the caller reuses it only for a retry of the same attempt.
+ */
+fun HttpRequestBuilder.idempotencyKey(key: String) {
+    headers["Idempotency-Key"] = key
+}
+
 fun createHttpClient(
     engine: HttpClientEngine,
     config: AppConfig,

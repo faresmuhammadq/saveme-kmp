@@ -1,0 +1,16 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S6, part 1: Given a verified person with a mailed code, When they open Enter code and type it, Then Redeem is available.
+# e2e-seed: verified-user+redeem-code
+# Part 2 cuts the connection (e2e-between: network-off); part 3 restores it (e2e-between: network-on).
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- evalScript: ${output.typed = E2E_CODE.replace(/-/g, '').toLowerCase()}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- tapOn:
+    id: "redeem.code"
+- inputText: "${output.typed}"
+- hideKeyboard
+- assertVisible: "${E2E_CODE}"

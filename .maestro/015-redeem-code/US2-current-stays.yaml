@@ -1,0 +1,28 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2-S1: Given a person whose current plan has no end date, When they redeem a code, Then the confirmation says the current plan stays and names the redeemed plan's end.
+# e2e-seed: verified-user+plus-lifetime+redeem-code
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- evalScript: ${output.typed = E2E_CODE.replace(/-/g, '').toLowerCase()}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- tapOn:
+    id: "redeem.code"
+- inputText: "${output.typed}"
+- hideKeyboard
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.done"
+    timeout: 20000
+- assertVisible:
+    id: "redeem.done.governing"
+    text: "Your current plan, Plus · Monthly, stays in place because it has no end date."
+- assertVisible:
+    id: "redeem.done.redeemed"
+    text: "The redeemed plan, Plus · Monthly, runs until .+"
+- assertNotVisible:
+    id: "redeem.done.play"

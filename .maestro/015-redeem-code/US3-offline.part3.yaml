@@ -1,0 +1,21 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# e2e-between: network-on
+# Part 3: back online; Try again redeems the same code with the same attempt (the server applies it once).
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- tapOn:
+    id: "redeem.retry"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.done"
+    timeout: 30000
+- assertVisible: "Code redeemed"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: mySubscription, SLOT: B }
+- assertTrue: ${output.planName == 'Plus · Monthly'}
