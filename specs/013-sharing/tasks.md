@@ -289,7 +289,7 @@ description: "Task list for 013-sharing"
 - [X] T121 Update README "On-device database" (Room v10; invitations; every wallet re-read once) and "Development backend" (`SHARING_INVITATION_URL` for device runs), and the C9 row of `specs/briefs/README.md`
 - [ ] T122 Run quickstart.md manual checks on the dev build — **deferred: E2E on owner's device**
 - [ ] T123 Run the full `/speckit-e2e 013-sharing` and write `specs/013-sharing/e2e-report.md` incl. the brief's checkpoints — **deferred: E2E on owner's device**
-- [ ] T124 Write specs/013-sharing/summary.md
+- [X] T124 Write specs/013-sharing/summary.md
 
 ---
 
