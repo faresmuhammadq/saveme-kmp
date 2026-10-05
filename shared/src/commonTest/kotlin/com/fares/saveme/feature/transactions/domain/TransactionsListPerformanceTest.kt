@@ -25,8 +25,8 @@ class TransactionsListPerformanceTest {
         repeat(2_000) { i ->
             env.seed(
                 transactionJson(
-                    id = "t$i", date = "2026-%02d-%02d".format(1 + i % 12, 1 + i % 28), amount = 100L + i,
-                    description = if (i % 7 == 0) "Plumber visit $i" else "Shop $i", createdAt = "2026-10-01T09:%02d:%02dZ".format(i / 60 % 60, i % 60),
+                    id = "t$i", date = "2026-${(1 + i % 12).pad2()}-${(1 + i % 28).pad2()}", amount = 100L + i,
+                    description = if (i % 7 == 0) "Plumber visit $i" else "Shop $i", createdAt = "2026-10-01T09:${(i / 60 % 60).pad2()}:${(i % 60).pad2()}Z",
                     categoryId = "c${i % 5}",
                 ),
             )
@@ -51,3 +51,5 @@ class TransactionsListPerformanceTest {
         assertTrue(filterTime.inWholeMilliseconds < 1_000, "filter took $filterTime")
     }
 }
+
+private fun Int.pad2(): String = toString().padStart(2, '0')
