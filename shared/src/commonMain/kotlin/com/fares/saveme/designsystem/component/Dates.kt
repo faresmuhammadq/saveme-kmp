@@ -3,7 +3,6 @@ package com.fares.saveme.designsystem.component
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.CalendarLocale
 import androidx.compose.material3.DatePickerFormatter
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,23 +53,25 @@ fun DateField(
     AppSelectField(label, value, onClick, modifier, errorText = errorText, enabled = enabled, trailingIcon = AppIcons.Calendar)
 }
 
-/** The picker's locale for [language] ("ar" or "en") with Western digits (0–9) in both (P-06.2); platform specific. */
-internal expect fun westernDigitsLocale(language: String): CalendarLocale
-
 /**
- * Formats dates through the given locale whatever locale the picker asks for, so the headline and the month title
- * print Western digits too; the calendar grid already follows the state's locale.
+ * A picker state whose calendar follows [language] ("ar" or "en") with Western digits (0-9) in both (P-06.2). Platform
+ * specific because the locale type (`java.util.Locale`, `NSLocale`) is not available to common code.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-private class WesternDatePickerFormatter(
-    private val delegate: DatePickerFormatter,
-    private val locale: CalendarLocale,
-) : DatePickerFormatter {
-    override fun formatMonthYear(monthMillis: Long?, locale: CalendarLocale): String? = delegate.formatMonthYear(monthMillis, this.locale)
+internal expect fun westernDigitsDatePickerState(
+    language: String,
+    initialSelectedDateMillis: Long,
+    yearRange: IntRange,
+    selectableDates: SelectableDates,
+): DatePickerState
 
-    override fun formatDate(dateMillis: Long?, locale: CalendarLocale, forContentDescription: Boolean): String? =
-        delegate.formatDate(dateMillis, this.locale, forContentDescription)
-}
+/**
+ * Formats dates through the [language] locale with Western digits whatever locale the picker asks for, so the headline
+ * and the month title print Western digits too; the calendar grid already follows the state's locale.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal expect fun westernDigitsDatePickerFormatter(language: String): DatePickerFormatter
 
 /**
  * The picker's calendar without a window, so the catalogue and screenshots can show it (as the dialog card does).
@@ -86,13 +87,12 @@ fun AppDatePickerContent(
     max: LocalDate = DefaultMaxDate,
 ) {
     val language = moneyLanguage()
-    val locale = remember(language) { westernDigitsLocale(language) }
     val todayPinned = LocalPickerToday.current != null
     val minMillis = min.toUtcMillis()
     val maxMillis = max.toUtcMillis()
-    val state = remember(locale, initial, min, max) {
-        DatePickerState(
-            locale = locale,
+    val state = remember(language, initial, min, max) {
+        westernDigitsDatePickerState(
+            language = language,
             initialSelectedDateMillis = initial.toUtcMillis(),
             yearRange = min.year..max.year,
             selectableDates = object : SelectableDates {
@@ -105,7 +105,7 @@ fun AppDatePickerContent(
     DatePicker(
         state = state,
         modifier = modifier,
-        dateFormatter = WesternDatePickerFormatter(DatePickerDefaults.dateFormatter(), locale),
+        dateFormatter = westernDigitsDatePickerFormatter(language),
         colors = DatePickerDefaults.colors(
             containerColor = AppTheme.colors.surface,
             titleContentColor = AppTheme.colors.ink2,
