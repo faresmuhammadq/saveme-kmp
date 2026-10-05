@@ -16,6 +16,7 @@ import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.category_unavailable
 import saveme.shared.generated.resources.cd_back
+import saveme.shared.generated.resources.refusal_now_viewer
 import saveme.shared.generated.resources.tx_error_amount_digits
 import saveme.shared.generated.resources.tx_error_amount_empty
 import saveme.shared.generated.resources.tx_error_amount_invalid
@@ -47,7 +48,7 @@ import saveme.shared.generated.resources.tx_reason_other_plain
 fun RefusalKind.messageRes(): StringResource = when (this) {
     RefusalKind.NotVerified -> Res.string.tx_reason_not_verified
     RefusalKind.NoLongerAvailable -> Res.string.tx_reason_gone
-    RefusalKind.NoRightHere -> Res.string.tx_reason_no_right
+    RefusalKind.NoRightHere -> Res.string.refusal_now_viewer
     RefusalKind.NoRightInOtherWallet -> Res.string.tx_reason_no_right_other
     RefusalKind.CategoryUnusable -> Res.string.tx_reason_category
     RefusalKind.DestinationUnavailable -> Res.string.tx_reason_destination

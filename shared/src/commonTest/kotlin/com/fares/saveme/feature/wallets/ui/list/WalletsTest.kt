@@ -141,3 +141,22 @@ class WalletsViewModelTest {
         }
     }
 }
+
+/** "You left <wallet>" on the wallet list (spec 013 FR-019). */
+class WalletsLeftNoticeTest {
+    @Test
+    fun theNoticeShowsOnceAndCanBeDismissed() = runMviTest {
+        val notice = MutableStateFlow<String?>(null)
+        var dismissed = 0
+        val vm = WalletsViewModel(
+            MutableStateFlow(WalletList(emptyList(), emptyList(), emptyList(), null)), { RefreshOutcome.Done }, { true }, { true },
+            leftNotice = notice, dismissLeftNotice = { dismissed++; notice.value = null },
+        )
+        assertNull(vm.state.value.leftNotice)
+        notice.value = "Home"
+        assertEquals("Home", vm.state.value.leftNotice)
+        vm.onIntent(WalletsIntent.DismissLeftNotice)
+        assertEquals(1, dismissed)
+        assertNull(vm.state.value.leftNotice)
+    }
+}

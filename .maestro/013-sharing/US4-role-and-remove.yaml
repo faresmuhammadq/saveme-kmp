@@ -1,0 +1,53 @@
+# deferred: E2E on owner's device
+# US4-S1/S2: Given a member who joined, When the owner makes them viewer and then removes them, Then the member list reflects both.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- tapOn:
+    id: "members.row.${output.memberUserId}"
+- tapOn:
+    id: "members.sheet.viewer"
+- extendedWaitUntil:
+    visible: "Viewer"
+    timeout: 20000
+- tapOn:
+    id: "members.row.${output.memberUserId}"
+- tapOn:
+    id: "members.sheet.remove"
+- tapOn:
+    id: "members.confirm"
+- extendedWaitUntil:
+    notVisible:
+      id: "members.row.${output.memberUserId}"
+    timeout: 20000

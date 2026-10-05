@@ -981,4 +981,153 @@
 
     <!-- Catalogue -->
     <string name="budgets_catalog_all">All expenses</string>
+
+    <!-- Sharing (spec 013) -->
+    <string name="role_member">Member</string>
+    <!-- Members -->
+    <string name="members_title">Members</string>
+    <string name="members_manage">Manage members</string>
+    <string name="members_see">See members</string>
+    <string name="members_pending_count">%1$d pending</string>
+    <string name="members_section_invitations">Pending invitations</string>
+    <string name="members_alone">You’re the only person here. Invite someone to share this wallet.</string>
+    <string name="members_cd_actions">Actions for %1$s</string>
+    <string name="members_cd_invitation">Invitation, %1$s</string>
+    <string name="members_cd_back">Back to the wallet</string>
+
+    <!-- Invite -->
+    <string name="invite_action">Invite</string>
+    <string name="invite_title">Invite someone</string>
+    <string name="invite_by_email">By email</string>
+    <string name="invite_by_link">Share a link</string>
+    <string name="invite_role_label">Role</string>
+    <string name="invite_role_editor_hint">Can add and change transactions</string>
+    <string name="invite_role_viewer_hint">Can view only</string>
+    <string name="invite_email_label">Email address</string>
+    <string name="invite_send">Send invitation</string>
+    <string name="invite_create_link">Create link</string>
+    <string name="invite_sent">Invitation sent.</string>
+    <string name="invite_saved_offline">Invitation saved. It will be sent when you’re online.</string>
+    <string name="invite_link_wait">Getting the link…</string>
+    <string name="invite_link_wait_offline">The link will be ready when you’re back online. You can share it from Members.</string>
+    <string name="invite_link_ready">The link is ready. Share it or copy it.</string>
+    <string name="invite_share">Share</string>
+    <string name="invite_copy">Copy</string>
+    <string name="invite_copied">Copied</string>
+    <string name="invite_done">Done</string>
+    <string name="invite_share_text">%1$s: I’d like to share a wallet with you. Open this link to join: %2$s</string>
+    <string name="invite_supersede">%1$s already has a pending invitation. Send a new one? The earlier one will stop working.</string>
+    <string name="invite_supersede_confirm">Send a new invitation</string>
+    <string name="invite_own_address">That’s your own address.</string>
+    <string name="invite_email_invalid">Enter a valid email address.</string>
+    <string name="invite_not_owner">Only the owner can invite.</string>
+    <string name="invite_wallet_archived">An archived wallet can’t take new invitations.</string>
+    <string name="invite_not_verified">Verify your email address, then invite.</string>
+    <string name="invite_failed">Couldn’t save the invitation. Try again.</string>
+    <string name="gate_not_included">Sharing isn’t included in your plan.</string>
+    <string name="gate_full">This wallet has reached the %1$d people your plan allows. Withdrawing a pending invitation frees a place.</string>
+    <string name="gate_see_plan">See your plan</string>
+
+    <!-- Pending invitations -->
+    <string name="invitation_pending">Pending</string>
+    <string name="invitation_expires">Expires %1$s</string>
+    <string name="invitation_expired">Expired</string>
+    <string name="invitation_link">Link</string>
+    <string name="invitation_waiting">Waiting to sync</string>
+    <string name="invitation_withdraw">Withdraw</string>
+    <string name="invitation_withdraw_confirm">Withdraw this invitation? Its link will stop working.</string>
+    <string name="invitation_link_gone">This link can’t be shown again.</string>
+    <string name="invitation_replace_link">Replace link</string>
+    <string name="invitation_not_sent">Not sent</string>
+    <string name="invitation_withdrawal_failed">Couldn’t withdraw</string>
+    <string name="invitation_refusal_not_verified">Verify your email address, then try again.</string>
+    <string name="invitation_refusal_full">This wallet has reached the number of people your plan allows.</string>
+    <string name="invitation_refusal_plan">Your plan doesn’t allow this right now.</string>
+    <string name="invitation_refusal_not_owner">Only the owner can invite.</string>
+    <string name="invitation_refusal_gone">This wallet is no longer available.</string>
+    <string name="invitation_refusal_invalid">The invitation isn’t valid. Discard it and try again.</string>
+    <string name="invitation_refusal_other">Something went wrong. Reference: %1$s</string>
+    <string name="invitation_refusal_other_plain">Something went wrong.</string>
+
+    <!-- Answering an invitation -->
+    <string name="join_title">%1$s invited you to %2$s</string>
+    <string name="join_someone">Someone</string>
+    <string name="join_until">Until %1$s</string>
+    <string name="join_action">Join</string>
+    <string name="join_decline">Decline</string>
+    <string name="join_decline_confirm">Decline this invitation?</string>
+    <string name="join_later">Not now</string>
+    <string name="join_declined">Invitation declined</string>
+    <string name="join_already">You’re already in this wallet.</string>
+    <string name="join_open_wallet">Open wallet</string>
+    <string name="join_signed_out">Sign in or create an account to answer this invitation.</string>
+    <string name="join_unavailable">This invitation can’t be opened. It may have ended, been used or withdrawn, or be meant for another account.</string>
+    <string name="join_invalid_link">This link isn’t a valid invitation.</string>
+    <string name="join_owner_plan_full">The wallet owner’s plan doesn’t allow another person in this wallet right now.</string>
+    <string name="join_too_many">Too many attempts. Try again in %1$d minutes.</string>
+    <string name="join_failed">Something went wrong. Reference: %1$s</string>
+    <string name="join_failed_plain">Something went wrong. Try again.</string>
+    <string name="needs_connection">Needs a connection.</string>
+    <string name="home_invitation">You have an invitation to answer</string>
+    <string name="home_invitation_open">Open</string>
+    <string name="wallet_joining">Getting the wallet…</string>
+
+    <!-- Member actions -->
+    <string name="member_make_editor">Make editor</string>
+    <string name="member_make_viewer">Make viewer</string>
+    <string name="member_remove">Remove from wallet</string>
+    <string name="member_remove_confirm">Remove %1$s? They will lose access to this wallet. What their phone already downloaded may stay on it.</string>
+    <string name="member_changed">This member changed. Look again.</string>
+    <string name="member_only_owner">Only the owner can do this.</string>
+    <string name="member_gone">This member is no longer in the wallet.</string>
+    <string name="member_owner_role">Ownership moves only by transfer.</string>
+    <string name="member_plan_full">This wallet has more people than your plan allows.</string>
+    <string name="member_plan_other">Your plan doesn’t allow this right now.</string>
+    <string name="member_failed">Something went wrong. Reference: %1$s</string>
+    <string name="member_failed_plain">Something went wrong. Try again.</string>
+    <string name="leave_action">Leave wallet</string>
+    <string name="leave_confirm">Leave %1$s? It will be removed from this phone.</string>
+    <string name="leave_confirm_waiting">%1$d changes in this wallet haven’t synced and will be discarded.</string>
+    <string name="leave_owner_note">To leave, transfer ownership first.</string>
+    <string name="leave_owner_cannot">The owner can’t leave.</string>
+    <string name="leave_done">You left %1$s</string>
+    <string name="access_lost">You no longer have access to this wallet.</string>
+
+    <!-- Roles everywhere -->
+    <string name="viewer_note">You can view this wallet but not change it. Only its owner can change your role.</string>
+    <string name="viewer_note_plan">The owner’s plan changed, so you can now view this wallet but not change it.</string>
+    <string name="refusal_now_viewer">You can now only view this wallet.</string>
+    <string name="plan_note">Your plan allows %1$d people in a wallet. The others can view it but not change it.</string>
+
+    <!-- Activity -->
+    <string name="activity_title">Activity</string>
+    <string name="activity_window">Activity covers the last 90 days.</string>
+    <string name="activity_offline">Activity needs a connection.</string>
+    <string name="activity_empty">Nothing has happened in this wallet yet.</string>
+    <string name="activity_failed">Couldn’t load the activity. Reference: %1$s</string>
+    <string name="activity_failed_plain">Couldn’t load the activity.</string>
+    <string name="activity_loading_more">Loading more</string>
+    <string name="activity_automatic">Automatically</string>
+    <string name="activity_former_member">A former member</string>
+    <string name="activity_created">%1$s added %2$s</string>
+    <string name="activity_edited">%1$s changed %2$s</string>
+    <string name="activity_deleted">%1$s deleted %2$s</string>
+    <string name="activity_restored">%1$s restored %2$s</string>
+    <string name="activity_archived">%1$s archived %2$s</string>
+    <string name="activity_ownership_transferred">%1$s transferred ownership of %2$s</string>
+    <string name="activity_confirmed">%1$s confirmed %2$s</string>
+    <string name="activity_skipped">%1$s skipped %2$s</string>
+    <string name="activity_joined">%1$s joined as %3$s</string>
+    <string name="activity_left">%1$s left</string>
+    <string name="activity_removed">%1$s removed %2$s</string>
+    <string name="activity_role_changed">%1$s changed the role of %2$s to %3$s</string>
+    <string name="activity_role_limited_by_plan">%2$s became a viewer because of the owner’s plan</string>
+    <string name="activity_invited">%1$s invited someone as %3$s</string>
+    <string name="activity_invitation_revoked">%1$s withdrew an invitation</string>
+    <string name="activity_subject_transaction">a transaction</string>
+    <string name="activity_subject_rule">a recurring rule</string>
+    <string name="activity_subject_occurrence">a payment</string>
+    <string name="activity_subject_member">a member</string>
+    <string name="activity_subject_invitation">an invitation as %1$s</string>
+    <string name="activity_subject_wallet">the wallet</string>
 </resources>

@@ -6,6 +6,8 @@
 #   # e2e-seed: none | verified-user | unverified-user
 #   #           | unverified-user+verify-link | verified-user+reset-link
 #   #           | verified-user+plus | verified-user+plus-grace | verified-user+plus-lifetime
+#   # Any seed above may end in +partner (e.g. verified-user+plus+partner, spec 013 sharing): the runner also
+#   # creates a second VERIFIED account on Plus (E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD), the invitee.
 # The runner creates a fresh account per flow (unique address, so the shared dev database needs no
 # reset) and passes it to Maestro as E2E_EMAIL / E2E_PASSWORD, plus E2E_API (the backend base URL
 # as seen from this machine, for .maestro/common/api.js). Accounts are created through the
@@ -257,6 +259,8 @@ for flow in "${flows[@]}"; do
     fi
     network_on # a previous flow may have left the route cut
     seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
+    want_partner=false
+    if [[ "$seed" == *+partner ]]; then want_partner=true; seed="${seed%+partner}"; fi
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
     case "${seed:-none}" in
         none) ;;
@@ -275,6 +279,13 @@ for flow in "${flows[@]}"; do
             esac
             if [[ ${#grant_args[@]} -gt 0 ]] && ! grant_plus "$email" "${grant_args[@]}"; then
                 echo "FAIL $name (granting Plus failed)"; failed=1; continue
+            fi
+            if [[ "$want_partner" == true ]]; then
+                partner_email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")-partner@example.com"
+                if ! seed_account "$partner_email" true || ! grant_plus "$partner_email" 30 0; then
+                    echo "FAIL $name (seeding the +partner account failed)"; failed=1; continue
+                fi
+                env_args+=(-e "E2E_PARTNER_EMAIL=$partner_email" -e "E2E_PARTNER_PASSWORD=$PASSWORD")
             fi
             if [[ "$seed" == *-link ]]; then
                 if [[ "$seed" == *verify-link ]]; then kind=VerifyAddress path=verify-email; else kind=ResetPassword path=reset-password; fi

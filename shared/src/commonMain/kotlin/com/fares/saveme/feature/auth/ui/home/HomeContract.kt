@@ -28,6 +28,8 @@ data class HomeState(
     val firstDue: DueGlimpse? = null,
     /** Up to three active budgets of the current period, the highest share spent first; the card is hidden when empty (spec 012 FR-017). */
     val budgets: List<BudgetGlimpse> = emptyList(),
+    /** An invitation link is held in memory for this app session: the card reopens it (spec 013 FR-013). */
+    val invitationHeld: Boolean = false,
 )
 
 /** What cancelling a pending deletion came to, as far as Home needs to know. */
@@ -48,6 +50,7 @@ sealed interface HomeIntent {
     data object DueClicked : HomeIntent
     data object BudgetsClicked : HomeIntent
     data class BudgetClicked(val id: String) : HomeIntent
+    data object InvitationClicked : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -58,10 +61,11 @@ sealed interface HomeEffect {
     data object OpenDue : HomeEffect
     data object NavigateBudgets : HomeEffect
     data class OpenBudget(val id: String) : HomeEffect
+    data object OpenInvitation : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 
-enum class HomeMessage { DeletionCancelled, Offline, Failed }
+enum class HomeMessage { DeletionCancelled, Offline, Failed, InvitationDeclined }
 
 sealed interface HomeChange {
     data class Account(val signedIn: AuthState.SignedIn) : HomeChange
@@ -73,6 +77,7 @@ sealed interface HomeChange {
     data class Sync(val status: SyncStatus) : HomeChange
     data class Due(val count: Int, val first: DueGlimpse?) : HomeChange
     data class Budgets(val budgets: List<BudgetGlimpse>) : HomeChange
+    data class InvitationHeld(val held: Boolean) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -91,4 +96,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.Sync -> state.copy(sync = change.status)
     is HomeChange.Due -> state.copy(dueCount = change.count, firstDue = change.first)
     is HomeChange.Budgets -> state.copy(budgets = change.budgets)
+    is HomeChange.InvitationHeld -> state.copy(invitationHeld = change.held)
 }

@@ -7,7 +7,9 @@ import com.fares.saveme.core.sync.CurrentAccount
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.BudgetSummary
 import com.fares.saveme.feature.auth.domain.DueSummary
+import com.fares.saveme.feature.auth.domain.HeldInvitationGlimpse
 import com.fares.saveme.feature.auth.domain.NoBudgetSummary
+import com.fares.saveme.feature.auth.domain.NoHeldInvitation
 import com.fares.saveme.feature.auth.domain.NoDueSummary
 import com.fares.saveme.feature.auth.data.AccountSnapshotStore
 import com.fares.saveme.feature.auth.data.AuthRepository
@@ -43,6 +45,8 @@ val authModule = module {
     // Default until the recurring module rebinds it (spec 010 research R-10).
     single<DueSummary> { NoDueSummary }
     single<BudgetSummary> { NoBudgetSummary }
+    // Default until the sharing module rebinds it (spec 013 R-16).
+    single<HeldInvitationGlimpse> { NoHeldInvitation }
     single { AccountSnapshotStore(get()) }
     single { IdentityApi(get()) }
     single { EntitlementsApi(get()) }

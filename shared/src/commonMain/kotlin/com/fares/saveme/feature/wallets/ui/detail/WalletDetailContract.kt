@@ -28,8 +28,18 @@ data class WalletDetailState(
     val confirm: DetailConfirm = DetailConfirm.None,
     val busy: Boolean = false,
     val timeZoneId: String = "UTC",
+    /** Pending, unexpired invitations of the wallet, for "See members (n pending)" (spec 013 FR-016). */
+    val pendingInvitations: Int = 0,
+    /** The latest role change about the person, read from the activity this session, was the owner's plan (FR-027). */
+    val planLimited: Boolean = false,
+    /** The person joined and the wallet's first read has not landed yet: "Getting the wallet…", never "gone" (FR-013). */
+    val joining: Boolean = false,
+    /** That first read failed or was offline: "Try again" is offered. */
+    val joiningFailed: Boolean = false,
 ) {
     val loaded: Boolean get() = wallet != null
+
+    val isViewer: Boolean get() = wallet?.server?.myRole == WalletRole.Viewer
 
     /** Only the owner edits, archives, deletes or transfers a wallet; the server decides, this hides the controls (FR-022). */
     val canEdit: Boolean get() = wallet?.server?.myRole == WalletRole.Owner
@@ -50,6 +60,9 @@ data class WalletDetailState(
 sealed interface WalletDetailIntent {
     data object TransactionsClicked : WalletDetailIntent
     data object RecurringClicked : WalletDetailIntent
+    data object MembersClicked : WalletDetailIntent
+    data object ActivityClicked : WalletDetailIntent
+    data object JoiningRetryClicked : WalletDetailIntent
     data object AddTransactionClicked : WalletDetailIntent
     data object EditClicked : WalletDetailIntent
     data object ArchiveClicked : WalletDetailIntent
@@ -71,6 +84,8 @@ sealed interface WalletDetailIntent {
 sealed interface WalletDetailEffect {
     data class OpenTransactions(val walletId: String) : WalletDetailEffect
     data class OpenRecurring(val walletId: String) : WalletDetailEffect
+    data class NavigateMembers(val walletId: String) : WalletDetailEffect
+    data class NavigateActivity(val walletId: String) : WalletDetailEffect
     data class OpenAddTransaction(val walletId: String) : WalletDetailEffect
     data class OpenEditor(val id: String) : WalletDetailEffect
     data object NavigateBack : WalletDetailEffect
@@ -85,6 +100,10 @@ sealed interface WalletDetailChange {
     data class TimeZone(val id: String) : WalletDetailChange
     data class Confirm(val confirm: DetailConfirm) : WalletDetailChange
     data class Busy(val busy: Boolean) : WalletDetailChange
+    data class Pending(val count: Int) : WalletDetailChange
+    data class PlanLimited(val limited: Boolean) : WalletDetailChange
+    data class Joining(val joining: Boolean) : WalletDetailChange
+    data class JoiningFailed(val failed: Boolean) : WalletDetailChange
 }
 
 fun reduce(state: WalletDetailState, change: WalletDetailChange): WalletDetailState = when (change) {
@@ -94,6 +113,10 @@ fun reduce(state: WalletDetailState, change: WalletDetailChange): WalletDetailSt
     is WalletDetailChange.TimeZone -> state.copy(timeZoneId = change.id)
     is WalletDetailChange.Confirm -> state.copy(confirm = change.confirm)
     is WalletDetailChange.Busy -> state.copy(busy = change.busy)
+    is WalletDetailChange.Pending -> state.copy(pendingInvitations = change.count)
+    is WalletDetailChange.PlanLimited -> state.copy(planLimited = change.limited)
+    is WalletDetailChange.Joining -> state.copy(joining = change.joining, joiningFailed = if (change.joining) state.joiningFailed else false)
+    is WalletDetailChange.JoiningFailed -> state.copy(joiningFailed = change.failed)
 }
 
 enum class ClashField { Name, OpeningBalance, Currency, Icon, Color, Archived }

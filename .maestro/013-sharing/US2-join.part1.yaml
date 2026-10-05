@@ -1,0 +1,31 @@
+# deferred: E2E on owner's device
+# US2-S1 (the brief's first checkpoint): Given a link invitation made by another account, When the phone opens the link and joins, Then the wallet appears; the partner's transaction shows after a refresh. Part 1: the partner creates the link, the phone opens it and joins.
+# The partner (second account) owns the wallet; the phone's account is the invitee.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: C, NAME: "Shared Home", OPENING: "50000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: C, ROLE: editor }
+- runFlow: ../common/sign-in.yaml
+- openLink:
+    link: ${output.shareUrl}
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: "invitation.join"
+    timeout: 30000
+- tapOn:
+    id: "invitation.join"
+- extendedWaitUntil:
+    visible: "Shared Home"
+    timeout: 60000

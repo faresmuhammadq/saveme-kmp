@@ -13,7 +13,7 @@ import org.jetbrains.compose.resources.getString
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import saveme.shared.generated.resources.Res
-import saveme.shared.generated.resources.wallet_gone
+import saveme.shared.generated.resources.access_lost
 import saveme.shared.generated.resources.wallet_refusal_not_owner
 import saveme.shared.generated.resources.wallet_transfer_changed
 import saveme.shared.generated.resources.wallet_transfer_failed
@@ -43,7 +43,7 @@ fun WalletDetailRoute(
 }
 
 internal fun DetailMessage.res(): StringResource = when (this) {
-    DetailMessage.Gone -> Res.string.wallet_gone
+    DetailMessage.Gone -> Res.string.access_lost
     DetailMessage.NotOwner -> Res.string.wallet_refusal_not_owner
     DetailMessage.TransferOffline -> Res.string.wallet_transfer_offline
     DetailMessage.NoLongerMember -> Res.string.wallet_transfer_not_member

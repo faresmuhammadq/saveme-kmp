@@ -653,6 +653,61 @@ switch (arg('ACTION')) {
         output.startDayFrom = output.profile.budget_period_start_day_from
         break
 
+    // Sharing (spec 013). Creates an invitation on WALLET_ID / WALLET / output.walletId from this slot (the owner): ROLE (viewer|editor,
+    // default viewer), INVITEE_EMAIL (omit for a link invitation). Copies it into output.invitation and its id into output.invitationId;
+    // for a link invitation the one-time link (meta.share_url) goes into output.shareUrl and the token into output.inviteToken.
+    case 'createInvitation':
+        var inviteWallet = transactionWalletId()
+        var inviteId = uuid7()
+        var inviteeEmail = arg('INVITEE_EMAIL')
+        var createdInvite = expect(call('PUT', 'wallets/' + inviteWallet + '/invitations/' + inviteId, {
+            role: arg('ROLE', 'viewer'),
+            invitee_email: inviteeEmail ? inviteeEmail : null,
+            version: 0,
+        }, token()), 201, 'createInvitation')
+        output.invitation = createdInvite.body.data
+        output.invitationId = createdInvite.body.data.id
+        output.shareUrl = createdInvite.body.meta && createdInvite.body.meta.share_url ? createdInvite.body.meta.share_url : ''
+        output.inviteToken = output.shareUrl ? output.shareUrl.split('token=')[1] : ''
+        break
+
+    // Previews an invitation from this slot (the invitee): TOKEN or output.inviteToken; EXPECT (default 200). Copies the preview into output.preview.
+    case 'previewInvitation':
+        var previewed = expect(call('POST', 'invitations/preview', { token: arg('TOKEN', output.inviteToken) }, token()), parseInt(arg('EXPECT', '200')), 'previewInvitation')
+        output.preview = previewed.body ? previewed.body.data : null
+        break
+
+    // Accepts an invitation from this slot (the invitee): TOKEN or output.inviteToken. Copies the member into output.member and the wallet id
+    // into output.walletId.
+    case 'acceptInvitation':
+        output.member = expect(call('POST', 'invitations/accept', { token: arg('TOKEN', output.inviteToken) }, token()), 200, 'acceptInvitation').body.data
+        output.walletId = output.member.wallet_id
+        output.memberUserId = output.member.member_user_id
+        break
+
+    // Declines an invitation from this slot (the invitee): TOKEN or output.inviteToken.
+    case 'declineInvitation':
+        expect(call('POST', 'invitations/decline', { token: arg('TOKEN', output.inviteToken) }, token()), 204, 'declineInvitation')
+        break
+
+    // Changes a member's role from this slot (the owner): USER_ID (default output.memberUserId from an acceptInvitation), ROLE. The member is found in the wallet's member list for its version.
+    case 'changeMemberRole':
+        var roleMember = findMember()
+        output.member = expect(call('PATCH', 'wallets/' + transactionWalletId() + '/members/' + roleMember.member_user_id, { role: arg('ROLE', 'viewer'), version: roleMember.version }, token()), 200, 'changeMemberRole').body.data
+        break
+
+    // Removes a member from this slot (the owner): USER_ID.
+    case 'removeMember':
+        var removed = findMember()
+        output.member = expect(call('DELETE_WITH_BODY', 'wallets/' + transactionWalletId() + '/members/' + removed.member_user_id, { version: removed.version }, token()), 200, 'removeMember').body.data
+        break
+
+    // Copies the wallet's members into output.members and their number into output.memberCount.
+    case 'listMembers':
+        output.members = listAllMembers()
+        output.memberCount = output.members.length
+        break
+
     default:
         throw new Error('api.js: unknown ACTION ' + arg('ACTION'))
 }
@@ -667,5 +722,17 @@ function findBudget() {
     if (!id) throw new Error('findBudget: no ID and no budget created by this script run')
     var matches = listAllBudgets().filter(function (b) { return b.id === id })
     if (matches.length !== 1) throw new Error('findBudget: no budget ' + id)
+    return matches[0]
+}
+
+// Sharing (spec 013). A member is found by USER_ID among the wallet's members.
+function listAllMembers() {
+    return expect(call('GET', 'wallets/' + transactionWalletId() + '/members?limit=50', undefined, token()), 200, 'listMembers').body.data
+}
+
+function findMember() {
+    var userId = arg('USER_ID', output.memberUserId)
+    var matches = listAllMembers().filter(function (m) { return m.member_user_id === userId })
+    if (matches.length !== 1) throw new Error('findMember: no member ' + userId)
     return matches[0]
 }

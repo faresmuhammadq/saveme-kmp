@@ -25,6 +25,8 @@ import com.fares.saveme.feature.recurring.data.local.OccurrenceDao
 import com.fares.saveme.feature.recurring.data.local.OccurrenceEntity
 import com.fares.saveme.feature.recurring.data.local.RecurringRuleDao
 import com.fares.saveme.feature.recurring.data.local.RecurringRuleEntity
+import com.fares.saveme.feature.sharing.data.local.InvitationDao
+import com.fares.saveme.feature.sharing.data.local.InvitationEntity
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
 import com.fares.saveme.feature.wallets.data.local.WalletDao
@@ -42,8 +44,9 @@ import kotlinx.coroutines.IO
         CategoryEntity::class, PlatformCategoryEntity::class, CategoryReferenceEntity::class,
         TransactionEntity::class, RecurringRuleEntity::class, OccurrenceEntity::class,
         BudgetEntity::class, BudgetProgressEntity::class,
+        InvitationEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -62,6 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun occurrenceDao(): OccurrenceDao
     abstract fun budgetDao(): BudgetDao
     abstract fun budgetProgressDao(): BudgetProgressDao
+    abstract fun invitationDao(): InvitationDao
 }
 
 @Suppress("KotlinNoActualForExpect", "NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -71,7 +75,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 fun buildAppDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
     builder
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

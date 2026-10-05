@@ -100,6 +100,26 @@ data object BudgetsKey : NavKey
 @Serializable
 data class BudgetEditorKey(val budgetId: String? = null) : NavKey
 
+// Sharing (spec 013). Keys carrying an invitation secret never print it (FR-010).
+
+/** One wallet's members and pending invitations. */
+@Serializable
+data class WalletMembersKey(val walletId: String) : NavKey
+
+/** Invites someone to [walletId]; [replacing] is the link invitation being replaced, if any. */
+@Serializable
+data class InviteKey(val walletId: String, val replacing: String? = null) : NavKey
+
+/** Answers an invitation link. The secret lives in this key and the screen's state only, never in storage. */
+@Serializable
+data class InvitationKey(val token: String) : NavKey {
+    override fun toString() = "InvitationKey(token=<redacted>)"
+}
+
+/** Who did what in one wallet. */
+@Serializable
+data class WalletActivityKey(val walletId: String) : NavKey
+
 @Serializable
 data object ChangePasswordKey : NavKey
 

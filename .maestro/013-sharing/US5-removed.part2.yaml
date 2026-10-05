@@ -1,0 +1,12 @@
+# deferred: E2E on owner's device
+# e2e-between: owner-removes-member
+# Part 2: the owner removed the member through the API; the phone refreshes and the wallet is gone with its data.
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- swipe:
+    direction: DOWN
+- extendedWaitUntil:
+    notVisible: "Shared Home"
+    timeout: 60000

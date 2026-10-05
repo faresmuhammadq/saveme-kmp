@@ -12,6 +12,7 @@ import com.fares.saveme.feature.transactions.domain.model.TransactionList
 import com.fares.saveme.feature.transactions.domain.model.TransactionQuery
 import com.fares.saveme.feature.transactions.domain.model.TransactionSyncState
 import com.fares.saveme.feature.transactions.domain.model.TransactionView
+import com.fares.saveme.feature.wallets.domain.model.WalletRole
 import com.fares.saveme.feature.wallets.domain.model.WalletView
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
@@ -69,7 +70,13 @@ data class TransactionsState(
     /** Due and missed occurrences, at most [MAX_DUE] (spec 010 FR-019); never in totals, search or filters. */
     val due: List<DueItem> = emptyList(),
     val dueTotal: Int = 0,
+    /** The person's role in the wallet: a viewer sees a note instead of write controls (spec 013 FR-027). */
+    val myRole: WalletRole? = null,
+    /** The latest role change about the person, read from the activity this session, was the owner's plan. */
+    val planLimited: Boolean = false,
 ) {
+    val isViewer: Boolean get() = myRole == WalletRole.Viewer
+
     val chips: List<FilterChip>
         get() = buildList {
             if (query.from != null || query.to != null) add(FilterChip.DateRange(query.from, query.to))
@@ -126,6 +133,7 @@ sealed interface TransactionsChange {
     data class Today(val date: LocalDate) : TransactionsChange
     data class TimeZone(val id: String) : TransactionsChange
     data class Due(val items: List<DueItem>) : TransactionsChange
+    data class PlanLimited(val limited: Boolean) : TransactionsChange
 }
 
 fun reduce(state: TransactionsState, change: TransactionsChange): TransactionsState = when (change) {
@@ -135,6 +143,7 @@ fun reduce(state: TransactionsState, change: TransactionsChange): TransactionsSt
             currency = view.shown.currency,
             balanceMinor = view.displayedBalanceMinor,
             isLiability = view.isLiability,
+            myRole = view.server.myRole,
         )
     } ?: state
     is TransactionsChange.Data -> state.copy(
@@ -160,6 +169,7 @@ fun reduce(state: TransactionsState, change: TransactionsChange): TransactionsSt
     is TransactionsChange.Today -> state.copy(today = change.date)
     is TransactionsChange.TimeZone -> state.copy(timeZoneId = change.id)
     is TransactionsChange.Due -> state.copy(due = change.items.take(TransactionsState.MAX_DUE), dueTotal = change.items.size)
+    is TransactionsChange.PlanLimited -> state.copy(planLimited = change.limited)
 }
 
 internal fun TransactionView.toRow(category: CategoryDisplay?, confirmation: ConfirmationStatus? = null) = RowUi(

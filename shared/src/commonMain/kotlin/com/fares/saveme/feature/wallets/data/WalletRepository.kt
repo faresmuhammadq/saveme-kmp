@@ -46,6 +46,8 @@ class WalletRepository(
 
     fun observeMembers(id: String): Flow<List<WalletMemberEntity>> = members.observe(id)
 
+    suspend fun membersOf(id: String): List<WalletMemberEntity> = members.get(id)
+
     /**
      * When the wallet list was last read completely: the oldest completed feed read of the person's scope and
      * every wallet. Until every one of them has completed once (an upgraded phone), the time of the last
@@ -114,6 +116,8 @@ class WalletRepository(
         val stored = members.getById(dto.id)
         if (stored != null && stored.version > dto.version) return false
         members.upsert(dto.toEntity())
+        // The person's own row also sets the wallet's role, so every screen gates on it at once (spec 013 FR-022, R-12).
+        if (dto.memberUserId == accountId()) wallets.get(dto.walletId)?.let { wallets.updateRole(it.id, dto.role) }
         return true
     }
 

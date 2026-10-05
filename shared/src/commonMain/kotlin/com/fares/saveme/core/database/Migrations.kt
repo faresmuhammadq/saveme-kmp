@@ -221,3 +221,24 @@ internal val MIGRATION_8_9 = object : Migration(8, 9) {
         )
     }
 }
+
+/**
+ * v9 → v10 (spec 013, research R-02, data-model §5): the `invitation` table, and every wallet scope's feed cursor, read stamp
+ * and integer position forgotten once. Invitations ride the wallet feeds, which skipped `invitation` rows until now; only a read
+ * from the start brings the pending ones created before the update (FR-030). The person's own (user) scope and every other row
+ * are kept.
+ */
+internal val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `invitation` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL,
+            `role` TEXT NOT NULL, `channel` TEXT NOT NULL, `invitee_email` TEXT, `invited_by` TEXT NOT NULL, `status` TEXT NOT NULL,
+            `expires_at` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL,
+            `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_invitation_account_id_wallet_id_status` ON `invitation` (`account_id`, `wallet_id`, `status`)")
+        connection.execSQL(
+            "UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL, `feed_position` = NULL WHERE `scope` LIKE 'wallet:%'",
+        )
+    }
+}

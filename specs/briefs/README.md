@@ -24,7 +24,7 @@ backend, spec directories take the next free number, so `C4` will not become `sp
 | [C14](C14-sync-engine.md) Sync engine | B14 | Brief | Profile/sessions pull only (`AccountSyncCoordinator`) | — (engine), B14 (batch) |
 | [C7](C07-recurring.md) Recurring transactions | B7 | Built | **Built** in spec 010 (recurring list, rule editor with gam'eya and installment presets, rule detail, occurrence confirm/skip/edit offline with a pending transaction, due section, Home card, duplicate guard, catch-up; device E2E deferred) | C6 |
 | [C8](C08-budgets.md) Budgets | B8 → spec 015 | Built | **Built** in spec 012 (budgets screen with the current Budget Period, budget editor with offline create, limit edit, archive and delete, progress computed on the phone from its own transactions and matched to the server's after each read, start day periods, Home card and row, clash and refusal choices; device E2E deferred) | C5, C6 |
-| [C9](C09-sharing.md) Sharing & invitations | B9 | Brief | `WalletMembers` catalog sample | C3, C4 |
+| [C9](C09-sharing.md) Sharing & invitations | B9 → spec 016 | Built | **Built** in spec 013 (invite by email or link with a role, offline-first through the sync engine, `/invite` App Link into an invitation screen with preview/join/decline, members screen with role change, removal, withdraw and leave, activity screen, viewer and plan notes, loss of access purges the wallet from the phone; Room v10; device E2E deferred) | C3, C4 |
 | [C10](C10-billing-google-play.md) Google Play billing | B10 | Brief | — | C3 |
 | [C11](C11-redeem-code.md) Redeem code | B11 (app side only) | Brief | — | C3 |
 | [C13](C13-reports.md) Reports | B13 | Brief | — | C6, C8 |

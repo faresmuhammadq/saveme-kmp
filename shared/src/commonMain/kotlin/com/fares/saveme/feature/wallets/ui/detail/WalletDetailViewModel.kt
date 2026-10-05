@@ -8,6 +8,8 @@ import com.fares.saveme.feature.wallets.domain.model.SaveResult
 import com.fares.saveme.feature.wallets.domain.model.TransferResult
 import com.fares.saveme.feature.wallets.domain.model.WalletView
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -29,6 +31,12 @@ class WalletDetailViewModel(
     private val transfer: suspend (String) -> TransferResult,
     timeZoneId: Flow<String> = emptyFlow(),
     private val clock: Clock = Clock.System,
+    pendingInvitations: Flow<Int> = flowOf(0),
+    planLimited: Flow<Boolean> = flowOf(false),
+    /** True while the person holds an own member row and the wallet record has not been read yet (spec 013 R-10). */
+    joining: Flow<Boolean> = flowOf(false),
+    /** True once the person left this wallet themself: the wallet vanishing is then not "access lost" (FR-023). */
+    leftByPerson: Flow<Boolean> = flowOf(false),
 ) : MviViewModel<WalletDetailState, WalletDetailIntent, WalletDetailEffect>(WalletDetailState(walletId = walletId)) {
 
     /** True from a confirmed delete on, so the wallet vanishing is not reported as "gone". */
@@ -36,19 +44,34 @@ class WalletDetailViewModel(
     private var seenWallet = false
 
     init {
-        wallet.onEach { view -> onWallet(view) }.launchIn(viewModelScope)
+        combine(wallet, joining, leftByPerson) { view, isJoining, left -> Triple(view, isJoining, left) }
+            .onEach { (view, isJoining, left) -> onWallet(view, isJoining, left) }
+            .launchIn(viewModelScope)
+        pendingInvitations.onEach { count -> setState { reduce(it, WalletDetailChange.Pending(count)) } }.launchIn(viewModelScope)
+        planLimited.onEach { limited -> setState { reduce(it, WalletDetailChange.PlanLimited(limited)) } }.launchIn(viewModelScope)
         members.onEach { list -> setState { reduce(it, WalletDetailChange.Members(list)) } }.launchIn(viewModelScope)
         timeZoneId.onEach { id -> setState { reduce(it, WalletDetailChange.TimeZone(id)) } }.launchIn(viewModelScope)
-        viewModelScope.launch {
-            if (refreshMembers() == RefreshOutcome.Done) setState { reduce(it, WalletDetailChange.MembersUpdated(clock.now())) }
-        }
+        viewModelScope.launch { readWallet() }
     }
 
-    private fun onWallet(view: WalletView?) {
+    /** The wallet's read; for a wallet just joined a read that did not complete leaves "Try again" (spec 013 FR-013). */
+    private suspend fun readWallet() {
+        val outcome = refreshMembers()
+        if (outcome == RefreshOutcome.Done) setState { reduce(reduce(it, WalletDetailChange.MembersUpdated(clock.now())), WalletDetailChange.JoiningFailed(false)) }
+        else setState { reduce(it, WalletDetailChange.JoiningFailed(true)) }
+    }
+
+    private fun onWallet(view: WalletView?, joining: Boolean, leftByPerson: Boolean) {
+        setState { reduce(it, WalletDetailChange.Joining(joining && view == null)) }
         if (view == null) {
+            // Just joined: the wallet record is on its way, so this is not "gone" (FR-013).
+            if (joining) return
             if (!leaving) {
-                sendEffect(WalletDetailEffect.ShowMessage(DetailMessage.Gone))
-                sendEffect(WalletDetailEffect.NavigateBack)
+                // After the person's own leave the members screen closes this one with its own message (FR-023).
+                if (!leftByPerson) {
+                    sendEffect(WalletDetailEffect.ShowMessage(DetailMessage.Gone))
+                    sendEffect(WalletDetailEffect.NavigateBack)
+                }
             }
             leaving = true
             return
@@ -61,6 +84,12 @@ class WalletDetailViewModel(
         when (intent) {
             WalletDetailIntent.TransactionsClicked -> sendEffect(WalletDetailEffect.OpenTransactions(walletId))
             WalletDetailIntent.RecurringClicked -> sendEffect(WalletDetailEffect.OpenRecurring(walletId))
+            WalletDetailIntent.MembersClicked -> sendEffect(WalletDetailEffect.NavigateMembers(walletId))
+            WalletDetailIntent.ActivityClicked -> sendEffect(WalletDetailEffect.NavigateActivity(walletId))
+            WalletDetailIntent.JoiningRetryClicked -> {
+                setState { reduce(it, WalletDetailChange.JoiningFailed(false)) }
+                viewModelScope.launch { readWallet() }
+            }
             WalletDetailIntent.AddTransactionClicked -> if (currentState.canAddTransaction) sendEffect(WalletDetailEffect.OpenAddTransaction(walletId))
             WalletDetailIntent.EditClicked -> if (currentState.canEdit) sendEffect(WalletDetailEffect.OpenEditor(walletId))
             WalletDetailIntent.ArchiveClicked -> if (currentState.canEdit) confirm(DetailConfirm.Archive)

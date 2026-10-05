@@ -1,0 +1,19 @@
+# deferred: E2E on owner's device
+# e2e-between: partner-transaction
+# Part 2: the partner records a transaction through the API; after a refresh the phone shows it (both ways).
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: C, WALLET: "Shared Home", AMOUNT: "4200", NOTE: "Partner lunch", CATEGORY: "Fares" }
+- runFlow: ../common/open-transactions.yaml
+- swipe:
+    direction: DOWN
+- extendedWaitUntil:
+    visible: "Partner lunch"
+    timeout: 60000

@@ -21,8 +21,8 @@ import saveme.shared.generated.resources.recurring_error_immutable
 import saveme.shared.generated.resources.recurring_error_invalid
 import saveme.shared.generated.resources.recurring_error_out_of_range
 import saveme.shared.generated.resources.recurring_error_required
-import saveme.shared.generated.resources.recurring_reason_no_right
 import saveme.shared.generated.resources.recurring_reason_no_right_other
+import saveme.shared.generated.resources.refusal_now_viewer
 import saveme.shared.generated.resources.recurring_reason_occurrence_gone
 import saveme.shared.generated.resources.recurring_reason_gone
 import saveme.shared.generated.resources.tx_error_amount_range
@@ -65,7 +65,8 @@ class RecurringCopyTest {
     @Test
     fun aForbiddenTransferNamesTheOtherWalletAndAGoneOccurrenceSaysSo() {
         assertEquals(Res.string.recurring_reason_no_right_other, RecurringRefusalKind.NoRightInOtherWallet.messageRes())
-        assertEquals(Res.string.recurring_reason_no_right, RecurringRefusalKind.NoRight.messageRes())
+        // A write refused because the role changed to viewer says so (spec 013 FR-027).
+        assertEquals(Res.string.refusal_now_viewer, RecurringRefusalKind.NoRight.messageRes())
         assertEquals(Res.string.recurring_reason_gone, RecurringRefusalKind.NoLongerAvailable.messageRes(isOccurrence = false))
         assertEquals(Res.string.recurring_reason_occurrence_gone, RecurringRefusalKind.NoLongerAvailable.messageRes(isOccurrence = true))
     }

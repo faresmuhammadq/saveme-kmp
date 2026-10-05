@@ -19,6 +19,8 @@ data class ProblemDetails(
     @SerialName("minimum_version") val minimumVersion: String? = null,
     /** VERSION_CONFLICT only: the record's present state, in the schema a read returns. */
     val current: JsonElement? = null,
+    /** FEATURE_NOT_ENTITLED only: the plan feature the answer is about, e.g. `sharing.enabled` (api-conventions: Problem). */
+    val feature: String? = null,
 )
 
 @Serializable

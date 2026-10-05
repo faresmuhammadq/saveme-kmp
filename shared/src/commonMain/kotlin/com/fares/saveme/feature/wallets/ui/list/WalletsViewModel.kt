@@ -17,9 +17,13 @@ class WalletsViewModel(
     private val canCreateAnother: suspend () -> Boolean,
     private val isEmailVerified: () -> Boolean,
     timeZoneId: Flow<String> = emptyFlow(),
+    /** The wallet the person just left, until the line is dismissed (spec 013 FR-019). */
+    leftNotice: Flow<String?> = emptyFlow(),
+    private val dismissLeftNotice: () -> Unit = {},
 ) : MviViewModel<WalletsState, WalletsIntent, WalletsEffect>(WalletsState()) {
 
     init {
+        leftNotice.onEach { name -> setState { reduce(it, WalletsChange.LeftNotice(name)) } }.launchIn(viewModelScope)
         list.onEach { stored -> setState { reduce(it, WalletsChange.Stored(stored)) } }.launchIn(viewModelScope)
         timeZoneId.onEach { id -> setState { reduce(it, WalletsChange.TimeZone(id)) } }.launchIn(viewModelScope)
     }
@@ -30,6 +34,7 @@ class WalletsViewModel(
             WalletsIntent.CreateClicked -> create()
             is WalletsIntent.WalletClicked -> sendEffect(WalletsEffect.OpenDetail(intent.id))
             WalletsIntent.DismissNotice -> setState { reduce(it, WalletsChange.NotEntitled(false)) }
+            WalletsIntent.DismissLeftNotice -> dismissLeftNotice()
             WalletsIntent.Back -> sendEffect(WalletsEffect.NavigateBack)
         }
     }

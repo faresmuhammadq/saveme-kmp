@@ -269,3 +269,37 @@ class TransactionsViewModelTest {
         assertNull(vm().state.value.chips.firstOrNull())
     }
 }
+
+/** The viewer note under the balance (spec 013 FR-027). */
+class TransactionsViewerNoteTest {
+    private fun walletFor(role: WalletRole) = WalletView(
+        Wallet("w1", "cash", "Home", "EGP", 0, 0, null, null, null, false, role, 1, Instant.parse("2026-09-01T00:00:00Z")),
+        null, false, com.fares.saveme.feature.wallets.domain.model.SyncState.None, 0,
+    )
+
+    private fun vm(role: WalletRole, planLimited: kotlinx.coroutines.flow.Flow<Boolean> = flowOf(false)) = TransactionsViewModel(
+        walletId = "w1", wallet = flowOf(walletFor(role)),
+        list = { flowOf(TransactionList("w1", "EGP", emptyList(), Instant.parse("2026-10-02T10:00:00Z"), true, canAdd = role != WalletRole.Viewer)) },
+        displays = flowOf(CategoryDisplays({ id -> display(id, "Name $id") })), filterChoices = flowOf(emptyList()), refresh = { RefreshOutcome.Done },
+        isEmailVerified = { true }, today = { today }, planLimited = planLimited,
+    )
+
+
+    @Test
+    fun onlyViewersSeeTheNoteAndThePlanVariantFollowsTheActivity() = com.fares.saveme.core.presentation.runMviTest {
+        assertTrue(vm(WalletRole.Viewer).state.value.isViewer)
+        assertFalse(vm(WalletRole.Editor).state.value.isViewer)
+        assertFalse(vm(WalletRole.Owner).state.value.isViewer)
+        val limited = MutableStateFlow(false)
+        val viewer = vm(WalletRole.Viewer, limited)
+        assertFalse(viewer.state.value.planLimited)
+        limited.value = true
+        assertTrue(viewer.state.value.planLimited)
+    }
+
+    @Test
+    fun aViewerCannotAdd() = com.fares.saveme.core.presentation.runMviTest {
+        assertFalse(vm(WalletRole.Viewer).state.value.canAdd)
+        assertTrue(vm(WalletRole.Editor).state.value.canAdd)
+    }
+}

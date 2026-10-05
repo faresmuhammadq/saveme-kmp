@@ -162,6 +162,31 @@ class AppGraphTest {
     }
 
     @Test
+    fun theSharingModuleStartsWithItsHandlerApplierAndParticipant() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        // The sync engine is built from every handler: a sharing class that resolved it eagerly would loop at start.
+        assertNotNull(koin.get<SyncEngine>())
+        assertTrue(koin.getAll<SyncHandler>().any { it is com.fares.saveme.feature.sharing.data.InvitationSyncHandler && it.recordType == "invitation" })
+        assertTrue(koin.getAll<FeedApplier>().any { it is com.fares.saveme.feature.sharing.data.InvitationFeedApplier && it.rowType == "invitation" && it.scopeKind == ScopeKind.Wallet })
+        assertTrue(koin.getAll<WalletDeletionParticipant>().any { it is com.fares.saveme.feature.sharing.domain.InvitationsWalletCleanup })
+        assertTrue(koin.get<com.fares.saveme.feature.sharing.domain.SharingService>() is com.fares.saveme.feature.sharing.domain.DefaultSharingService)
+        // The hooks other features own are rebound by sharing's module (listed last), and the memory holders are sign-out cleaners.
+        assertTrue(koin.get<com.fares.saveme.feature.wallets.domain.SharingGlance>() is com.fares.saveme.feature.sharing.domain.DefaultSharingGlance)
+        assertTrue(koin.get<com.fares.saveme.feature.auth.domain.HeldInvitationGlimpse>() is com.fares.saveme.feature.sharing.domain.DefaultHeldInvitationGlimpse)
+        val cleaners = koin.getAll<UserDataCleaner>()
+        assertTrue(cleaners.any { it is com.fares.saveme.feature.sharing.domain.HeldInvitation })
+        assertTrue(cleaners.any { it is com.fares.saveme.feature.sharing.domain.ShareLinks })
+        assertTrue(cleaners.any { it is com.fares.saveme.feature.sharing.domain.PlanDemotionNotes })
+        assertTrue(koin.get<com.fares.saveme.feature.wallets.domain.WalletMemberships>() is com.fares.saveme.feature.wallets.domain.DefaultWalletMemberships)
+        assertNotNull(koin.get<com.fares.saveme.feature.sharing.domain.InvitationLinkParser>())
+    }
+
+    @Test
     fun theFeedGraphHasOneApplierPerConsumedPairOneWalletScopesAndTheRunnerAndPullerResolveWithoutACycle() {
         initKoin(
             config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
@@ -175,12 +200,13 @@ class AppGraphTest {
         assertNotNull(koin.get<SyncEngine>())
         val appliers = koin.getAll<FeedApplier>()
         val pairs = appliers.map { it.scopeKind to it.rowType }
-        assertEquals(11, appliers.size)
+        assertEquals(12, appliers.size)
         assertEquals(
             setOf(
                 ScopeKind.User to "profile", ScopeKind.User to "device_session", ScopeKind.User to "category", ScopeKind.User to "wallet_member",
                 ScopeKind.Wallet to "wallet", ScopeKind.Wallet to "wallet_member", ScopeKind.Wallet to "category_reference", ScopeKind.Wallet to "transaction",
                 ScopeKind.Wallet to "recurring_rule", ScopeKind.Wallet to "occurrence", ScopeKind.User to "budget",
+                ScopeKind.Wallet to "invitation",
             ),
             pairs.toSet(),
         )

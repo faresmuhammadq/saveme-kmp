@@ -58,6 +58,20 @@ class PendingChangeDaoTest {
     }
 
     @Test
+    fun forScopeReturnsOnlyThatScopesRowsInAnyStateOldestFirst() = runTest {
+        fun wallet(id: String, walletId: String, order: Long, state: String = "Waiting") =
+            row(id, order, state = state).copy(scopeKind = "wallet", scopeId = walletId)
+        dao.upsert(wallet("b", "w1", 2, state = "Refused"))
+        dao.upsert(wallet("a", "w1", 1))
+        dao.upsert(wallet("c", "w2", 3))
+        dao.upsert(row("user", 4))
+        assertEquals(listOf("a", "b"), dao.forScope("wallet", "w1").map { it.recordId })
+        assertEquals(listOf("c"), dao.forScope("wallet", "w2").map { it.recordId })
+        assertEquals(listOf("user"), dao.forScope("user", "u1").map { it.recordId })
+        assertEquals(emptyList<PendingChangeEntity>(), dao.forScope("wallet", "none"))
+    }
+
+    @Test
     fun countsAndResets() = runTest {
         dao.upsert(row("w", 1))
         dao.upsert(row("s", 2, state = "Sending"))

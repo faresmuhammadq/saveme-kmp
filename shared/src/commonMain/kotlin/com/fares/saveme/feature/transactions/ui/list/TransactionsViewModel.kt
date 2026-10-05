@@ -42,6 +42,7 @@ class TransactionsViewModel(
     timeZoneId: Flow<String> = emptyFlow(),
     due: Flow<List<DueItem>> = flowOf(emptyList()),
     private val confirmationStatus: (String) -> Flow<ConfirmationStatus?> = { flowOf(null) },
+    planLimited: Flow<Boolean> = flowOf(false),
 ) : MviViewModel<TransactionsState, TransactionsIntent, TransactionsEffect>(TransactionsState(walletId = walletId)) {
 
     private val query = MutableStateFlow(TransactionQuery())
@@ -54,6 +55,7 @@ class TransactionsViewModel(
     init {
         setState { reduce(it, TransactionsChange.Today(today())) }
         wallet.onEach { view -> setState { reduce(it, TransactionsChange.Wallet(view)) } }.launchIn(viewModelScope)
+        planLimited.onEach { limited -> setState { reduce(it, TransactionsChange.PlanLimited(limited)) } }.launchIn(viewModelScope)
         due.onEach { items -> setState { reduce(it, TransactionsChange.Due(items)) } }.launchIn(viewModelScope)
         combine(query.flatMapLatest { q -> list(q).flatMapLatest { stored -> confirmations(stored).map { stored to it } } }, displays) { (stored, statuses), shown ->
             Triple(stored, shown, statuses)

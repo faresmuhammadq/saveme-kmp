@@ -1,0 +1,44 @@
+# deferred: E2E on owner's device
+# US6-S1: Given a partner who joined and added a transaction, When the owner opens Activity, Then it lists the transaction first and the join below it.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor, INVITEE_EMAIL: "${E2E_PARTNER_EMAIL}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: C, WALLET: "Alpha", AMOUNT: "1500", NOTE: "Partner coffee", CATEGORY: "Fares" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.activity"
+- extendedWaitUntil:
+    visible:
+      id: "activity.list"
+    timeout: 30000
+- assertVisible: "Partner coffee"
+- assertVisible: ".*joined as.*"

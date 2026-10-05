@@ -1,0 +1,49 @@
+# deferred: E2E on owner's device
+# US1-S1: Given an owner on Plus, When they invite an address as editor, Then the members screen lists the invitation as pending.
+# e2e-seed: verified-user+plus+partner
+# The runner provides E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD (a second verified account, also on Plus) for seeds ending in +partner.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.manageMembers"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.manageMembers"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- tapOn:
+    id: "members.invite"
+- extendedWaitUntil:
+    visible:
+      id: "invite.email"
+    timeout: 15000
+- tapOn:
+    id: "invite.role.editor"
+- tapOn:
+    id: "invite.email"
+- inputText: "${E2E_PARTNER_EMAIL}"
+- hideKeyboard
+- tapOn:
+    id: "invite.send"
+- extendedWaitUntil:
+    visible:
+      id: "members.list"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Pending"
+    timeout: 20000
+- assertVisible: "${E2E_PARTNER_EMAIL}"
