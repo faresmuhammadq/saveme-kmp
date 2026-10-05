@@ -4,7 +4,9 @@ import com.fares.saveme.feature.budgets.profileView
 import com.fares.saveme.feature.reports.ReportsRig
 import com.fares.saveme.feature.reports.line
 import com.fares.saveme.feature.reports.reportWalletView
+import com.fares.saveme.feature.reports.domain.model.PlannedSummary
 import com.fares.saveme.feature.reports.domain.model.ReportScope
+import com.fares.saveme.feature.reports.domain.model.TrendSlot
 import com.fares.saveme.feature.transactions.domain.LedgerSnapshot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -83,6 +85,20 @@ class ReportsServiceCurrencyTest {
         assertEquals(0, report.summary!!.balanceEnd)
         assertEquals(emptyList(), report.breakdown!!.expenses.items)
         assertEquals(listOf("EGP", "EUR", "USD"), report.currencies, "the chosen currency stays in the list")
+    }
+
+    @Test
+    fun aCurrencyWithNoWalletShowsZeroScheduledFiguresWhenScheduledIsOnAsTheServerAnswers() = runTest {
+        // Found by the live QA (spec 014 T089): the server answers `planned` zeros, never absent, for a currency with no wallet.
+        val rig = ReportsRig(backgroundScope)
+        rig.mixed()
+        rig.service.setCurrency("EUR")
+        rig.service.setIncludeScheduled(all, true)
+        val report = rig.report()
+        assertEquals(PlannedSummary(0, 0, 0, 0), report.planned)
+        assertEquals(0L, report.breakdown!!.expenses.plannedMinor)
+        assertEquals(0L, report.breakdown!!.income.plannedMinor)
+        assertEquals(true, report.trend.all { it is TrendSlot.Known && it.point.plannedExpensesMinor == 0L && it.point.plannedIncomeMinor == 0L })
     }
 
     @Test

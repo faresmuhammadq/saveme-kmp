@@ -259,8 +259,13 @@ class DefaultReportsService(
         val window = plan.window.takeIf { ids.isNotEmpty() }
         val range = plan.range
         val ledgerFlow = if (window == null || range == null) flowOf(LedgerSnapshot.Empty) else ledger.observe(ids, range.from, range.to, window.first, window.second)
-        val scheduledFlow: Flow<List<ScheduledLine>?> =
-            if (plan.includeScheduled && window != null) scheduled.observe(ids, window.first, window.second) else flowOf(null)
+        // With the switch on, a report that covers no wallet still answers scheduled zeros, as the server does (live QA, T089).
+        val scheduledFlow: Flow<List<ScheduledLine>?> = when {
+            !plan.includeScheduled -> flowOf(null)
+            window != null -> scheduled.observe(ids, window.first, window.second)
+            ids.isEmpty() -> flowOf(emptyList())
+            else -> flowOf(null)
+        }
         val waitingFlow = if (plan.includeScheduled && range != null && ids.isNotEmpty()) scheduled.observeWaiting(ids, range.from, range.to) else flowOf(false)
         return combine(ledgerFlow, scheduledFlow, waitingFlow, categories.observeReportLabels(ids), stampOf(plan.scope)) { snap, sched, waiting, labels, at ->
             ReportState.Ready(assemble(plan, snap, sched, waiting, labels, at))

@@ -69,6 +69,32 @@ class ReportsAccessibilityTest {
         compose.onNodeWithTag("reports.trend.row.1").assertIsDisplayed()
     }
 
+    /** Every text under the tagged row, in reading order (label then amount). */
+    private fun textOf(tag: String): String {
+        fun walk(node: androidx.compose.ui.semantics.SemanticsNode): List<String> =
+            node.config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } + node.children.flatMap { walk(it) }
+        return walk(compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()).joinToString(" ")
+    }
+
+    @Test
+    fun aLiabilityWalletsNegativeBalancesAreAmountsOwed() {
+        // FR-017, US3 AC4: a credit card's balances read "Owed 3,000.00 EGP"; a negative net or cross-wallet balance is a net amount with U+2212.
+        show(ReportUiFixtures.creditCard)
+        assertTrue(textOf("reports.summary.balance_start"), "Owed" in textOf("reports.summary.balance_start") && "3,000.00" in textOf("reports.summary.balance_start"))
+        assertTrue(textOf("reports.summary.balance_end"), "Owed" in textOf("reports.summary.balance_end") && "4,200.00" in textOf("reports.summary.balance_end"))
+        assertTrue(textOf("reports.summary.net"), "\u2212" in textOf("reports.summary.net") && "-" !in textOf("reports.summary.net"))
+    }
+
+    @Test
+    fun aCrossWalletNegativeBalanceIsANetAmountWithTheTrueMinusSignNeverOwed() {
+        val cross = ReportUiFixtures.ready().copy(
+            summary = com.fares.saveme.feature.reports.ui.reports.SummaryUi(com.fares.saveme.feature.reports.domain.model.SummaryFigures(0, 420_000, -420_000, 0, 0, -100_000, -520_000, "EGP"), null, liabilityWallet = false),
+        )
+        show(cross)
+        assertTrue(textOf("reports.summary.balance_end"), "\u2212" in textOf("reports.summary.balance_end") && "Owed" !in textOf("reports.summary.balance_end") && "-" !in textOf("reports.summary.balance_end"))
+        assertTrue(textOf("reports.summary.net"), "\u2212" in textOf("reports.summary.net"))
+    }
+
     @Test
     fun theScheduledPartIsWrittenAndNamedNotJustOutlined() {
         show(ReportUiFixtures.scheduled)
