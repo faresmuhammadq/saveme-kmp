@@ -1,0 +1,11 @@
+# From Home: opens the cross-wallet Reports screen and waits for it.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "home.reports"
+- extendedWaitUntil:
+    visible:
+      id: "reports.screen"
+    timeout: 15000

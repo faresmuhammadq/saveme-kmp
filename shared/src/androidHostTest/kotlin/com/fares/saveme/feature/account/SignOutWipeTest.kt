@@ -50,7 +50,9 @@ class SignOutWipeTest {
         val heldInvitation = com.fares.saveme.feature.sharing.domain.HeldInvitation()
         val shareLinks = com.fares.saveme.feature.sharing.domain.ShareLinks()
         val planNotes = com.fares.saveme.feature.sharing.domain.PlanDemotionNotes()
-        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(heldInvitation, shareLinks, planNotes, com.fares.saveme.core.sync.SyncSignOutCleaner { runner }, DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
+        val reportChoices = com.fares.saveme.feature.reports.domain.ReportChoicesStore()
+        val learnedPeriods = com.fares.saveme.feature.reports.domain.LearnedPeriods()
+        val sessions = SessionManager(env.repository, env.entitlementsApi, env.events, backgroundScope, cleaners = listOf(heldInvitation, shareLinks, planNotes, com.fares.saveme.feature.reports.domain.ReportsCleaner(reportChoices, learnedPeriods), com.fares.saveme.core.sync.SyncSignOutCleaner { runner }, DatabaseCleaner(db), languages, com.fares.saveme.core.session.UserDataCleaner { env.keyValues.remove("transactions.lastWallet") }))
         SignInUseCase(env.clientInfo, DeviceIdentityStore(env.keyValues), env.repository, sessions)(
             "sara@example.com", "pw", "0192f7a0-1c3d-7abc-9f01-2b3c4d5e6f70",
         )
@@ -131,6 +133,12 @@ class SignOutWipeTest {
         heldInvitation.hold(com.fares.saveme.feature.sharing.domain.InvitationLink.Valid("t".repeat(43)))
         shareLinks.offer("i1", "https://app.example/invite?token=" + "t".repeat(43))
         planNotes.record("w1", true)
+        // The session's report choices and the Budget Period dates the server reported are memory only and go too (spec 014 FR-029).
+        reportChoices.update("u1", com.fares.saveme.feature.reports.domain.model.ReportScope.AllWallets) { it.copy(trendLength = 12, currency = "USD") }
+        learnedPeriods.store(
+            "u1", com.fares.saveme.feature.reports.domain.PeriodProfile(25, null),
+            listOf(com.fares.saveme.feature.reports.domain.model.BudgetPeriodSpan(kotlinx.datetime.LocalDate(2026, 8, 25), kotlinx.datetime.LocalDate(2026, 9, 24))),
+        )
         db.deviceSessionDao().replaceAll(listOf(DeviceSessionEntity("a", "u1", "Pixel", "android", "1.0.0", "active", "2026-09-28T09:00:00Z", null, true)))
         db.syncScopeDao().upsert(SyncScopeEntity(SyncScopeEntity.PROFILE, "2026-09-28T10:00:00Z"))
         // Feed positions and read stamps are the account's too (spec 009 FR-028).
@@ -155,6 +163,8 @@ class SignOutWipeTest {
         assertNull(db.pendingChangeDao().get("invitation", "i2"))
         assertNull(heldInvitation.held.value)
         assertNull(shareLinks.get("i1"))
+        assertEquals(com.fares.saveme.feature.reports.domain.model.ReportChoices(), reportChoices.get("u1", com.fares.saveme.feature.reports.domain.model.ReportScope.AllWallets))
+        assertEquals(emptyList<com.fares.saveme.feature.reports.domain.model.BudgetPeriodSpan>(), learnedPeriods.get("u1", com.fares.saveme.feature.reports.domain.PeriodProfile(25, null)))
         assertEquals(false, planNotes.observe("w1").first())
         assertNull(db.recurringRuleDao().get("r1"))
         assertEquals(emptyList<com.fares.saveme.feature.recurring.data.local.OccurrenceEntity>(), db.occurrenceDao().getForWallet("w1"))

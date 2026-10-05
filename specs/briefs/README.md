@@ -27,7 +27,7 @@ backend, spec directories take the next free number, so `C4` will not become `sp
 | [C9](C09-sharing.md) Sharing & invitations | B9 → spec 016 | Built | **Built** in spec 013 (invite by email or link with a role, offline-first through the sync engine, `/invite` App Link into an invitation screen with preview/join/decline, members screen with role change, removal, withdraw and leave, activity screen, viewer and plan notes, loss of access purges the wallet from the phone; Room v10; device E2E deferred) | C3, C4 |
 | [C10](C10-billing-google-play.md) Google Play billing | B10 | Brief | — | C3 |
 | [C11](C11-redeem-code.md) Redeem code | B11 (app side only) | Brief | — | C3 |
-| [C13](C13-reports.md) Reports | B13 | Brief | — | C6, C8 |
+| [C13](C13-reports.md) Reports | B13 → spec 019 | Built | **Built** in spec 014 (Reports screen per wallet or across wallets in one currency, computed on the phone with waiting changes included: summary, spending by category with shares, 3/6/12-period trend with chart and table, previous/next and custom ranges, excluded-wallet notice, scheduled money switch; Budget Periods derived as budgets do, learned from the server only when it cannot; Home row and wallet Report action; Room stays v10; device E2E deferred) | C6, C8 |
 | [C15](C15-export-deletion.md) Export & deletion completion | B15 | Brief | Deletion request/cancel done (002) | C6, C9 |
 | [C16](C16-push.md) Push notifications | B16 | Brief | — | C1, C7, C9 |
 

@@ -1,0 +1,50 @@
+# deferred: E2E on owner's device
+# US3-S1/S2: Given a shared wallet where the person spent 1,000.00 and the partner 500.00, When the wallet detail's "Report" opens, Then the wallet's report shows expenses 1,500.00 in its own currency, with no currency choice and no excluded notice.
+# e2e-seed: verified-user+partner
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Household", OPENING: "100000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor, INVITEE_EMAIL: "${E2E_PARTNER_EMAIL}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: B, WALLET: "Household", AMOUNT: "100000", NOTE: "Mine", CATEGORY: "Groceries" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: C, WALLET_ID: "${output.walletId}", AMOUNT: "50000", NOTE: "Partner's", CATEGORY: "Groceries" }
+- runFlow: ../common/sign-in.yaml
+- tapOn:
+    id: "home.wallets"
+- extendedWaitUntil:
+    visible: "Household"
+    timeout: 30000
+- tapOn: "Household"
+- extendedWaitUntil:
+    visible:
+      id: "wallet.report"
+    timeout: 15000
+- tapOn:
+    id: "wallet.report"
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*1,500.00.*"
+    timeout: 60000
+- assertNotVisible:
+    id: "reports.currency"
+- assertNotVisible:
+    id: "reports.excluded"

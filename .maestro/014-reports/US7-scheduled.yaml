@@ -1,0 +1,32 @@
+# deferred: E2E on owner's device
+# US7: Given a rent rule of 5,000.00 scheduled later this period and nothing recorded for it, When "Include scheduled" is turned on, Then the report shows "Scheduled: ..." beside the expenses and in the Rent row, and the balances do not change.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US7
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Cash", DESCRIPTION: "Rent", AMOUNT: "500000", CATEGORY: "Groceries", START_IN_DAYS: "3" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.balance_end"
+    timeout: 60000
+- assertNotVisible:
+    id: "reports.planned"
+- tapOn:
+    id: "reports.scheduled.switch"
+- extendedWaitUntil:
+    visible:
+      id: "reports.planned"
+      text: "Scheduled: .*5,000.00.*"
+    timeout: 30000
+- assertVisible:
+    id: "reports.summary.expenses"
+    text: ".*5,500.00.*"

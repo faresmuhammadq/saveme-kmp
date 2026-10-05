@@ -189,3 +189,20 @@ Each is the conservative option.
 
 15. Arabic words in contracts/ui-and-e2e.md Copy.
 16. The six chart components are not on the design canvas yet (P-07.3 asks to check against it): built from its tokens and to be added to the canvas after review (research R-10).
+
+## Implementation notes
+
+Choices made during implementation (owner away, delegated authority); each follows the spec, plan and research.
+
+1. `ReportScope.AllWallets` is an object: the cross-wallet currency is a session choice (`ReportChoices.currency`) and the resolved one is `Report.currency`.
+2. `ReportsService.setRange` and `setTrendLength` are `suspend`: after storing the choice they run the Budget Period lookup when a period is unknown. Previous/Next from a custom range step out of it (the period containing the day before `from`, or after `to`).
+3. Period lookup sends one `GET /reports/trend` (`months` = the number of unknown, oldest slots, `date` = the day before the oldest nameable period; all slots unknown: `months` = trend length, `date` = the needed day). Unknown slots are always the oldest, so one read of at most 12 periods always suffices; the "several reads beyond 12" case cannot arise. An attempt is not repeated until the next open or pull.
+4. The ledger returns rows only for the range and one sum per day (`DaySum`) for the days of the trend window outside it, plus `before`; only ten columns are read (`ReportRow`). This is how SC-005 (70,000 rows, 12 periods) holds on the host; `before` and the daily sums are corrected for waiting changes at their stored and shown dates.
+5. `TransactionsService.observeFeedReadAt(walletId)` (default `flowOf(null)`) gives a wallet report its "Updated" stamp without observing the whole list.
+6. `CoveredWallets` and the calculator take a small `ReportWallet` (name, currency, shown opening balance, liability, archived, waiting) mapped from `WalletView`; the calculator ignores a ledger line's deleted state (the ledger already leaves deleted rows out) and treats lines before the range as history for the opening balance.
+7. Error codes `INVALID_QUERY_PARAMETER` and `INVALID_ID` are matched by the raw `problem.code` string: `core` has no enum entries for them and `core` is not changed (DI registration only).
+8. The categories screen reads the session's report (same scope, range, currency, switch); the key's dates and currency are carried for display and tests, and after process death the choices are the defaults.
+9. Layout: `ReportFigureRow` and `ShareBarRow` drop their amount below the label when it would leave the label under 40% of the width (200% text); chart columns widen to their longest written value and the chart scrolls from the start edge.
+10. `BudgetsLayeringTest` now allows `feature/reports` to import `budgets.domain.BudgetPeriods` and `DayTicker` only (research R-07); every other budgets import by another feature still fails it.
+11. Contract recheck (T092): `reports.yaml` last changed in `d7ed413`; unchanged at `b63e917` and in the backend working tree. No drift.
+12. Not done here, by instruction: T037, T047, T054, T061, T069, T075, T081, T094, T095 (device E2E), T089 and T090 (live-backend QA and captured fixtures), T096 (summary).

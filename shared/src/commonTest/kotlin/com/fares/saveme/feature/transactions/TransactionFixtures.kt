@@ -31,6 +31,9 @@ import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
+import com.fares.saveme.feature.transactions.data.local.WalletBalanceSum
+import com.fares.saveme.feature.transactions.data.local.DaySumRow
+import com.fares.saveme.feature.transactions.data.local.ReportRow
 import com.fares.saveme.feature.transactions.domain.BalanceReconciler
 import com.fares.saveme.feature.transactions.domain.DefaultTransactionsService
 import com.fares.saveme.feature.transactions.domain.TransactionPostings
@@ -73,6 +76,37 @@ class FakeTransactionDao : TransactionDao {
                 ((it.kind == "expense" && it.date >= from && it.date <= to) || it.id in waitingIds || it.pendingConfirmation)
         }
     }
+    override fun observeForReport(accountId: String, walletIds: List<String>, from: String, to: String, waitingIds: List<String>): Flow<List<ReportRow>> = rows.map { all ->
+        all.values.filter {
+            it.accountId == accountId && it.deletedAt == null &&
+                (((it.walletId in walletIds || (it.counterWalletId != null && it.counterWalletId in walletIds)) && it.date >= from && it.date <= to) ||
+                    it.id in waitingIds || it.pendingConfirmation)
+        }.map { ReportRow(it.id, it.walletId, it.counterWalletId, it.kind, it.date, it.amountMinor, it.currency, it.categoryId, it.version, it.pendingConfirmation) }
+    }
+
+    override fun observeDailySums(accountId: String, walletIds: List<String>, from: String, to: String, extraFrom: String, extraTo: String): Flow<List<DaySumRow>> = rows.map { all ->
+        all.values
+            .filter {
+                it.accountId == accountId && it.deletedAt == null && it.version > 0 && (it.kind == "income" || it.kind == "expense") && it.walletId in walletIds &&
+                    ((it.date >= extraFrom && it.date < from) || (it.date > to && it.date <= extraTo))
+            }
+            .groupBy { it.date to it.kind }
+            .map { (key, group) -> DaySumRow(key.first, key.second, group.sumOf { it.amountMinor }) }
+    }
+
+    override fun observeBalancesBefore(accountId: String, walletIds: List<String>, before: String): Flow<List<WalletBalanceSum>> = rows.map { all ->
+        val sums = HashMap<String, Long>()
+        all.values.filter { it.accountId == accountId && it.deletedAt == null && it.version > 0 && it.date < before }.forEach { row ->
+            if (row.walletId in walletIds) {
+                val effect = when (row.kind) { "income" -> row.amountMinor; "expense", "transfer" -> -row.amountMinor; else -> 0L }
+                sums[row.walletId] = (sums[row.walletId] ?: 0L) + effect
+            }
+            val counter = row.counterWalletId
+            if (row.kind == "transfer" && counter != null && counter in walletIds) sums[counter] = (sums[counter] ?: 0L) + row.amountMinor
+        }
+        sums.map { (wallet, total) -> WalletBalanceSum(wallet, total) }
+    }
+
     override suspend fun get(id: String): TransactionEntity? = rows.value[id]
     override fun observeRelevant(ids: List<String>): Flow<List<TransactionEntity>> =
         rows.map { all -> all.values.filter { it.id in ids || it.carryConfirmedAt != null || it.pendingConfirmation } }

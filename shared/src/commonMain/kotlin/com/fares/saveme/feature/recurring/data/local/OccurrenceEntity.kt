@@ -68,6 +68,18 @@ interface OccurrenceDao {
     @Query("SELECT * FROM occurrence WHERE id = :id")
     fun observe(id: String): Flow<OccurrenceEntity?>
 
+    /**
+     * What reports need (spec 014 R-05): the occurrences the server still calls `scheduled`, in a wallet of [walletIds] or
+     * with one of them as the destination, dated in [from]..[to], plus those a waiting change names ([waitingIds]; a change
+     * may move one in or out of the range). The overlay is the caller's.
+     */
+    @Query(
+        """SELECT * FROM occurrence WHERE account_id = :accountId AND (wallet_id IN (:walletIds) OR counter_wallet_id IN (:walletIds))
+        AND ((status = 'scheduled' AND date >= :from AND date <= :to) OR id IN (:waitingIds))
+        ORDER BY date, ordinal, id""",
+    )
+    fun observeScheduledFor(accountId: String, walletIds: List<String>, from: String, to: String, waitingIds: List<String>): Flow<List<OccurrenceEntity>>
+
     @Query("SELECT * FROM occurrence WHERE id = :id")
     suspend fun get(id: String): OccurrenceEntity?
 

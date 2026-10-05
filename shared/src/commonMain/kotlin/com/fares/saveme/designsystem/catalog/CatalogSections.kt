@@ -112,6 +112,7 @@ fun CatalogSections() {
         DialogsSection()
         TransactionsSection()
         RecurringSection()
+        ReportsSection()
     }
 }
 

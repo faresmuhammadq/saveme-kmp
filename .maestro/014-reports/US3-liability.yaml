@@ -1,0 +1,35 @@
+# deferred: E2E on owner's device
+# US3-S4: Given a credit card with an opening debt of 3,000.00 and a 1,200.00 purchase, When its report opens, Then the balances show as amounts owed ("Owed ...").
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Visa", OPENING: "-300000", TYPE: "credit_card" }
+- runFlow:
+    file: ../common/seed-transaction.yaml
+    env: { WALLET: "Visa", AMOUNT: "120000", NOTE: "Laptop bag", CATEGORY: "Groceries" }
+- runFlow: ../common/sign-in.yaml
+- tapOn:
+    id: "home.wallets"
+- extendedWaitUntil:
+    visible: "Visa"
+    timeout: 30000
+- tapOn: "Visa"
+- tapOn:
+    id: "wallet.report"
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.balance_end"
+    timeout: 60000
+- assertVisible:
+    id: "reports.summary.balance_start"
+    text: "Owed .*3,000.00.*"
+- assertVisible:
+    id: "reports.summary.balance_end"
+    text: "Owed .*4,200.00.*"

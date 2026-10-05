@@ -57,6 +57,35 @@ data class TransactionEntity(
     override fun toString() = "TransactionEntity($id, version=$version)"
 }
 
+/**
+ * The few columns reports read per row (spec 014 R-03): a row of a report is ten values, not the whole transaction, which is
+ * what keeps 20,000 rows within a second.
+ */
+data class ReportRow(
+    val id: String,
+    @ColumnInfo(name = "wallet_id") val walletId: String,
+    @ColumnInfo(name = "counter_wallet_id") val counterWalletId: String?,
+    val kind: String,
+    val date: String,
+    @ColumnInfo(name = "amount_minor") val amountMinor: Long,
+    val currency: String,
+    @ColumnInfo(name = "category_id") val categoryId: String?,
+    val version: Long,
+    @ColumnInfo(name = "pending_confirmation") val pendingConfirmation: Boolean,
+) {
+    /** Amounts are the person's own; they are never printed (P-09.2). */
+    override fun toString() = "ReportRow($id)"
+}
+
+/** One day's income or expense sum over some wallets: [kind] is `income` or `expense`. */
+data class DaySumRow(val date: String, val kind: String, val total: Long)
+
+/** One wallet's summed balance effect, as [TransactionDao.observeBalancesBefore] answers. */
+data class WalletBalanceSum(
+    @ColumnInfo(name = "wallet_id") val walletId: String,
+    val total: Long,
+)
+
 @Dao
 interface TransactionDao {
     /** Live rows where the wallet is the source or the destination, newest first (research R-13). */
@@ -79,6 +108,49 @@ interface TransactionDao {
         (kind = 'expense' AND date >= :from AND date <= :to) OR id IN (:waitingIds) OR pending_confirmation = 1)""",
     )
     fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>>
+
+    /**
+     * What reports need (spec 014 R-03) in one snapshot: the live rows touching [walletIds] (as source or destination)
+     * dated in [from]..[to], every row whose id is in [waitingIds] (a waiting change may move it in or out of the range)
+     * and every phone-only confirmation, for one account. Other kinds and the overlay are left to the caller.
+     */
+    @Query(
+        """SELECT id, wallet_id, counter_wallet_id, kind, date, amount_minor, currency, category_id, version, pending_confirmation
+        FROM transactions WHERE account_id = :accountId AND deleted_at IS NULL AND (
+        ((wallet_id IN (:walletIds) OR counter_wallet_id IN (:walletIds)) AND date >= :from AND date <= :to)
+        OR id IN (:waitingIds) OR pending_confirmation = 1)""",
+    )
+    fun observeForReport(accountId: String, walletIds: List<String>, from: String, to: String, waitingIds: List<String>): Flow<List<ReportRow>>
+
+    /**
+     * Income and expense sums per day that the server holds (version above zero) for [walletIds], dated in
+     * [extraFrom]..[extraTo] but outside [from]..[to] (those days come row by row): what a trend over earlier periods needs
+     * without reading every row. Rows the overlay changes are corrected by the caller.
+     */
+    @Query(
+        """SELECT date AS date, kind AS kind, SUM(amount_minor) AS total FROM transactions
+        WHERE account_id = :accountId AND deleted_at IS NULL AND version > 0 AND kind IN ('income', 'expense') AND wallet_id IN (:walletIds)
+        AND ((date >= :extraFrom AND date < :from) OR (date > :to AND date <= :extraTo)) GROUP BY date, kind""",
+    )
+    fun observeDailySums(accountId: String, walletIds: List<String>, from: String, to: String, extraFrom: String, extraTo: String): Flow<List<DaySumRow>>
+
+    /**
+     * Per wallet, the signed effect of the live rows the server holds (version above zero) dated before [before]: income
+     * +, expense -, a transfer - on its source and + on its destination; another kind counts nothing (the same rule as
+     * `BalanceEffect.of`). Rows the overlay changes are corrected by the caller.
+     */
+    @Query(
+        """SELECT wallet_id AS wallet_id, SUM(amount) AS total FROM (
+        SELECT wallet_id AS wallet_id,
+          CASE kind WHEN 'income' THEN amount_minor WHEN 'expense' THEN -amount_minor WHEN 'transfer' THEN -amount_minor ELSE 0 END AS amount
+        FROM transactions WHERE account_id = :accountId AND deleted_at IS NULL AND version > 0 AND date < :before AND wallet_id IN (:walletIds)
+        UNION ALL
+        SELECT counter_wallet_id AS wallet_id, amount_minor AS amount
+        FROM transactions WHERE account_id = :accountId AND deleted_at IS NULL AND version > 0 AND date < :before
+          AND kind = 'transfer' AND counter_wallet_id IN (:walletIds)
+        ) GROUP BY wallet_id""",
+    )
+    fun observeBalancesBefore(accountId: String, walletIds: List<String>, before: String): Flow<List<WalletBalanceSum>>
 
     @Query("SELECT * FROM transactions WHERE id = :id")
     suspend fun get(id: String): TransactionEntity?

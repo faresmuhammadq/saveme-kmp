@@ -708,8 +708,99 @@ switch (arg('ACTION')) {
         output.memberCount = output.members.length
         break
 
+    // Reports (spec 014). Moves money between two wallets of this slot: WALLET (source name) or WALLET_ID, COUNTER_WALLET (destination name)
+    // or COUNTER_WALLET_ID, AMOUNT in minor units (1000), DATE (today), NOTE. Copies it into output.transaction.
+    case 'createTransfer':
+        var transferSourceId = transactionWalletId()
+        var transferTargetId = arg('COUNTER_WALLET_ID') ? arg('COUNTER_WALLET_ID') : walletIdByName(arg('COUNTER_WALLET'))
+        var transferSource = expect(call('GET', 'wallets/' + transferSourceId, undefined, token()), 200, 'getWallet').body.data
+        var transferId = uuid7()
+        output.transaction = expect(call('PUT', 'wallets/' + transferSourceId + '/transactions/' + transferId, {
+            kind: 'transfer',
+            date: dateArg(),
+            amount_minor: parseInt(arg('AMOUNT', '1000')),
+            currency: transferSource.currency,
+            category_id: null,
+            counter_wallet_id: transferTargetId,
+            description: arg('NOTE', null),
+            memo: null,
+            counterparty: null,
+            cleared: false,
+            version: 0,
+        }, token()), 201, 'createTransfer').body.data
+        output.transactionId = transferId
+        break
+
+    // Reads the server's cross-wallet summary for the current Budget Period (CURRENCY, default EGP; WALLET_ID for one wallet's) into
+    // output.reportSummary and its members as output.incomeMinor, output.expensesMinor, output.netMinor and output.balanceEndMinor.
+    case 'getReportSummary':
+        var reportPath = arg('WALLET_ID') ? 'wallets/' + arg('WALLET_ID') + '/reports/summary' : 'reports/summary?currency=' + arg('CURRENCY', 'EGP')
+        var reportData = expect(call('GET', reportPath, undefined, token()), 200, 'getReportSummary').body.data
+        output.reportSummary = reportData
+        output.incomeMinor = reportData.income.amount_minor
+        output.expensesMinor = reportData.expenses.amount_minor
+        output.netMinor = reportData.net.amount_minor
+        output.balanceEndMinor = reportData.balance_end.amount_minor
+        break
+
+    // Seeds the reports quickstart data set from this slot: wallets Cash (EGP, 1,000.00), Bank (EGP, 5,000.00) and Savings (USD, 900.00); a salary of
+    // 10,000.00 into Bank, groceries 3,500.00 and transport 1,200.00 out of Cash, an own-category expense of 800.00 out of Bank (so income 10,000.00,
+    // expenses 5,500.00, shares 64% / 22% / 15%), and a transfer of 500.00 from Cash to Bank (nowhere in a cross-wallet EGP report). Copies the ids into
+    // output.cashId, output.bankId and output.savingsId. Dates are today's.
+    case 'seedReportsData':
+        seedReportsData()
+        break
+
     default:
         throw new Error('api.js: unknown ACTION ' + arg('ACTION'))
+}
+
+// Reports (spec 014).
+function walletIdByName(name) {
+    var matches = listAllWallets().filter(function (w) { return w.name === name })
+    if (matches.length !== 1) throw new Error('walletIdByName: expected one wallet named "' + name + '", found ' + matches.length)
+    return matches[0].id
+}
+
+function putTransaction(walletId, currency, kind, amount, categoryId, counterWalletId, note) {
+    return expect(call('PUT', 'wallets/' + walletId + '/transactions/' + uuid7(), {
+        kind: kind,
+        date: dateArg(),
+        amount_minor: amount,
+        currency: currency,
+        category_id: categoryId,
+        counter_wallet_id: counterWalletId,
+        description: note,
+        memo: null,
+        counterparty: null,
+        cleared: false,
+        version: 0,
+    }, token()), 201, 'seedReportsData ' + note).body.data
+}
+
+function defaultCategoryId(name) {
+    var found = expect(call('GET', 'platform-categories', undefined, token()), 200, 'listPlatformCategories').body.data.filter(function (c) { return c.names.en === name })
+    if (found.length < 1) throw new Error('defaultCategoryId: no platform category named "' + name + '"')
+    return found[0].id
+}
+
+function seedReportsData() {
+    function wallet(name, currency, opening) {
+        return expect(call('PUT', 'wallets/' + uuid7(), { type: 'cash', name: name, currency: currency, opening_balance_minor: opening, icon: null, color: null, version: 0 }, token()), 201, 'seed wallet ' + name).body.data
+    }
+    var cash = wallet('Cash', 'EGP', 100000)
+    var bank = wallet('Bank', 'EGP', 500000)
+    var savings = wallet('Savings', 'USD', 90000)
+    var pets = expect(call('PUT', 'categories/' + uuid7(), { kind: 'expense', name: 'Pets', icon: null, color: null, version: 0 }, token()), 201, 'seed category Pets').body.data
+    putTransaction(bank.id, 'EGP', 'income', 1000000, defaultCategoryId('Salary'), null, 'Salary')
+    putTransaction(cash.id, 'EGP', 'expense', 350000, defaultCategoryId('Groceries'), null, 'Weekly shop')
+    putTransaction(cash.id, 'EGP', 'expense', 120000, defaultCategoryId('Transport'), null, 'Taxi')
+    putTransaction(bank.id, 'EGP', 'expense', 80000, pets.id, null, 'Vet')
+    putTransaction(cash.id, 'EGP', 'transfer', 50000, null, bank.id, 'Top up bank')
+    output.cashId = cash.id
+    output.bankId = bank.id
+    output.savingsId = savings.id
+    output.walletId = cash.id
 }
 
 // Budgets (spec 012). A budget is found by ID, or output.budgetId from a createBudget in this run.

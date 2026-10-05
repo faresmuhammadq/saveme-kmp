@@ -95,6 +95,9 @@ interface TransactionsService {
 
     /** Reads every page of the wallet's list; without [force] a read within the last 60 seconds is skipped. */
     suspend fun refresh(walletId: String, force: Boolean = false): RefreshOutcome
+
+    /** When the wallet's feed was last read completely, null before the first read (spec 014 R-11: a wallet report's "Updated"). */
+    fun observeFeedReadAt(walletId: String): Flow<Instant?> = flowOf(null)
 }
 
 class DefaultTransactionsService(
@@ -145,6 +148,9 @@ class DefaultTransactionsService(
             )
         }
     }
+
+    override fun observeFeedReadAt(walletId: String): Flow<Instant?> =
+        repository.observeRefreshedAt(walletId).map { stamp -> stamp?.let { runCatching { Instant.parse(it) }.getOrNull() } }
 
     private class ListInputs(
         val stored: List<TransactionEntity>,

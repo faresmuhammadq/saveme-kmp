@@ -1,0 +1,11 @@
+# Seeds the reports data set from the second device (slot B, signed in already): wallets Cash and Bank (EGP) and Savings (USD), a salary of
+# 10,000.00, groceries 3,500.00, transport 1,200.00, an own-category expense of 800.00 and a 500.00 transfer from Cash to Bank, all dated today.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runScript:
+    file: api.js
+    env:
+      ACTION: seedReportsData
+      SLOT: B

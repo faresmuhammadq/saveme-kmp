@@ -1,0 +1,21 @@
+# deferred: E2E on owner's device
+# e2e-between: network-on
+# Part 3: online; the expense is sent, the note goes, the figures stay 5,700.00 and the server's summary says the same.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- pressKey: back
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "reports.waiting"
+    timeout: 60000
+- assertVisible:
+    id: "reports.summary.expenses"
+    text: ".*5,700.00.*"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: getReportSummary, SLOT: B }
+- assertTrue: ${output.expensesMinor == 570000}
+- assertTrue: ${output.incomeMinor == 1000000}

@@ -244,6 +244,19 @@ class WalletDetailTransactionsTest {
     }
 
     @Test
+    fun theReportActionOpensTheWalletsReportForOwnerEditorAndViewer() = runMviTest {
+        // Spec 014 FR-021: navigation only, whatever the role.
+        listOf(WalletRole.Owner, WalletRole.Editor, WalletRole.Viewer).forEach { role ->
+            wallet.value = view(role)
+            val vm = vm()
+            vm.effects.test {
+                vm.onIntent(WalletDetailIntent.ReportClicked)
+                assertEquals(WalletDetailEffect.OpenReport("w1"), awaitItem())
+            }
+        }
+    }
+
+    @Test
     fun addTransactionIsOfferedToOwnersAndEditorsOfAnActiveWalletOnly() = runMviTest {
         val vm = vm()
         assertTrue(vm.state.value.canAddTransaction)
