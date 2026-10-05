@@ -148,7 +148,7 @@ description: "Task list for 015-redeem-code"
 - [X] T050 Gates: `./gradlew :shared:testAndroidHostTest`, `:shared:verifyRoborazziAndroidHostTest`, `:androidApp:assembleDevDebug`, `:shared:compileKotlinIosSimulatorArm64`; `check-backend-contract.sh` clean (client codes vs catalogue)
 - [ ] T051 Quickstart §3 spot checks (FLAG_SECURE, paste-only menu, keyboard suggestions, Arabic 200 %) — **deferred: E2E on owner's device**
 - [X] T052 Update `specs/briefs/README.md` client state for C11 and plan.md "Implementation notes"
-- [ ] T053 Write specs/015-redeem-code/summary.md
+- [X] T053 Write specs/015-redeem-code/summary.md
 
 ---
 
