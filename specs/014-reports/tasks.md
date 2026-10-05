@@ -274,7 +274,7 @@ description: "Task list for 014-reports"
 - [X] T093 Update README (reports: computed on the phone, no table; Room stays v10) and the C13 row of `specs/briefs/README.md`
 - [ ] T094 Run quickstart.md manual checks on the dev build — **deferred: E2E on owner's device**
 - [ ] T095 Run the full `/speckit-e2e 014-reports` and write `specs/014-reports/e2e-report.md` incl. the brief's checkpoint (SC-007) — **deferred: E2E on owner's device**
-- [ ] T096 Write specs/014-reports/summary.md
+- [X] T096 Write specs/014-reports/summary.md
 
 ---
 
