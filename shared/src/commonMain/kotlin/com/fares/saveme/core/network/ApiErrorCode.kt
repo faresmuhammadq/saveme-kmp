@@ -38,6 +38,21 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
 
     /** 410 on a feed read whose position is behind the purge horizon (spec 009, FR-008, FR-032). */
     SYNC_CURSOR_EXPIRED(RetryClass.AfterChange),
+
+    /** 403 on redeeming a code mailed to another address (spec 015, FR-028). */
+    REDEEM_CODE_EMAIL_MISMATCH(RetryClass.AfterChange),
+
+    /** 409 on redeeming a code another person already used (spec 015, FR-028). */
+    REDEEM_CODE_USED(RetryClass.Never),
+
+    /** 410 on redeeming a code past its expiry (spec 015, FR-028). */
+    REDEEM_CODE_EXPIRED(RetryClass.Never),
+
+    /** 409 when a request with the same Idempotency-Key is still running (spec 015, FR-028). */
+    IDEMPOTENCY_REQUEST_IN_PROGRESS(RetryClass.Automatic),
+
+    /** 409 when an Idempotency-Key was reused with a different request (spec 015, FR-028). */
+    IDEMPOTENCY_KEY_REUSED(RetryClass.Never),
     UNKNOWN(RetryClass.Never);
 
     companion object {

@@ -1186,4 +1186,34 @@
     <string name="activity_subject_member">عضو</string>
     <string name="activity_subject_invitation">دعوة بصفة %1$s</string>
     <string name="activity_subject_wallet">المحفظة</string>
+    <!-- Redeem code (spec 015) -->
+    <string name="plan_enter_code">أدخل رمزًا</string>
+    <string name="redeem_title">إدخال رمز</string>
+    <string name="redeem_intro">أدخل الرمز الموجود في بريدك الإلكتروني. يعمل الرمز فقط على الحساب الذي يحمل البريد الإلكتروني الذي أُرسل إليه.</string>
+    <string name="redeem_field_label">رمز الاسترداد</string>
+    <string name="redeem_field_hint">16 حرفًا ورقمًا كما في بريدك</string>
+    <string name="redeem_verify_note">أكّد بريدك الإلكتروني أولًا. تعمل الرموز على الحسابات المؤكَّدة فقط.</string>
+    <string name="redeem_submit">استرداد</string>
+    <string name="redeem_retry">حاول مرة أخرى</string>
+    <string name="redeem_offline">تحتاج إلى اتصال بالإنترنت لاسترداد الرمز.</string>
+    <string name="redeem_not_valid">هذا الرمز غير صالح. تحقّق منه وحاول مرة أخرى.</string>
+    <string name="redeem_invalid_format">هذا ليس رمزًا صالحًا. يتكوّن الرمز من 16 حرفًا ورقمًا.</string>
+    <string name="redeem_signed_in_as">أنت مسجّل الدخول باسم %1$s.</string>
+    <string name="redeem_rate_limited_minutes">محاولات كثيرة. حاول مرة أخرى بعد %1$d دقيقة.</string>
+    <string name="redeem_rate_limited_minute">محاولات كثيرة. حاول مرة أخرى بعد دقيقة.</string>
+    <string name="redeem_rate_limited_later">محاولات كثيرة. حاول مرة أخرى لاحقًا.</string>
+    <string name="redeem_in_progress">ما زلنا نتحقق من هذا الرمز. حاول مرة أخرى بعد لحظات.</string>
+    <string name="redeem_done_title">تم استرداد الرمز</string>
+    <string name="redeem_done_now_on_until">أنت الآن على خطة %1$s حتى %2$s.</string>
+    <string name="redeem_done_now_on_no_end">أنت الآن على خطة %1$s بلا تاريخ انتهاء.</string>
+    <string name="redeem_done_current_stays_until">تبقى خطتك الحالية %1$s سارية لأنها تنتهي لاحقًا في %2$s.</string>
+    <string name="redeem_done_current_stays_no_end">تبقى خطتك الحالية %1$s سارية لأنها بلا تاريخ انتهاء.</string>
+    <string name="redeem_done_redeemed_until">تستمر الخطة المستردّة %1$s حتى %2$s.</string>
+    <string name="redeem_done_redeemed_no_end">الخطة المستردّة %1$s بلا تاريخ انتهاء.</string>
+    <string name="redeem_done_starts_on">تبدأ فترة الفوترة الخاصة بها في %1$s.</string>
+    <string name="redeem_done_play_renews">سيستمر Google Play في تحصيل رسوم اشتراكك إلى أن تلغيه من Google Play.</string>
+    <string name="redeem_done_button">تم</string>
+    <string name="error_redeem_code_email_mismatch">أُرسل هذا الرمز إلى بريد إلكتروني آخر. سجّل الدخول بذلك البريد لاستخدامه.</string>
+    <string name="error_redeem_code_used">تم استخدام هذا الرمز من قبل.</string>
+    <string name="error_redeem_code_expired">انتهت صلاحية هذا الرمز. تواصل مع الدعم للمساعدة.</string>
 </resources>

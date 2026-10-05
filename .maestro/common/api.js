@@ -708,6 +708,25 @@ switch (arg('ACTION')) {
         output.memberCount = output.members.length
         break
 
+    // Redeem code (spec 015). Reads the account's governing subscription into output.subscription and the plan
+    // name into output.planName ("Free" when there is none), seen from this slot.
+    case 'mySubscription':
+        output.subscription = expect(call('GET', 'me/subscription', undefined, token()), 200, 'mySubscription').body.data
+        output.planName = output.subscription.plan.name
+        break
+
+    // Redeems CODE (the mailed form, XXXX-XXXX-XXXX-XXXX) from this slot with IDEMPOTENCY_KEY (default a fresh one) and
+    // checks the status (EXPECT, default 200). Copies a success into output.redeem. The code is a throwaway dev value.
+    case 'redeemCode':
+        var redeemHeaders = headers(token())
+        redeemHeaders['Idempotency-Key'] = arg('IDEMPOTENCY_KEY', uuid7())
+        var redeemed = http.post(apiBase + 'billing/redeem', { headers: redeemHeaders, body: JSON.stringify({ code: arg('CODE') }) })
+        if (redeemed.status !== parseInt(arg('EXPECT', '200'))) {
+            throw new Error('redeemCode: expected HTTP ' + arg('EXPECT', '200') + ', got ' + redeemed.status + ' ' + redeemed.body)
+        }
+        if (redeemed.status === 200) output.redeem = json(redeemed.body).data
+        break
+
     default:
         throw new Error('api.js: unknown ACTION ' + arg('ACTION'))
 }

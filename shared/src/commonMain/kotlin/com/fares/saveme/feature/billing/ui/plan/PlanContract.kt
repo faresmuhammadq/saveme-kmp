@@ -85,10 +85,12 @@ sealed interface PlanIntent {
     data object Opened : PlanIntent
     data object Refresh : PlanIntent
     data object Back : PlanIntent
+    data object EnterCode : PlanIntent
 }
 
 sealed interface PlanEffect {
     data object NavigateBack : PlanEffect
+    data object OpenRedeem : PlanEffect
 }
 
 sealed interface PlanChange {

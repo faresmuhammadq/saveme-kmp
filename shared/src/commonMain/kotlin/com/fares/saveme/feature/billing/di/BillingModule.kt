@@ -3,6 +3,7 @@ package com.fares.saveme.feature.billing.di
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.feature.account.domain.ProfileSyncer
+import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.billing.data.BillingApi
 import com.fares.saveme.feature.billing.data.BillingDataCleaner
@@ -12,9 +13,11 @@ import com.fares.saveme.feature.billing.domain.BillingSyncCoordinator
 import com.fares.saveme.feature.billing.domain.Entitlements
 import com.fares.saveme.feature.billing.domain.EntitlementsRefresher
 import com.fares.saveme.feature.billing.domain.PlanOverview
+import com.fares.saveme.feature.billing.domain.RedeemService
 import com.fares.saveme.feature.billing.domain.RefreshReason
 import com.fares.saveme.feature.billing.domain.SessionEntitlements
 import com.fares.saveme.feature.billing.ui.plan.PlanViewModel
+import com.fares.saveme.feature.billing.ui.redeem.RedeemViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,6 +37,7 @@ val billingModule = module {
         BillingSyncCoordinator(get(), get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)).also { it.start() }
     }
     single { PlanOverview(get(), get(), get(), get()) }
+    single { RedeemService(get(), get(), get(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
 
     viewModel {
         val overview = get<PlanOverview>()
@@ -49,6 +53,20 @@ val billingModule = module {
             loadStored = { overview.loadStored() },
             refresh = { refresher.refresh(RefreshReason.PlanScreen) },
             loadCatalogue = { overview.loadCatalogue() },
+        )
+    }
+
+    viewModel {
+        val sessions = get<SessionManager>()
+        val syncer = get<ProfileSyncer>()
+        val clientInfo = get<ClientInfo>()
+        val service = get<RedeemService>()
+        RedeemViewModel(
+            redeem = { code, attempt -> service.redeem(code, attempt) },
+            isEmailVerified = { (sessions.state.value as? AuthState.SignedIn)?.account?.emailVerified == true },
+            signedInEmail = { (sessions.state.value as? AuthState.SignedIn)?.account?.email },
+            signedIn = sessions.state.map { it is AuthState.SignedIn },
+            timeZoneId = syncer.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
         )
     }
 }

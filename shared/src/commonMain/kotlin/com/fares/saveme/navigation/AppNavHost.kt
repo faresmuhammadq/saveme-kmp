@@ -39,6 +39,8 @@ import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsRoute
 import com.fares.saveme.feature.billing.ui.plan.PlanEffect
+import com.fares.saveme.feature.billing.ui.redeem.RedeemEffect
+import com.fares.saveme.feature.billing.ui.redeem.RedeemRoute
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorEffect
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
 import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
@@ -311,6 +313,15 @@ fun AppNavHost(
                 PlanRoute(onEffect = { effect ->
                     when (effect) {
                         PlanEffect.NavigateBack -> appStack.pop()
+                        PlanEffect.OpenRedeem -> appStack.add(RedeemCodeKey)
+                    }
+                })
+            }
+            entry<RedeemCodeKey> {
+                RedeemRoute(onEffect = { effect ->
+                    when (effect) {
+                        RedeemEffect.NavigateBack -> appStack.pop()
+                        RedeemEffect.RequireVerification -> emailNotVerifiedVisible = true
                     }
                 })
             }

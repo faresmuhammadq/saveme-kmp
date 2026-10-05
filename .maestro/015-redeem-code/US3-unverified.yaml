@@ -1,0 +1,23 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S5: Given an unverified person, When they open Enter code and tap Redeem, Then the verify note shows, the verify prompt opens and nothing is sent.
+# e2e-seed: unverified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- assertVisible:
+    id: "redeem.verifyNote"
+- tapOn:
+    id: "redeem.code"
+- inputText: "7KQ2MX4D9TRBH3WE"
+- hideKeyboard
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "verifySheet.resend"
+    timeout: 10000
+- assertNotVisible:
+    id: "redeem.message"

@@ -1,0 +1,41 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US1-S1: Given a verified person on Free with a mailed code, When they type it lower-case without hyphens and tap Redeem, Then the confirmation names the plan and the Plan screen shows it.
+# e2e-seed: verified-user+redeem-code
+# The runner provides E2E_CODE (XXXX-XXXX-XXXX-XXXX) read from the dev mail catcher.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- evalScript: ${output.typed = E2E_CODE.replace(/-/g, '').toLowerCase()}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- tapOn:
+    id: "redeem.code"
+- inputText: "${output.typed}"
+- hideKeyboard
+# Four groups of four, upper-case.
+- assertVisible: "${E2E_CODE}"
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.done"
+    timeout: 20000
+- assertVisible: "Code redeemed"
+- assertVisible: "You.re now on Plus · Monthly until .+"
+- tapOn:
+    id: "redeem.doneButton"
+- extendedWaitUntil:
+    visible:
+      id: "plan.current"
+    timeout: 15000
+- assertVisible:
+    id: "plan.current.name"
+    text: "Plus · Monthly"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: mySubscription, SLOT: B }
+- assertTrue: ${output.planName == 'Plus · Monthly'}

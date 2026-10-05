@@ -1,0 +1,12 @@
+# From Home: Account -> Plan -> "Enter code", and waits for the redeem screen's code field (spec 015).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runFlow: open-plan.yaml
+- tapOn:
+    id: "plan.enterCode"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.code"
+    timeout: 15000

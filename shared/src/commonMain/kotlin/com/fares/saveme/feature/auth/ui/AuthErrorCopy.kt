@@ -24,11 +24,15 @@ fun ApiErrorCode.message(): StringResource = when (this) {
     ApiErrorCode.RATE_LIMITED -> Res.string.error_rate_limited_soon
     ApiErrorCode.UNAUTHENTICATED -> Res.string.error_session_ended
     ApiErrorCode.CLIENT_VERSION_UNSUPPORTED -> Res.string.error_update_required
+    ApiErrorCode.REDEEM_CODE_EMAIL_MISMATCH -> Res.string.error_redeem_code_email_mismatch
+    ApiErrorCode.REDEEM_CODE_USED -> Res.string.error_redeem_code_used
+    ApiErrorCode.REDEEM_CODE_EXPIRED -> Res.string.error_redeem_code_expired
+    ApiErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS -> Res.string.redeem_in_progress
     ApiErrorCode.SERVICE_UNAVAILABLE, ApiErrorCode.INTERNAL_ERROR -> Res.string.error_service_unavailable
     ApiErrorCode.CLIENT_VERSION_REQUIRED, ApiErrorCode.CLIENT_VERSION_INVALID, ApiErrorCode.MALFORMED_JSON,
     ApiErrorCode.NOT_ACCEPTABLE, ApiErrorCode.UNSUPPORTED_MEDIA_TYPE, ApiErrorCode.FORBIDDEN,
     ApiErrorCode.NOT_FOUND, ApiErrorCode.CATEGORY_IN_USE, ApiErrorCode.INVALID_CURSOR, ApiErrorCode.SYNC_CURSOR_EXPIRED,
-    ApiErrorCode.UNKNOWN -> Res.string.error_generic_reference
+    ApiErrorCode.IDEMPOTENCY_KEY_REUSED, ApiErrorCode.UNKNOWN -> Res.string.error_generic_reference
 }
 
 fun FieldError.message(): StringResource = when (this) {

@@ -93,4 +93,13 @@ class PlanViewModelTest {
             assertEquals(PlanEffect.NavigateBack, awaitItem())
         }
     }
+
+    @Test
+    fun enterCodeOpensTheRedeemScreen() = runMviTest {
+        val vm = vm()
+        vm.effects.test {
+            vm.onIntent(PlanIntent.EnterCode)
+            assertEquals(PlanEffect.OpenRedeem, awaitItem())
+        }
+    }
 }

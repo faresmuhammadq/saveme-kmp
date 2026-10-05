@@ -39,6 +39,7 @@ import com.fares.saveme.designsystem.component.AppNavigationBar
 import com.fares.saveme.designsystem.component.AppSnackbarHost
 import com.fares.saveme.designsystem.component.AppTextButton
 import com.fares.saveme.designsystem.component.AppTextField
+import com.fares.saveme.designsystem.component.CodeField
 import com.fares.saveme.designsystem.component.AppTopAppBar
 import com.fares.saveme.designsystem.component.BalanceHero
 import com.fares.saveme.designsystem.component.BudgetProgress
@@ -196,6 +197,8 @@ fun FieldsSection() = CatalogSection(Res.string.catalog_section_fields) {
     var visible by remember { mutableStateOf(false) }
     PasswordField(password, { password = it }, stringResource(Res.string.catalog_field_password), visible, { visible = !visible })
     AppTextField("EGP 450.00", {}, stringResource(Res.string.catalog_field_amount), enabled = false)
+    var code by remember { mutableStateOf("7KQ2MX") }
+    CodeField(code, { code = it.uppercase().filter { c -> c.isLetterOrDigit() }.take(16) }, stringResource(Res.string.redeem_field_label))
 }
 
 @Composable

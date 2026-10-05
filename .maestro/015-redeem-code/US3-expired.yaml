@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S3: Given an expired code, When it is redeemed, Then the message says it has expired.
+# e2e-seed: verified-user+redeem-code-expired
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- evalScript: ${output.typed = E2E_CODE.replace(/-/g, '').toLowerCase()}
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-redeem.yaml
+- tapOn:
+    id: "redeem.code"
+- inputText: "${output.typed}"
+- hideKeyboard
+- tapOn:
+    id: "redeem.submit"
+- extendedWaitUntil:
+    visible:
+      id: "redeem.message"
+    timeout: 20000
+- assertVisible:
+    id: "redeem.message"
+    text: "This code has expired. Contact support for help."
+
