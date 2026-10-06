@@ -2,6 +2,7 @@ package com.fares.saveme.feature.auth.di
 
 import com.fares.saveme.core.config.AppConfig
 import com.fares.saveme.core.config.Environment
+import com.fares.saveme.core.session.SignOutParticipant
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.core.sync.CurrentAccount
 import com.fares.saveme.feature.auth.domain.AuthState
@@ -74,7 +75,7 @@ val authModule = module {
         }
     }
     factory { SignInUseCase(get(), get(), get(), get()) }
-    factory { SignOutUseCase(get(), get()) }
+    factory { SignOutUseCase(get(), get(), participants = { getAll<SignOutParticipant>() }) }
     factory { RegisterUseCase(get(), get()) }
     factory { VerifyEmailUseCase(get()) }
     factory { ResendVerificationUseCase(get()) }

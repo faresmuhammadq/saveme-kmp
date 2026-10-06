@@ -130,7 +130,7 @@ class AccountScreensScreenshotTest(
                 DeleteAccountScreen(DeleteAccountState(step = DeleteStep.Confirm, password = "x", passwordError = DeletePasswordProblem.Incorrect)) {}
             }),
             arrayOf("delete_scheduled", @Composable {
-                DeleteAccountScreen(DeleteAccountState(step = DeleteStep.Scheduled(Instant.parse("2026-10-28T10:00:00Z")))) {}
+                DeleteAccountScreen(DeleteAccountState(step = DeleteStep.Scheduled(Instant.parse("2026-10-28T10:00:00Z"), emptyList()))) {}
             }),
             arrayOf("delete_service_error", @Composable {
                 DeleteAccountScreen(DeleteAccountState(step = DeleteStep.Confirm, banner = com.fares.saveme.feature.account.ui.deleteaccount.DeleteBanner.Error(ApiErrorCode.INTERNAL_ERROR, "req-42"))) {}

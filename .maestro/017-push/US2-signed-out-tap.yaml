@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a tap after sign-out shows sign-in and is forgotten; sign-out also clears the shade, so this flow posts, signs out and checks nothing is left to tap.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- tapOn: "Account"
+- tapOn:
+    id: "account.devTools"
+- tapOn:
+    id: "devtools.simulatePush"
+- tapOn:
+    id: "simulatePush.post.budget_exceeded"
+- back
+- back
+- tapOn: "Sign out"
+- tapOn: "Sign out"
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 20000
+- runFlow: ../common/open-shade.yaml
+- assertNotVisible: "Test notification"

@@ -51,7 +51,7 @@ database, `saveme.db`, which screens read from (constitution P-04). The schema i
 `shared/schemas/` on every build — commit changes to it, and add a Room migration whenever the
 version in `AppDatabase` goes up (now v10: invitations, and every wallet's feed place is forgotten once so invitations created before the update are read; v9 added budgets and the progress figures read for them; the person's own feed place is forgotten once
 so budgets created earlier are read; v8 added an integer feed position stored beside each place; v7 added recurring rules and
-occurrences). Sign-out clears every table. Reports (summary, spending by category, trend) are computed on the phone from its own rows with waiting changes included; no figure is stored and no table was added, so the version stays v10. Budgets are computed on the phone from its own transactions and shown with the server's figures once
+occurrences). Sign-out clears every table. Push notifications (spec 017) add no table (Room stays v10): four small records live in the key-value store (this phone's registration as a session id, a fingerprint of the push address and a time; the last 100 shown notification ids; two per-installation flags), and the push address itself is never stored by the app. Reports (summary, spending by category, trend) are computed on the phone from its own rows with waiting changes included; no figure is stored and no table was added, so the version stays v10. Budgets are computed on the phone from its own transactions and shown with the server's figures once
 nothing has changed since they were read. Sync reads only what changed since the last position it stored per scope (the
 person's own, and one per wallet), and sends waiting changes in batches of up to 50. A refresh first asks the server where
 the followed wallets stand (`GET /sync/wallets/heads`) and reads only the wallets that moved.
@@ -64,6 +64,9 @@ Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
 - Screenshots: record with `./gradlew :shared:recordRoborazziAndroidHostTest`, check with
   `./gradlew :shared:verifyRoborazziAndroidHostTest`
 - iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+- Push (spec 017): no Firebase is in the build yet. Host tests and the development build use a fake push provider
+  (Account → Developer tools → Simulate a notification posts every message type through the real receiving path); staging and
+  production builds have no push provider, so they show no Notifications row until the Firebase phase lands.
 
 ### E2E tests
 

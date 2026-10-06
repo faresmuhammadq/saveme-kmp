@@ -38,6 +38,7 @@ object AppIcons {
     val Devices by lazy { icon("Devices", "M4 5h12v9H4zM2 18h13M18 9h4v11h-4zM20 17h.01") }
     val Lock by lazy { icon("Lock", "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4M12 15v2") }
     val Delete by lazy { icon("Delete", "M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3") }
+    val Bell by lazy { icon("Bell", "M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2zM10 21h4") }
     val Logout by lazy { icon("Logout", "M9 4H5v16h4M16 8l4 4-4 4M20 12H9", autoMirror = true) }
     val Language by lazy { icon("Language", "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20") }
 

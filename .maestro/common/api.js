@@ -335,6 +335,36 @@ switch (arg('ACTION')) {
         expect(call('POST', 'account/deletion-request', { password: password }, token()), 200, 'requestDeletion')
         break
 
+    // Spec 016. Asks for an export from this slot: SCOPE (account), WALLET_ID for scope wallet. Copies it into output.exportRecord.
+    case 'requestExport':
+        var exportBody = { scope: arg('SCOPE', 'account') }
+        if (exportBody.scope === 'wallet') exportBody.wallet_id = arg('WALLET_ID', output.walletId)
+        output.exportRecord = expect(call('POST', 'exports', exportBody, token()), 202, 'requestExport').body.data
+        break
+
+    // Lists this slot's exports into output.exports (newest first).
+    case 'listExports':
+        output.exports = expect(call('GET', 'exports?limit=20', undefined, token()), 200, 'listExports').body.data
+        break
+
+    // Reads one export (ID or output.exportRecord.id) into output.exportRecord.
+    case 'getExport':
+        output.exportRecord = expect(call('GET', 'exports/' + arg('ID', output.exportRecord.id), undefined, token()), 200, 'getExport').body.data
+        break
+
+    // Reads the deletion plan into output.plan.
+    case 'deletionPlan':
+        output.plan = expect(call('GET', 'account/deletion-request', undefined, token()), 200, 'deletionPlan').body.data
+        break
+
+    // Schedules deletion with one chosen new owner: WALLET_ID (default output.walletId), MEMBER_ID (default output.memberUserId).
+    case 'requestDeletionWithChoice':
+        expect(call('POST', 'account/deletion-request', {
+            password: password,
+            successors: [{ wallet_id: arg('WALLET_ID', output.walletId), member_user_id: arg('MEMBER_ID', output.memberUserId) }],
+        }, token()), 200, 'requestDeletionWithChoice')
+        break
+
     // Creates a wallet from this slot: NAME, TYPE (cash), CURRENCY (EGP), OPENING in minor units (10000).
     // Copies it into output.wallet and its id into output.walletId.
     case 'createWallet':
@@ -725,6 +755,8 @@ switch (arg('ACTION')) {
             throw new Error('redeemCode: expected HTTP ' + arg('EXPECT', '200') + ', got ' + redeemed.status + ' ' + redeemed.body)
         }
         if (redeemed.status === 200) output.redeem = json(redeemed.body).data
+        break
+
     // Reports (spec 014). Moves money between two wallets of this slot: WALLET (source name) or WALLET_ID, COUNTER_WALLET (destination name)
     // or COUNTER_WALLET_ID, AMOUNT in minor units (1000), DATE (today), NOTE. Copies it into output.transaction.
     case 'createTransfer':
@@ -766,6 +798,45 @@ switch (arg('ACTION')) {
     // output.cashId, output.bankId and output.savingsId. Dates are today's.
     case 'seedReportsData':
         seedReportsData()
+        break
+
+    // Notification preferences (spec 017). Reads this slot's preferences into output.notificationPreferences, and its version, budget
+    // alerts switch and quiet hours as output.prefsVersion, output.prefsBudgetAlerts, output.prefsQuietStart and output.prefsQuietEnd.
+    case 'notificationPreferences':
+        var readPrefs = expect(call('GET', 'me/notification-preferences', undefined, token()), 200, 'notificationPreferences').body.data
+        output.notificationPreferences = readPrefs
+        output.prefsVersion = readPrefs.version
+        output.prefsBudgetAlerts = readPrefs.categories.budget_exceeded
+        output.prefsQuietStart = readPrefs.quiet_hours.start
+        output.prefsQuietEnd = readPrefs.quiet_hours.end
+        break
+
+    // Saves this slot's preferences the way a second phone would, so the app's next save meets a stale version (US3 conflict flow).
+    // Reads the stored ones first and sends every member with the stored version; BUDGET_ALERTS (true/false, default false) and
+    // QUIET_START / QUIET_END (HH:MM on a quarter hour, defaults 21:00 and 06:00) are changed. Copies the answer into output.notificationPreferences.
+    case 'saveNotificationPreferences':
+        var storedPrefs = expect(call('GET', 'me/notification-preferences', undefined, token()), 200, 'notificationPreferences').body.data
+        var savedPrefs = expect(call('PUT', 'me/notification-preferences', {
+            version: storedPrefs.version,
+            categories: {
+                recurring_due: storedPrefs.categories.recurring_due,
+                budget_exceeded: arg('BUDGET_ALERTS', 'false') === 'true',
+                sharing: storedPrefs.categories.sharing,
+                billing: storedPrefs.categories.billing,
+                export_ready: storedPrefs.categories.export_ready,
+                deletion_reminder: storedPrefs.categories.deletion_reminder,
+            },
+            quiet_hours: { enabled: true, start: arg('QUIET_START', '21:00'), end: arg('QUIET_END', '06:00') },
+        }, token()), 200, 'saveNotificationPreferences').body.data
+        output.notificationPreferences = savedPrefs
+        output.prefsVersion = savedPrefs.version
+        break
+
+    // Counts the push registrations of this slot's account that the backend holds, through the device list (a registration has no read
+    // endpoint, by design: the token is write-only). Used by the registration flow as a smoke check only: it asserts the session is current.
+    case 'expectCurrentSession':
+        output.currentSession = expect(call('GET', 'auth/sessions', undefined, token()), 200, 'listSessions').body.data.filter(function (s) { return s.current })[0]
+        if (!output.currentSession) throw new Error('expectCurrentSession: this slot has no current session')
         break
 
     default:

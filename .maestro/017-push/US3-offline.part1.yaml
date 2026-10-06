@@ -1,0 +1,11 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S5, part 1: Given the Notifications screen loaded online, When the connection is cut (part 2), Then a save keeps the edits and says it needs a connection; opening the screen offline says so (part 3).
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-notifications.yaml
+- tapOn:
+    id: "notifications.category.billing"

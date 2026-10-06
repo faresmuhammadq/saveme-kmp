@@ -1,0 +1,15 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a `subscription_ending` notification, tapped from the shade, opens its screen (plan.current); the tap only navigates.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/simulate-push.yaml
+    env: { TYPE: "subscription_ending" }
+- extendedWaitUntil:
+    visible:
+      id: "plan.current"
+    timeout: 20000

@@ -119,7 +119,9 @@ internal fun directionIn(draft: TransactionDraft, walletId: String): Direction {
 
 internal fun addedByOf(createdBy: String, accountId: String?, memberNames: Map<String, String?>): AddedBy = when {
     createdBy.isBlank() || createdBy == accountId -> AddedBy.You
-    else -> memberNames[createdBy]?.takeIf { it.isNotBlank() }?.let { AddedBy.Member(it) } ?: AddedBy.AnotherMember
+    else -> memberNames[createdBy]?.takeIf { it.isNotBlank() }?.let { AddedBy.Member(it) }
+        // A departed member's row is gone from the wallet's members; with none held at all we cannot tell (FR-033).
+        ?: if (memberNames.isNotEmpty() && createdBy !in memberNames) AddedBy.FormerMember else AddedBy.AnotherMember
 }
 
 internal fun counterpartOf(draft: TransactionDraft, viewedWalletId: String, walletNames: Map<String, String>): Counterpart? {

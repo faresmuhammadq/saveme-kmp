@@ -9,6 +9,13 @@ tags:
     env:
       ROW: "Delete account"
 - tapOn: "Continue"
+# Spec 016: the plan is read first; with no shared wallet the review follows, and its button leads to the password.
+- extendedWaitUntil:
+    visible:
+      id: "delete.review"
+    timeout: 20000
+- tapOn:
+    id: "delete.review.submit"
 - tapOn: "Password"
 - inputText: ${E2E_PASSWORD}
 - hideKeyboard

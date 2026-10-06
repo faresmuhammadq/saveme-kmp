@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US4-S3: Given two notifications in the shade, When the person signs out, Then the shade holds none of the app's.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- tapOn: "Account"
+- tapOn:
+    id: "account.devTools"
+- tapOn:
+    id: "devtools.simulatePush"
+- tapOn:
+    id: "simulatePush.post.subscription_ending"
+- tapOn:
+    id: "simulatePush.post.deletion_reminder"
+- back
+- back
+- tapOn: "Sign out"
+- tapOn: "Sign out"
+- extendedWaitUntil:
+    visible: "Create account"
+    timeout: 20000
+- runFlow: ../common/open-shade.yaml
+- assertNotVisible: "Test notification"

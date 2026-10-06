@@ -3,6 +3,7 @@ package com.fares.saveme.feature.account.data
 import app.cash.turbine.test
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.feature.account.AccountTestEnv
+import com.fares.saveme.feature.account.data.dto.DeletionRequestDto
 import com.fares.saveme.feature.account.data.dto.DeletionScheduleDto
 import com.fares.saveme.feature.account.domain.model.ActionOutcome
 import com.fares.saveme.feature.account.domain.model.DeletionOutcome
@@ -32,7 +33,7 @@ class DeletionContractTest {
             jsonResponse(200, """{"data":{"state":"pending_deletion","deletion_scheduled_for":"2026-10-28T10:00:00Z"},"meta":{}}""")
         }
         env.signedIn()
-        val schedule = assertIs<ApiResult.Success<DeletionScheduleDto>>(env.api.requestDeletion("secret")).value
+        val schedule = assertIs<ApiResult.Success<DeletionScheduleDto>>(env.api.requestDeletion(DeletionRequestDto("secret"))).value
         assertEquals("2026-10-28T10:00:00Z", schedule.deletionScheduledFor)
         val request = env.requests.single()
         assertEquals(HttpMethod.Post, request.method)

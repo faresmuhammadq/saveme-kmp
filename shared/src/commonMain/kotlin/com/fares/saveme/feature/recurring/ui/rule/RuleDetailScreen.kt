@@ -29,6 +29,7 @@ import com.fares.saveme.designsystem.component.formatMoney
 import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.recurring.domain.model.RecurringSyncState
+import com.fares.saveme.feature.recurring.domain.model.RuleAuthor
 import com.fares.saveme.feature.recurring.ui.OccurrenceListRow
 import com.fares.saveme.feature.recurring.ui.RecurringBackBar
 import com.fares.saveme.feature.recurring.ui.RuleListRow
@@ -49,6 +50,8 @@ import saveme.shared.generated.resources.recurring_action_end
 import saveme.shared.generated.resources.recurring_action_pause
 import saveme.shared.generated.resources.recurring_action_resume
 import saveme.shared.generated.resources.recurring_author
+import saveme.shared.generated.resources.recurring_author_former
+import saveme.shared.generated.resources.recurring_author_other
 import saveme.shared.generated.resources.recurring_auto_off
 import saveme.shared.generated.resources.recurring_auto_on
 import saveme.shared.generated.resources.recurring_catch_up_done
@@ -120,7 +123,12 @@ private fun Summary(state: RuleDetailState) {
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xxs)) {
         cadenceEndText(draft.endDate, draft.occurrenceCount)?.let { Line(it) }
         Line(stringResource(if (draft.autoConfirm) Res.string.recurring_auto_on else Res.string.recurring_auto_off))
-        view.authorName?.let { Line(stringResource(Res.string.recurring_author, it)) }
+        when (val author = view.author) {
+            RuleAuthor.You -> Unit
+            is RuleAuthor.Member -> AuthorLine(stringResource(Res.string.recurring_author, author.name))
+            RuleAuthor.AnotherMember -> AuthorLine(stringResource(Res.string.recurring_author_other))
+            RuleAuthor.FormerMember -> AuthorLine(stringResource(Res.string.recurring_author_former))
+        }
         view.walletName?.let { Line(it) }
         when (state.readOnlyReason) {
             ReadOnlyReason.Unknown -> Line(stringResource(Res.string.recurring_readonly_unknown))
@@ -129,6 +137,11 @@ private fun Summary(state: RuleDetailState) {
             ReadOnlyReason.None -> Unit
         }
     }
+}
+
+@Composable
+private fun AuthorLine(text: String) {
+    Text(text, style = AppTheme.type.body, color = AppTheme.colors.ink2, modifier = Modifier.testTag("ruleDetail.author"))
 }
 
 @Composable

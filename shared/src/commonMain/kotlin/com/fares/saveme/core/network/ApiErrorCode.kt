@@ -53,6 +53,9 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
 
     /** 409 when an Idempotency-Key was reused with a different request (spec 015, FR-028). */
     IDEMPOTENCY_KEY_REUSED(RetryClass.Never),
+
+    /** 409 on asking for an export while one is queued or running; `current` carries it (spec 016, FR-036). Not retried by this feature. */
+    EXPORT_IN_PROGRESS(RetryClass.Automatic),
     UNKNOWN(RetryClass.Never);
 
     companion object {

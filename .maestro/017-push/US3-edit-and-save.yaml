@@ -1,0 +1,36 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S1/S2: Given default preferences, When the person turns Budget alerts off, sets quiet hours 23:00 to 07:00 and saves once, Then the saved values show again after reopening and the server holds them.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-notifications.yaml
+- tapOn:
+    id: "notifications.category.budget_exceeded"
+- tapOn:
+    id: "notifications.quiet.start"
+- tapOn: "23:00"
+- tapOn:
+    id: "notifications.quiet.end"
+- tapOn: "07:00"
+- tapOn:
+    id: "notifications.save"
+- extendedWaitUntil:
+    visible: "Saved"
+    timeout: 15000
+- back
+- back
+- runFlow: ../common/open-notifications.yaml
+- assertVisible: "23:00"
+- assertVisible: "07:00"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: notificationPreferences, SLOT: B }
+- assertTrue: ${output.prefsBudgetAlerts == false}
+- assertTrue: ${output.prefsQuietStart == '23:00'}
+- assertTrue: ${output.prefsQuietEnd == '07:00'}

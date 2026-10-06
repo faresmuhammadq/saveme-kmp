@@ -16,6 +16,8 @@ data class HomeState(
     val emailVerified: Boolean = true,
     val deletionCancelledNotice: Boolean = false,
     val deletionPendingOn: Instant? = null,
+    /** The present minute (a tick), so "being deleted" is re-evaluated without any write (spec 016 FR-032). */
+    val now: Instant = Instant.fromEpochMilliseconds(0),
     val cancellingDeletion: Boolean = false,
     val confirmSignOutVisible: Boolean = false,
     val signingOut: Boolean = false,
@@ -31,6 +33,9 @@ data class HomeState(
     /** An invitation link is held in memory for this app session: the card reopens it (spec 013 FR-013). */
     val invitationHeld: Boolean = false,
 )
+
+/** Whether the scheduled deletion date has passed while the account is still pending (spec 016 FR-032). */
+val HomeState.beingDeleted: Boolean get() = deletionPendingOn?.let { it <= now } == true
 
 /** What cancelling a pending deletion came to, as far as Home needs to know. */
 enum class CancelDeletionResult { Done, Offline, Failed }
@@ -80,6 +85,7 @@ sealed interface HomeChange {
     data class Due(val count: Int, val first: DueGlimpse?) : HomeChange
     data class Budgets(val budgets: List<BudgetGlimpse>) : HomeChange
     data class InvitationHeld(val held: Boolean) : HomeChange
+    data class Tick(val now: Instant) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -99,4 +105,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.Due -> state.copy(dueCount = change.count, firstDue = change.first)
     is HomeChange.Budgets -> state.copy(budgets = change.budgets)
     is HomeChange.InvitationHeld -> state.copy(invitationHeld = change.held)
+    is HomeChange.Tick -> state.copy(now = change.now)
 }

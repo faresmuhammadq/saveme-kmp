@@ -1,0 +1,21 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a `budget_exceeded` notification, tapped from the shade, opens its screen (budgetEditor.save); the tap only navigates.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { AMOUNT: "600000" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/simulate-push.yaml
+    env: { TYPE: "budget_exceeded" }
+- extendedWaitUntil:
+    visible:
+      id: "budgetEditor.save"
+    timeout: 20000

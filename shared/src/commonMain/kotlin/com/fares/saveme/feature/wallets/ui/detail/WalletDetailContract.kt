@@ -46,6 +46,9 @@ data class WalletDetailState(
 
     val candidates: List<Member> get() = members.filter { !it.isYou }
 
+    /** Every role may export a wallet the server already has (a wallet made on this phone has version 0, spec 016 FR-002). */
+    val exportable: Boolean get() = wallet != null && wallet.server.version > 0
+
     /** Offered to an owner or editor of an active wallet (spec 008 FR-008). */
     val canAddTransaction: Boolean
         get() = wallet != null && !wallet.archived &&
@@ -63,6 +66,7 @@ sealed interface WalletDetailIntent {
     data object ReportClicked : WalletDetailIntent
     data object MembersClicked : WalletDetailIntent
     data object ActivityClicked : WalletDetailIntent
+    data object ExportClicked : WalletDetailIntent
     data object JoiningRetryClicked : WalletDetailIntent
     data object AddTransactionClicked : WalletDetailIntent
     data object EditClicked : WalletDetailIntent
@@ -88,6 +92,7 @@ sealed interface WalletDetailEffect {
     data class OpenReport(val walletId: String) : WalletDetailEffect
     data class NavigateMembers(val walletId: String) : WalletDetailEffect
     data class NavigateActivity(val walletId: String) : WalletDetailEffect
+    data class OpenExport(val walletId: String) : WalletDetailEffect
     data class OpenAddTransaction(val walletId: String) : WalletDetailEffect
     data class OpenEditor(val id: String) : WalletDetailEffect
     data object NavigateBack : WalletDetailEffect

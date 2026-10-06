@@ -1,0 +1,81 @@
+# deferred: E2E on owner's device
+# US4-1…7: Given an owner of two shared wallets (A: one viewer; B: an editor and a viewer), When they delete their account choosing the viewer of B, Then the request carries that choice and the scheduled step names the owners.
+# e2e-seed: verified-user+plus+shared-owner
+# The runner provides E2E_PARTNER_* (viewer of A, editor of B) and E2E_PARTNER2_* (viewer of B), both on Plus.
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: viewer }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Bravo", OPENING: "20000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: D, EMAIL: "${E2E_PARTNER2_EMAIL}", PASSWORD: "${E2E_PARTNER2_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: viewer }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: D }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-account.yaml
+- scrollUntilVisible:
+    element:
+      text: "Delete account"
+- tapOn: "Delete account"
+- assertVisible:
+    id: "delete.explain.play"
+- tapOn:
+    id: "delete.continue"
+- extendedWaitUntil:
+    visible:
+      id: "delete.owners"
+    timeout: 20000
+- assertVisible: ".*will become the owner.*"
+- assertVisible:
+    id: "delete.owners.choice.${output.walletId}.${output.memberUserId}"
+- tapOn:
+    id: "delete.owners.choice.${output.walletId}.${output.memberUserId}"
+- tapOn:
+    id: "delete.owners.next"
+- extendedWaitUntil:
+    visible:
+      id: "delete.review"
+    timeout: 10000
+- tapOn:
+    id: "delete.review.submit"
+- tapOn: "Password"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn:
+    id: "deleteAccount.confirm"
+- extendedWaitUntil:
+    visible:
+      id: "delete.scheduled.owners"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: deletionPlan, SLOT: B }
+- assertTrue: ${output.plan.successors.some(function (s) { return s.reason == 'chosen' })}
