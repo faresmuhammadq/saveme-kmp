@@ -24,6 +24,10 @@ class OccurrenceRepository(
 
     fun observeForRule(ruleId: String): Flow<List<OccurrenceEntity>> = occurrences.observeForRule(ruleId)
 
+    /** The rows reports read (spec 014 R-05): still scheduled in the range for the wallets, or named by a waiting change. */
+    fun observeScheduledFor(accountId: String, walletIds: Set<String>, from: String, to: String, waitingIds: List<String>): Flow<List<OccurrenceEntity>> =
+        occurrences.observeScheduledFor(accountId, walletIds.toList(), from, to, waitingIds)
+
     fun observe(id: String): Flow<OccurrenceEntity?> = occurrences.observe(id)
 
     suspend fun get(id: String): OccurrenceEntity? = occurrences.get(id)

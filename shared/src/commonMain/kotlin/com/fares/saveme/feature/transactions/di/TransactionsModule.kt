@@ -22,6 +22,8 @@ import com.fares.saveme.feature.transactions.domain.DefaultTransactionsService
 import com.fares.saveme.feature.transactions.domain.DefaultOccurrenceTransactions
 import com.fares.saveme.feature.transactions.domain.OccurrenceTransactions
 import com.fares.saveme.feature.transactions.domain.OwnSpending
+import com.fares.saveme.feature.transactions.domain.ReportLedger
+import com.fares.saveme.feature.transactions.domain.TransactionReportLedger
 import com.fares.saveme.feature.transactions.domain.TransactionOwnSpending
 import com.fares.saveme.feature.transactions.domain.NoRecurringLinks
 import com.fares.saveme.feature.transactions.domain.RecurringLinks
@@ -111,6 +113,15 @@ val transactionsModule = module {
             accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
             memberWalletIds = { get<WalletsService>().observeList().map { list -> (list.active + list.archived).map { it.id }.toSet() } },
             ruleAuthorOf = { ruleId -> get<RecurringLinks>().ruleAuthorOf(ruleId) },
+        )
+    }
+    // What reports read (spec 014 R-03): the effective lines of some wallets in a range and the balance effect before it.
+    single<ReportLedger> {
+        val sessions = get<SessionManager>()
+        TransactionReportLedger(
+            engine = { get<SyncEngine>() },
+            repository = get(),
+            accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
         )
     }
     // One of the sources C5 unions (spec 010 FR-032): bound as a secondary type so recurring's can sit beside it.

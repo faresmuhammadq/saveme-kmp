@@ -1,0 +1,28 @@
+# deferred: E2E on owner's device
+# US6: Given three EGP wallets and one USD wallet, When Reports opens in EGP, Then it says "Not included: Savings (USD)"; "See USD report" switches to the USD wallet's figures and names the EGP wallets as not included.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.excluded"
+      text: ".*Not included: Savings \\(USD\\).*"
+    timeout: 60000
+- tapOn:
+    id: "reports.excluded.see.USD"
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.balance_end"
+      text: ".*USD 900.00.*"
+    timeout: 30000
+- assertVisible:
+    id: "reports.excluded"
+    text: ".*Bank \\(EGP\\).*Cash \\(EGP\\).*"

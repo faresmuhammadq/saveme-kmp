@@ -60,6 +60,7 @@ data class WalletDetailState(
 sealed interface WalletDetailIntent {
     data object TransactionsClicked : WalletDetailIntent
     data object RecurringClicked : WalletDetailIntent
+    data object ReportClicked : WalletDetailIntent
     data object MembersClicked : WalletDetailIntent
     data object ActivityClicked : WalletDetailIntent
     data object JoiningRetryClicked : WalletDetailIntent
@@ -84,6 +85,7 @@ sealed interface WalletDetailIntent {
 sealed interface WalletDetailEffect {
     data class OpenTransactions(val walletId: String) : WalletDetailEffect
     data class OpenRecurring(val walletId: String) : WalletDetailEffect
+    data class OpenReport(val walletId: String) : WalletDetailEffect
     data class NavigateMembers(val walletId: String) : WalletDetailEffect
     data class NavigateActivity(val walletId: String) : WalletDetailEffect
     data class OpenAddTransaction(val walletId: String) : WalletDetailEffect

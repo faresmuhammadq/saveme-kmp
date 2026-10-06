@@ -1,0 +1,18 @@
+# deferred: E2E on owner's device
+# US2-S2/S4: Given a 200.00 expense recorded offline and counted, When the phone is back online and the report is pulled, Then the note goes, nothing jumps and the figures equal the server's. Part 1: online, the seeded report.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*5,500.00.*"
+    timeout: 60000

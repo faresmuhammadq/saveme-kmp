@@ -104,6 +104,28 @@ data object BudgetsKey : NavKey
 @Serializable
 data class BudgetEditorKey(val budgetId: String? = null) : NavKey
 
+// Reports (spec 014).
+
+/** The Reports screen: one wallet's report, or every wallet on the phone in one currency when [walletId] is null. */
+@Serializable
+data class ReportsKey(val walletId: String? = null) : NavKey
+
+/**
+ * Spending by category for the range, currency and scheduled switch the Reports screen showed ([kind] is `expense` or
+ * `income`). The dates never print (P-09.2).
+ */
+@Serializable
+data class ReportCategoriesKey(
+    val walletId: String?,
+    val from: String,
+    val to: String,
+    val currency: String,
+    val includeScheduled: Boolean,
+    val kind: String,
+) : NavKey {
+    override fun toString() = "ReportCategoriesKey(walletId=$walletId, currency=$currency, includeScheduled=$includeScheduled, kind=$kind)"
+}
+
 // Sharing (spec 013). Keys carrying an invitation secret never print it (FR-010).
 
 /** One wallet's members and pending invitations. */

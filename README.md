@@ -51,7 +51,7 @@ database, `saveme.db`, which screens read from (constitution P-04). The schema i
 `shared/schemas/` on every build — commit changes to it, and add a Room migration whenever the
 version in `AppDatabase` goes up (now v10: invitations, and every wallet's feed place is forgotten once so invitations created before the update are read; v9 added budgets and the progress figures read for them; the person's own feed place is forgotten once
 so budgets created earlier are read; v8 added an integer feed position stored beside each place; v7 added recurring rules and
-occurrences). Sign-out clears every table. Budgets are computed on the phone from its own transactions and shown with the server's figures once
+occurrences). Sign-out clears every table. Reports (summary, spending by category, trend) are computed on the phone from its own rows with waiting changes included; no figure is stored and no table was added, so the version stays v10. Budgets are computed on the phone from its own transactions and shown with the server's figures once
 nothing has changed since they were read. Sync reads only what changed since the last position it stored per scope (the
 person's own, and one per wallet), and sends waiting changes in batches of up to 50. A refresh first asks the server where
 the followed wallets stand (`GET /sync/wallets/heads`) and reads only the wallets that moved.

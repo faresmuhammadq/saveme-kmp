@@ -67,7 +67,10 @@ class BudgetsLayeringTest {
     @Test
     fun noFeatureOtherThanBudgetsImportsBudgetsAndCoreImportsOnlyItsDatabaseRegistry() {
         feature.listFiles().orEmpty().filter { it.isDirectory && it.name != "budgets" }.forEach { dir ->
-            val offenders = imports(dir).filter { (_, i) -> i.startsWith(base + "budgets") }
+            // Reports (spec 014) reuses budgets' pure period derivation and day ticker through budgets' domain, so the two can never
+            // disagree on a Budget Period (research R-07); nothing else of budgets, and no other feature.
+            val allowed = if (dir.name == "reports") listOf("com.fares.saveme.feature.budgets.domain.BudgetPeriods", "com.fares.saveme.feature.budgets.domain.DayTicker") else emptyList()
+            val offenders = imports(dir).filter { (_, i) -> i.startsWith(base + "budgets") && i !in allowed }
             assertTrue(offenders.isEmpty(), "${dir.name} imports budgets: $offenders")
         }
         // The Room registry (core.database) lists every feature's entities by design; nothing else in core may.

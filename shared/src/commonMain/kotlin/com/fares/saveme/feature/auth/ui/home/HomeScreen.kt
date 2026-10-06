@@ -63,6 +63,7 @@ import saveme.shared.generated.resources.budgets_home_row
 import saveme.shared.generated.resources.budgets_home_see_all
 import saveme.shared.generated.resources.budgets_limit_line
 import saveme.shared.generated.resources.budgets_status_waiting
+import saveme.shared.generated.resources.reports_home_row
 import saveme.shared.generated.resources.budgets_unknown_progress
 import saveme.shared.generated.resources.home_invitation
 import saveme.shared.generated.resources.home_invitation_open
@@ -156,6 +157,12 @@ fun HomeScreen(
             modifier = Modifier.testTag("home.budgets"),
             trailing = ListTrailing.Chevron,
             onClick = { onIntent(HomeIntent.BudgetsClicked) },
+        )
+        AppListItem(
+            headline = stringResource(Res.string.reports_home_row),
+            modifier = Modifier.testTag("home.reports"),
+            trailing = ListTrailing.Chevron,
+            onClick = { onIntent(HomeIntent.ReportsClicked) },
         )
         Text(stringResource(Res.string.home_signed_in_as, state.email), style = AppTheme.type.body, color = AppTheme.colors.ink)
         DestructiveButton(stringResource(Res.string.sign_out_action), { onIntent(HomeIntent.SignOutClicked) })

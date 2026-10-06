@@ -1,0 +1,36 @@
+# deferred: E2E on owner's device
+# US4: Given the seeded data in this period only, When the trend shows 3 periods, Then the table lists each period oldest first with the earlier ones at zero; the 6 and 12 choices change the count.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- scrollUntilVisible:
+    element:
+      id: "reports.trend.length"
+- tapOn:
+    id: "reports.trend.length.3"
+- extendedWaitUntil:
+    visible:
+      id: "reports.trend.row.2"
+    timeout: 30000
+- assertNotVisible:
+    id: "reports.trend.row.3"
+- assertVisible:
+    id: "reports.trend.row.2"
+    text: ".*10,000.00.*5,500.00.*4,500.00.*"
+- assertVisible:
+    id: "reports.trend.row.0"
+    text: ".*0.00.*"
+- tapOn:
+    id: "reports.trend.length.12"
+- extendedWaitUntil:
+    visible:
+      id: "reports.trend.row.11"
+    timeout: 30000

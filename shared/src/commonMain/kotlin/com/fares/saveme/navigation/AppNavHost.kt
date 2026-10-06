@@ -63,6 +63,10 @@ import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorEffect
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorRoute
 import com.fares.saveme.feature.transactions.ui.list.TransactionsEffect
 import com.fares.saveme.feature.transactions.ui.list.TransactionsRoute
+import com.fares.saveme.feature.reports.ui.categories.ReportCategoriesEffect
+import com.fares.saveme.feature.reports.ui.categories.ReportCategoriesRoute
+import com.fares.saveme.feature.reports.ui.reports.ReportsEffect
+import com.fares.saveme.feature.reports.ui.reports.ReportsRoute
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailEffect
 import com.fares.saveme.feature.wallets.ui.detail.WalletDetailRoute
 import com.fares.saveme.feature.recurring.ui.editor.RuleEditorEffect
@@ -255,6 +259,7 @@ fun AppNavHost(
                         HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
                         HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
                         HomeEffect.NavigateBudgets -> appStack.add(BudgetsKey)
+                        HomeEffect.NavigateReports -> appStack.add(ReportsKey())
                         HomeEffect.OpenInvitation -> heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
                         is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
                         is HomeEffect.ShowMessage -> Unit // shown by the route
@@ -348,6 +353,7 @@ fun AppNavHost(
                             is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
                             is WalletDetailEffect.NavigateMembers -> appStack.add(WalletMembersKey(effect.walletId))
                             is WalletDetailEffect.NavigateActivity -> appStack.add(WalletActivityKey(effect.walletId))
+                            is WalletDetailEffect.OpenReport -> appStack.add(ReportsKey(effect.walletId))
                             is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
                             WalletDetailEffect.NavigateBack -> appStack.pop()
                             is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
@@ -452,6 +458,38 @@ fun AppNavHost(
                         }
                     },
                     onRequireVerification = { emailNotVerifiedVisible = true },
+                )
+            }
+            entry<ReportsKey> { key ->
+                ReportsRoute(
+                    walletId = key.walletId,
+                    onEffect = { effect ->
+                        when (effect) {
+                            is ReportsEffect.OpenCategories -> appStack.add(
+                                ReportCategoriesKey(
+                                    walletId = effect.args.walletId,
+                                    from = effect.args.from.toString(),
+                                    to = effect.args.to.toString(),
+                                    currency = effect.args.currency,
+                                    includeScheduled = effect.args.includeScheduled,
+                                    kind = effect.args.kind.wire,
+                                ),
+                            )
+                            ReportsEffect.OpenWallets -> appStack.add(WalletsKey)
+                            ReportsEffect.Close -> appStack.pop()
+                        }
+                    },
+                )
+            }
+            entry<ReportCategoriesKey> { key ->
+                ReportCategoriesRoute(
+                    walletId = key.walletId,
+                    kind = key.kind,
+                    onEffect = { effect ->
+                        when (effect) {
+                            ReportCategoriesEffect.Close -> appStack.pop()
+                        }
+                    },
                 )
             }
             entry<BudgetEditorKey> { key ->

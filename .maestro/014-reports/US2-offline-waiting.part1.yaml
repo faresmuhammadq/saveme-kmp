@@ -1,0 +1,20 @@
+# deferred: E2E on owner's device
+# US2 (the brief's second checkpoint): Given the seeded report shown, When the phone goes offline and a 200.00 Groceries expense is recorded, Then Reports counts it at once (expenses 5,700.00), says "Includes changes waiting to sync" and "You're offline · Updated". Part 1: online, the report shows the seeded figures.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+    timeout: 60000
+- assertVisible:
+    id: "reports.summary.expenses"
+    text: ".*5,500.00.*"

@@ -65,6 +65,17 @@ class FakeOccurrenceDao : OccurrenceDao {
         rows.map { all -> sorted(all.values.filter { it.recurringRuleId == ruleId }) }
 
     override fun observe(id: String): Flow<OccurrenceEntity?> = rows.map { it[id] }
+
+    override fun observeScheduledFor(accountId: String, walletIds: List<String>, from: String, to: String, waitingIds: List<String>): Flow<List<OccurrenceEntity>> =
+        rows.map { all ->
+            sorted(
+                all.values.filter {
+                    it.accountId == accountId && (it.walletId in walletIds || (it.counterWalletId != null && it.counterWalletId in walletIds)) &&
+                        ((it.status == "scheduled" && it.date >= from && it.date <= to) || it.id in waitingIds)
+                },
+            )
+        }
+
     override suspend fun get(id: String) = rows.value[id]
     override suspend fun getByTransactionId(transactionId: String) = rows.value.values.filter { it.transactionId == transactionId }
     override suspend fun getForRule(ruleId: String) = rows.value.values.filter { it.recurringRuleId == ruleId }

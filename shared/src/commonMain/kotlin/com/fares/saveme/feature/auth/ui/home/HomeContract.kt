@@ -49,6 +49,7 @@ sealed interface HomeIntent {
     data object SyncNowClicked : HomeIntent
     data object DueClicked : HomeIntent
     data object BudgetsClicked : HomeIntent
+    data object ReportsClicked : HomeIntent
     data class BudgetClicked(val id: String) : HomeIntent
     data object InvitationClicked : HomeIntent
 }
@@ -60,6 +61,7 @@ sealed interface HomeEffect {
     data object NavigateAddTransaction : HomeEffect
     data object OpenDue : HomeEffect
     data object NavigateBudgets : HomeEffect
+    data object NavigateReports : HomeEffect
     data class OpenBudget(val id: String) : HomeEffect
     data object OpenInvitation : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect

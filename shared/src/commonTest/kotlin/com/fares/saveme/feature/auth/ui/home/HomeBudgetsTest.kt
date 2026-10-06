@@ -43,6 +43,16 @@ class HomeBudgetsTest {
     }
 
     @Test
+    fun theReportsRowOpensTheReportsScreen() = runMviTest {
+        // Spec 014 FR-021: a navigation-only row after "Budgets"; every role and plan.
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
+        vm.effects.test {
+            vm.onIntent(HomeIntent.ReportsClicked)
+            assertEquals(HomeEffect.NavigateReports, awaitItem())
+        }
+    }
+
+    @Test
     fun aBudgetOnTheCardOpensItsEditor() = runMviTest {
         val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
         vm.effects.test {
