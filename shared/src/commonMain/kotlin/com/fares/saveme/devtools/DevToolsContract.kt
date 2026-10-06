@@ -6,11 +6,13 @@ data object DevToolsState
 sealed interface DevToolsIntent {
     data object ComponentsClicked : DevToolsIntent
     data object PasteLinkClicked : DevToolsIntent
+    data object SimulatePushClicked : DevToolsIntent
     data object Back : DevToolsIntent
 }
 
 sealed interface DevToolsEffect {
     data object NavigateCatalog : DevToolsEffect
     data object NavigatePasteLink : DevToolsEffect
+    data object NavigateSimulatePush : DevToolsEffect
     data object NavigateBack : DevToolsEffect
 }

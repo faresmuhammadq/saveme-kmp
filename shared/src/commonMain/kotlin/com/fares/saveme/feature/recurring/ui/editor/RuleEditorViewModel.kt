@@ -269,6 +269,7 @@ class RuleEditorViewModel(
                     when (result) {
                         is RuleResult.Created, RuleResult.Saved -> {
                             leaving = true
+                            if (result is RuleResult.Created) sendEffect(RuleEditorEffect.Created)
                             sendEffect(RuleEditorEffect.Close)
                         }
                         RuleResult.NotVerified -> sendEffect(RuleEditorEffect.RequireVerification)

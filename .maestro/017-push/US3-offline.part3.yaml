@@ -1,0 +1,12 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3-S5, part 3: still offline, reopening shows the not-loaded message.
+# e2e-between: network-on
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- back
+- back
+- runFlow: ../common/open-notifications.yaml
+- assertVisible:
+    id: "notifications.save"

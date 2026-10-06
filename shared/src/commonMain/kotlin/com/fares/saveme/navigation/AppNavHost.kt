@@ -48,6 +48,23 @@ import com.fares.saveme.feature.billing.ui.plan.PlanEffect
 import com.fares.saveme.feature.billing.ui.redeem.RedeemEffect
 import com.fares.saveme.feature.billing.ui.redeem.RedeemRoute
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorEffect
+import com.fares.saveme.devtools.push.SimulatePushEffect
+import com.fares.saveme.devtools.push.SimulatePushRoute
+import com.fares.saveme.feature.notifications.domain.NotificationPromptGate
+import com.fares.saveme.feature.notifications.domain.PushCoordinator
+import com.fares.saveme.feature.notifications.domain.PushPayloadParser
+import com.fares.saveme.feature.notifications.domain.PushRouter
+import com.fares.saveme.feature.notifications.ui.PermissionStatus
+import com.fares.saveme.feature.notifications.ui.invitation.InvitationNoticeEffect
+import com.fares.saveme.feature.notifications.ui.invitation.InvitationNoticeRoute
+import com.fares.saveme.feature.notifications.ui.open.NotificationOpenEffect
+import com.fares.saveme.feature.notifications.ui.open.NotificationOpenRoute
+import com.fares.saveme.feature.notifications.ui.prompt.NotificationPromptSheet
+import com.fares.saveme.feature.notifications.ui.rememberNotificationPermissionRequester
+import com.fares.saveme.feature.notifications.ui.settings.NotificationSettingsEffect
+import com.fares.saveme.feature.notifications.ui.settings.NotificationSettingsRoute
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
 import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
 import com.fares.saveme.feature.budgets.ui.list.BudgetsRoute
@@ -128,6 +145,9 @@ fun AppNavHost(
     linkParser: AuthLinkParser = koinInject(),
     invitationParser: InvitationLinkParser = koinInject(),
     heldInvitation: HeldInvitation = koinInject(),
+    pushTaps: PushTapBus = koinInject(),
+    promptGate: NotificationPromptGate = koinInject(),
+    pushCoordinator: PushCoordinator = koinInject(),
 ) {
     val authState by sessionManager.state.collectAsStateWithLifecycle()
     val authStack = remember { mutableStateListOf<NavKey>(EntryKey) }
@@ -181,6 +201,18 @@ fun AppNavHost(
         }
     }
 
+    // Taps on notifications (spec 017 R-10). Declared after the transition effect, like the mail links. A tap while nobody is
+    // signed in is forgotten, not held (FR-029); one while the update screen blocks is dropped (FR-033); a tap only navigates.
+    var tapCount by remember { mutableStateOf(0L) }
+    LaunchedEffect(signedIn, authState == AuthState.Unknown) {
+        if (sessionManager.state.value == AuthState.Unknown) return@LaunchedEffect
+        pushTaps.taps.collect { data ->
+            pushTaps.consume()
+            val route = PushRouter.route(PushPayloadParser.parse(data))
+            appStack.openPushTap(route, sessionManager.state.value is AuthState.SignedIn) { ++tapCount }
+        }
+    }
+
     // Any call can answer 426; the blocking screen goes on whichever stack is showing (FR-018).
     LaunchedEffect(apiEvents) {
         apiEvents.events.filterIsInstance<ApiEvent.UpdateRequired>().collect { event ->
@@ -199,6 +231,26 @@ fun AppNavHost(
     }
     if (emailNotVerifiedVisible && signedIn) {
         EmailNotVerifiedSheet(onDismiss = { emailNotVerifiedVisible = false })
+    }
+
+    // The notification explanation: once per installation, after a moment where it clearly helps, never over another sheet (FR-011).
+    var promptVisible by remember { mutableStateOf(false) }
+    val permissionRequester = rememberNotificationPermissionRequester()
+    val scope = rememberCoroutineScope()
+    val offerPrompt: () -> Unit = {
+        val askable = permissionRequester.status() == PermissionStatus.Askable
+        scope.launch { if (promptGate.offerIfDue(askable, otherSheetShowing = emailNotVerifiedVisible || promptVisible)) promptVisible = true }
+    }
+
+    if (promptVisible && signedIn) {
+        NotificationPromptSheet(
+            onTurnOn = {
+                promptVisible = false
+                // The person's own tap on "Turn on": the only place besides the Notifications screen that may raise the dialog (FR-010).
+                permissionRequester.request { granted -> if (granted) pushCoordinator.onPermissionChanged() }
+            },
+            onNotNow = { promptVisible = false },
+        )
     }
 
     if (authState == AuthState.Unknown) {
@@ -282,6 +334,8 @@ fun AppNavHost(
                                 AccountDestination.ChangePassword -> ChangePasswordKey
                                 AccountDestination.DeleteAccount -> DeleteAccountKey
                                 AccountDestination.Plan -> PlanKey
+                                AccountDestination.Notifications -> NotificationSettingsKey
+                                AccountDestination.DevTools -> DevToolsKey
                                 AccountDestination.Exports -> ExportsKey
                             },
                         )
@@ -539,6 +593,7 @@ fun AppNavHost(
                 BudgetEditorRoute(
                     budgetId = key.budgetId,
                     onEffect = { effect ->
+                        if (isPromptMoment(key, effect)) offerPrompt()
                         when (effect) {
                             BudgetEditorEffect.Saved, BudgetEditorEffect.NavigateBack -> appStack.pop()
                             is BudgetEditorEffect.ShowMessage, BudgetEditorEffect.RequireVerification -> Unit // shown by the route
@@ -584,8 +639,10 @@ fun AppNavHost(
                     fromDate = key.fromDate,
                     prefill = key.prefill,
                     onEffect = { effect ->
+                        if (isPromptMoment(key, effect)) offerPrompt()
                         when (effect) {
                             RuleEditorEffect.Close -> appStack.pop()
+                            RuleEditorEffect.Created -> Unit // only marks the moment above
                             is RuleEditorEffect.OpenFromDate -> {
                                 appStack.pop()
                                 appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = true))
@@ -646,6 +703,7 @@ fun AppNavHost(
                 InvitationRoute(
                     token = key.token,
                     onEffect = { effect ->
+                        if (isPromptMoment(key, effect)) offerPrompt()
                         when (effect) {
                             is InvitationEffect.OpenWallet -> {
                                 if (appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
@@ -669,12 +727,50 @@ fun AppNavHost(
                     },
                 )
             }
+            entry<NotificationSettingsKey> {
+                NotificationSettingsRoute(onEffect = { effect ->
+                    when (effect) {
+                        NotificationSettingsEffect.NavigateBack -> appStack.pop()
+                        else -> Unit // handled by the route
+                    }
+                })
+            }
+            entry<NotificationOpenKey> { key ->
+                NotificationOpenRoute(route = key.route, nonce = key.nonce, onEffect = { effect ->
+                    when (effect) {
+                        NotificationOpenEffect.Close -> appStack.pop()
+                        // The target takes this screen's place, so Back returns to where the person was (FR-032).
+                        is NotificationOpenEffect.Replace -> {
+                            val at = appStack.indexOf(key)
+                            if (at >= 0) {
+                                appStack.removeAt(at)
+                                appStack.openPushTarget(effect.target)
+                            }
+                        }
+                    }
+                })
+            }
+            entry<InvitationNoticeKey> {
+                InvitationNoticeRoute(onEffect = { effect ->
+                    when (effect) {
+                        InvitationNoticeEffect.Close -> appStack.pop()
+                    }
+                })
+            }
+            entry<SimulatePushKey> {
+                SimulatePushRoute(onEffect = { effect ->
+                    when (effect) {
+                        SimulatePushEffect.NavigateBack -> activeStack.pop()
+                    }
+                })
+            }
             entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
             entry<DevToolsKey> {
                 DevToolsRoute(onEffect = { effect ->
                     when (effect) {
                         DevToolsEffect.NavigateCatalog -> activeStack.add(CatalogKey)
                         DevToolsEffect.NavigatePasteLink -> activeStack.add(PasteLinkKey)
+                        DevToolsEffect.NavigateSimulatePush -> activeStack.add(SimulatePushKey)
                         DevToolsEffect.NavigateBack -> activeStack.pop()
                     }
                 })

@@ -1,0 +1,15 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US1-S3: Given notifications allowed on the phone, When the person signs in, Then the phone registers for its session; the backend keeps the token write-only, so the check is that the session is current and the app is signed in with the Notifications row present.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-notifications.yaml
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: expectCurrentSession, SLOT: B }

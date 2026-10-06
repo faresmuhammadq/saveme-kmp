@@ -1,7 +1,9 @@
 package com.fares.saveme.feature.account.di
 
 import com.fares.saveme.core.database.AppDatabase
+import com.fares.saveme.core.config.AppConfig
 import com.fares.saveme.core.platform.ClientInfo
+import com.fares.saveme.feature.notifications.domain.PushTokenProvider
 import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
 import com.fares.saveme.feature.account.data.ExportApi
@@ -148,6 +150,8 @@ val accountModule = module {
             signOut = { signOut() },
             syncStatus = engine.status,
             syncNow = { engine.syncNow() },
+            notificationsAvailable = get<PushTokenProvider>().isAvailable,
+            devToolsAvailable = get<AppConfig>().isDebugTools,
         )
     }
     viewModel {

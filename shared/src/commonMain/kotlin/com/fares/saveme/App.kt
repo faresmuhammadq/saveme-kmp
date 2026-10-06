@@ -12,6 +12,8 @@ import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
 import com.fares.saveme.feature.billing.domain.BillingSyncCoordinator
 import com.fares.saveme.feature.budgets.domain.BudgetsSyncCoordinator
 import com.fares.saveme.feature.categories.domain.CategoriesSyncCoordinator
+import com.fares.saveme.feature.notifications.domain.PushCoordinator
+import com.fares.saveme.feature.notifications.ui.ChannelsEffect
 import com.fares.saveme.feature.transactions.domain.TransactionsSyncCoordinator
 import com.fares.saveme.feature.wallets.domain.WalletsSyncCoordinator
 import com.fares.saveme.navigation.AppNavHost
@@ -26,6 +28,7 @@ fun App(
     categoriesSync: CategoriesSyncCoordinator = koinInject(),
     transactionsSync: TransactionsSyncCoordinator = koinInject(),
     budgetsSync: BudgetsSyncCoordinator = koinInject(),
+    pushCoordinator: PushCoordinator = koinInject(),
 ) {
     val override by languages.language.collectAsStateWithLifecycle()
     LaunchedEffect(languages) { languages.load() }
@@ -37,9 +40,12 @@ fun App(
         categoriesSync.onForeground()
         transactionsSync.onForeground()
         budgetsSync.onForeground()
+        pushCoordinator.onForeground()
         onStopOrDispose { }
     }
-    AppLocaleProvider(override = override, effective = override ?: languages.device()) {
+    val effective = override ?: languages.device()
+    AppLocaleProvider(override = override, effective = effective) {
+        ChannelsEffect(effective)
         AppTheme {
             AppNavHost()
         }

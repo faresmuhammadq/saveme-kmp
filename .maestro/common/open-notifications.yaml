@@ -1,0 +1,16 @@
+# From Home: opens Account, then Notifications, and waits for the screen's title (dev builds; the row is hidden without a push provider).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn: "Account"
+- extendedWaitUntil:
+    visible:
+      id: "account.notifications"
+    timeout: 10000
+- tapOn:
+    id: "account.notifications"
+- extendedWaitUntil:
+    visible:
+      id: "notifications.save"
+    timeout: 20000

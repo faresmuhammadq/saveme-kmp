@@ -30,6 +30,8 @@ import com.fares.saveme.designsystem.component.AppListItem
 import com.fares.saveme.designsystem.component.AppSelectField
 import com.fares.saveme.designsystem.component.ListTrailing
 import com.fares.saveme.designsystem.component.SelectionList
+import com.fares.saveme.designsystem.component.TimeOfDayField
+import com.fares.saveme.designsystem.component.TimeOfDayList
 import com.fares.saveme.designsystem.component.AmountDisplay
 import com.fares.saveme.designsystem.component.AppBottomSheet
 import com.fares.saveme.designsystem.component.AppFab
@@ -449,6 +451,14 @@ fun RowsSection() = CatalogSection(Res.string.catalog_section_rows) {
         enabled = false,
         supportingText = stringResource(Res.string.profile_currency_locked),
     )
+    TimeOfDayField(stringResource(Res.string.notifications_quiet_from), minutes = 22 * 60, onChange = {})
+    TimeOfDayField(stringResource(Res.string.notifications_quiet_to), minutes = 8 * 60, onChange = {}, enabled = false)
+    TimeOfDayField(
+        stringResource(Res.string.notifications_quiet_to),
+        minutes = 22 * 60,
+        onChange = {},
+        errorText = stringResource(Res.string.notifications_quiet_invalid),
+    )
 }
 
 @Composable
@@ -469,4 +479,5 @@ fun DialogsSection() = CatalogSection(Res.string.catalog_section_dialogs) {
         onSelect = {},
         searchable = false,
     )
+    TimeOfDayList(options = (0 until 24 * 60 step 15).toList(), selected = 22 * 60, onSelect = {}, modifier = Modifier.height(240.dp))
 }

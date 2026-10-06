@@ -1,0 +1,17 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US5-S3 (documentation only): in a staging or production build the Account screen has no "Developer tools" row and no "Notifications" row (no push provider until the gated Firebase phase).
+# e2e-seed: verified-user
+# Run against `assembleStagingDebug` / `assembleProdDebug`; the dev flavor shows both rows, so this flow fails there by design.
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runFlow: ../common/sign-in.yaml
+- tapOn: "Account"
+- extendedWaitUntil:
+    visible: "Sign out"
+    timeout: 10000
+- assertNotVisible:
+    id: "account.devTools"
+- assertNotVisible:
+    id: "account.notifications"

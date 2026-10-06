@@ -1,0 +1,23 @@
+# Account -> Developer tools -> Simulate a notification -> Post for ${TYPE} (a contract type, or future_type), then pulls the shade and taps the
+# notification. Needs a dev build, Android 13+ with notifications allowed, and (to open a record) the record on the phone.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn: "Account"
+- extendedWaitUntil:
+    visible:
+      id: "account.devTools"
+    timeout: 10000
+- tapOn:
+    id: "account.devTools"
+- tapOn:
+    id: "devtools.simulatePush"
+- extendedWaitUntil:
+    visible:
+      id: "simulatePush.post.${TYPE}"
+    timeout: 10000
+- tapOn:
+    id: "simulatePush.post.${TYPE}"
+- runFlow: open-shade.yaml
+- tapOn: "Test notification"

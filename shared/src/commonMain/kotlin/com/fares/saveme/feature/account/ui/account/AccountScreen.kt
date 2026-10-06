@@ -33,8 +33,10 @@ import saveme.shared.generated.resources.account_change_password
 import saveme.shared.generated.resources.account_delete
 import saveme.shared.generated.resources.account_devices
 import saveme.shared.generated.resources.account_email_unverified
+import saveme.shared.generated.resources.account_dev_tools
 import saveme.shared.generated.resources.account_export
 import saveme.shared.generated.resources.account_email_verified
+import saveme.shared.generated.resources.account_notifications
 import saveme.shared.generated.resources.account_plan
 import saveme.shared.generated.resources.account_profile
 import saveme.shared.generated.resources.account_title
@@ -72,6 +74,15 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                 trailing = ListTrailing.Chevron,
                 onClick = { onIntent(AccountIntent.Open(AccountDestination.Devices)) },
             )
+            if (state.notificationsAvailable) {
+                AppListItem(
+                    stringResource(Res.string.account_notifications),
+                    leadingIcon = AppIcons.Bell,
+                    trailing = ListTrailing.Chevron,
+                    modifier = Modifier.testTag("account.notifications"),
+                    onClick = { onIntent(AccountIntent.Open(AccountDestination.Notifications)) },
+                )
+            }
             AppListItem(
                 stringResource(Res.string.account_export),
                 leadingIcon = AppIcons.Sync,
@@ -85,6 +96,17 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                 trailing = ListTrailing.Chevron,
                 onClick = { onIntent(AccountIntent.Open(AccountDestination.ChangePassword)) },
             )
+        }
+        if (state.devToolsAvailable) {
+            Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
+                AppListItem(
+                    stringResource(Res.string.account_dev_tools),
+                    leadingIcon = AppIcons.Laptop,
+                    trailing = ListTrailing.Chevron,
+                    modifier = Modifier.testTag("account.devTools"),
+                    onClick = { onIntent(AccountIntent.Open(AccountDestination.DevTools)) },
+                )
+            }
         }
         Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
             AppListItem(

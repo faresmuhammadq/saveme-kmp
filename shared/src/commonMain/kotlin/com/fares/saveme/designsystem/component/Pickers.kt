@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +25,7 @@ import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.fares.saveme.designsystem.format.formatTimeOfDay
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
 import org.jetbrains.compose.resources.stringResource
@@ -131,6 +133,63 @@ fun <T> SelectionList(
                     onClick = { onSelect(option) },
                 )
             }
+        }
+    }
+}
+
+/**
+ * A time of day in whole steps ([stepMinutes], default a quarter hour), 24-hour with Western digits and read left to right
+ * in every language (spec 017 R-13). Opens a [SelectionSheet] of every step, scrolled to the current value. [minutes]
+ * is minutes after midnight and is snapped down to a step for display.
+ */
+@Composable
+fun TimeOfDayField(
+    label: String,
+    minutes: Int,
+    onChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    stepMinutes: Int = 15,
+    enabled: Boolean = true,
+    errorText: String? = null,
+) {
+    var open by remember { mutableStateOf(false) }
+    val options = remember(stepMinutes) { (0 until 24 * 60 step stepMinutes).toList() }
+    val selected = remember(minutes, stepMinutes) { (minutes.coerceIn(0, 24 * 60 - 1) / stepMinutes) * stepMinutes }
+    AppSelectField(
+        label = label,
+        value = formatTimeOfDay(selected),
+        onClick = { open = true },
+        modifier = modifier,
+        errorText = errorText,
+        enabled = enabled,
+    )
+    if (open) {
+        AppBottomSheet(onDismiss = { open = false }, title = label) {
+            TimeOfDayList(options, selected, onSelect = { onChange(it); open = false })
+        }
+    }
+}
+
+/** The sheet's content, usable without the sheet window (catalogue, screenshots); scrolled so [selected] is in view. */
+@Composable
+fun TimeOfDayList(
+    options: List<Int>,
+    selected: Int?,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = (options.indexOf(selected) - 2).coerceAtLeast(0))
+    LazyColumn(modifier.heightIn(max = 420.dp), state = listState) {
+        items(options, key = { it }) { option ->
+            AppListItem(
+                headline = formatTimeOfDay(option),
+                trailing = if (option == selected) {
+                    ListTrailing.Custom { Icon(AppIcons.Check, contentDescription = null, tint = AppTheme.colors.primary) }
+                } else {
+                    ListTrailing.None
+                },
+                onClick = { onSelect(option) },
+            )
         }
     }
 }

@@ -1,0 +1,24 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a `occurrence_auto_confirm_refused` notification, tapped from the shade, opens its screen (occurrence.state); the tap only navigates.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-wallet.yaml
+    env: { NAME: "Alpha", OPENING: "1000000" }
+- runFlow:
+    file: ../common/seed-rule.yaml
+    env: { WALLET: "Alpha", DESCRIPTION: "Rent", AMOUNT: "450000", CATEGORY: "Rent" }
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/simulate-push.yaml
+    env: { TYPE: "occurrence_auto_confirm_refused" }
+- extendedWaitUntil:
+    visible:
+      id: "occurrence.state"
+    timeout: 20000

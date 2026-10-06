@@ -755,6 +755,8 @@ switch (arg('ACTION')) {
             throw new Error('redeemCode: expected HTTP ' + arg('EXPECT', '200') + ', got ' + redeemed.status + ' ' + redeemed.body)
         }
         if (redeemed.status === 200) output.redeem = json(redeemed.body).data
+        break
+
     // Reports (spec 014). Moves money between two wallets of this slot: WALLET (source name) or WALLET_ID, COUNTER_WALLET (destination name)
     // or COUNTER_WALLET_ID, AMOUNT in minor units (1000), DATE (today), NOTE. Copies it into output.transaction.
     case 'createTransfer':
@@ -796,6 +798,45 @@ switch (arg('ACTION')) {
     // output.cashId, output.bankId and output.savingsId. Dates are today's.
     case 'seedReportsData':
         seedReportsData()
+        break
+
+    // Notification preferences (spec 017). Reads this slot's preferences into output.notificationPreferences, and its version, budget
+    // alerts switch and quiet hours as output.prefsVersion, output.prefsBudgetAlerts, output.prefsQuietStart and output.prefsQuietEnd.
+    case 'notificationPreferences':
+        var readPrefs = expect(call('GET', 'me/notification-preferences', undefined, token()), 200, 'notificationPreferences').body.data
+        output.notificationPreferences = readPrefs
+        output.prefsVersion = readPrefs.version
+        output.prefsBudgetAlerts = readPrefs.categories.budget_exceeded
+        output.prefsQuietStart = readPrefs.quiet_hours.start
+        output.prefsQuietEnd = readPrefs.quiet_hours.end
+        break
+
+    // Saves this slot's preferences the way a second phone would, so the app's next save meets a stale version (US3 conflict flow).
+    // Reads the stored ones first and sends every member with the stored version; BUDGET_ALERTS (true/false, default false) and
+    // QUIET_START / QUIET_END (HH:MM on a quarter hour, defaults 21:00 and 06:00) are changed. Copies the answer into output.notificationPreferences.
+    case 'saveNotificationPreferences':
+        var storedPrefs = expect(call('GET', 'me/notification-preferences', undefined, token()), 200, 'notificationPreferences').body.data
+        var savedPrefs = expect(call('PUT', 'me/notification-preferences', {
+            version: storedPrefs.version,
+            categories: {
+                recurring_due: storedPrefs.categories.recurring_due,
+                budget_exceeded: arg('BUDGET_ALERTS', 'false') === 'true',
+                sharing: storedPrefs.categories.sharing,
+                billing: storedPrefs.categories.billing,
+                export_ready: storedPrefs.categories.export_ready,
+                deletion_reminder: storedPrefs.categories.deletion_reminder,
+            },
+            quiet_hours: { enabled: true, start: arg('QUIET_START', '21:00'), end: arg('QUIET_END', '06:00') },
+        }, token()), 200, 'saveNotificationPreferences').body.data
+        output.notificationPreferences = savedPrefs
+        output.prefsVersion = savedPrefs.version
+        break
+
+    // Counts the push registrations of this slot's account that the backend holds, through the device list (a registration has no read
+    // endpoint, by design: the token is write-only). Used by the registration flow as a smoke check only: it asserts the session is current.
+    case 'expectCurrentSession':
+        output.currentSession = expect(call('GET', 'auth/sessions', undefined, token()), 200, 'listSessions').body.data.filter(function (s) { return s.current })[0]
+        if (!output.currentSession) throw new Error('expectCurrentSession: this slot has no current session')
         break
 
     default:

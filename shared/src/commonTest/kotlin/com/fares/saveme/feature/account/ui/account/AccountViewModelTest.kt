@@ -38,6 +38,24 @@ class AccountViewModelTest {
     }
 
     @Test
+    fun theNotificationsAndDeveloperRowsShowOnlyWhenTheBuildHasThem() = runMviTest {
+        val none = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = {})
+        assertEquals(false, none.state.value.notificationsAvailable)
+        assertEquals(false, none.state.value.devToolsAvailable)
+        val push = AccountViewModel(
+            MutableStateFlow(AuthState.SignedIn(account)), signOut = {}, notificationsAvailable = true, devToolsAvailable = true,
+        )
+        assertEquals(true, push.state.value.notificationsAvailable)
+        assertEquals(true, push.state.value.devToolsAvailable)
+        push.effects.test {
+            push.onIntent(AccountIntent.Open(AccountDestination.Notifications))
+            assertEquals(AccountEffect.Navigate(AccountDestination.Notifications), awaitItem())
+            push.onIntent(AccountIntent.Open(AccountDestination.DevTools))
+            assertEquals(AccountEffect.Navigate(AccountDestination.DevTools), awaitItem())
+        }
+    }
+
+    @Test
     fun theWholeRowsIncludePlan() = runMviTest {
         val vm = AccountViewModel(MutableStateFlow(AuthState.SignedIn(account)), signOut = {})
         vm.effects.test {

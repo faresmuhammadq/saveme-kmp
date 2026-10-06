@@ -3,6 +3,7 @@ package com.fares.saveme.navigation
 import androidx.navigation3.runtime.NavKey
 import com.fares.saveme.feature.auth.domain.SignOutReason
 import com.fares.saveme.feature.auth.ui.checkinbox.CheckInboxKind
+import com.fares.saveme.feature.notifications.domain.PushRoute
 import com.fares.saveme.feature.recurring.domain.model.RulePrefill
 import kotlinx.serialization.Serializable
 
@@ -189,3 +190,23 @@ data class ResetPasswordKey(val token: String) : NavKey {
 
 @Serializable
 data object PasteLinkKey : NavKey
+
+// Push (spec 017).
+
+/** Account -> Notifications. */
+@Serializable
+data object NotificationSettingsKey : NavKey
+
+/** The "Opening…" screen of a tapped notification; [nonce] tells two taps for the same route apart. Prints the target type only (P-09.2). */
+@Serializable
+data class NotificationOpenKey(val route: PushRoute, val nonce: Long = 0) : NavKey {
+    override fun toString() = "NotificationOpenKey($route)"
+}
+
+/** The "check your email" notice an invitation push opens. */
+@Serializable
+data object InvitationNoticeKey : NavKey
+
+/** Development builds only: Developer tools -> Simulate a notification. */
+@Serializable
+data object SimulatePushKey : NavKey
