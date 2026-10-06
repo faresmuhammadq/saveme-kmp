@@ -218,7 +218,7 @@ description: "Task list for 017-push"
 - [X] T081 Live contract QA per contracts/push-api-client.md "Live QA" (curl, throwaway `qa017-*` accounts, local backend `127.0.0.1:43871`), capturing answers (tokens replaced by same-shape fakes) into `nt/data/CapturedNotificationsResponses.kt` — done in qa-report.md section 7 (backend spec 023 still uncommitted at `e8c308a`; QA ran against its working tree)
 - [X] T082 `nt/data/NotificationsLiveReplayTest.kt`: replay the captured answers through the real `ApiClient`, `NotificationsApi`, `PushRegistrationService` and `NotificationPreferencesService` — done in qa-report.md section 7 (backend spec 023 still uncommitted at `e8c308a`; QA ran against its working tree)
 - [X] T083 Full gate `./gradlew build allTests --continue`; note pre-existing failures separately from this spec's
-- [ ] T084 Write specs/017-push/summary.md (parent writes it)
+- [X] T084 Write specs/017-push/summary.md (parent writes it)
 
 ---
 
