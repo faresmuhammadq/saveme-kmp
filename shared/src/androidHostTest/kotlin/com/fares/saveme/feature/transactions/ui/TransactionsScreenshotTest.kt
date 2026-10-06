@@ -233,6 +233,7 @@ class TransactionsScreenshotTest(
             arrayOf("editor_create_transfer_none", @Composable {
                 TransactionEditorScreen(createBase.copy(kindWire = "transfer", amountText = "500", destinationChoices = emptyList()), {})
             }),
+            arrayOf("editor_edit_former_member", @Composable { TransactionEditorScreen(editBase.copy(addedBy = AddedBy.FormerMember), {}) }),
             arrayOf("editor_edit_transfer", @Composable { TransactionEditorScreen(transferEdit, {}) }),
             arrayOf("editor_refused_other_wallet", @Composable {
                 TransactionEditorScreen(transferEdit.copy(sync = EditorSync.Refused(RefusalReason(RefusalKind.NoRightInOtherWallet))), {})

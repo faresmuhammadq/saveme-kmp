@@ -1,0 +1,44 @@
+# deferred: E2E on owner's device
+# US2-1/2: Given a viewer in a partner's wallet, When they open the wallet and tap "Export this wallet", Then the request opens with that wallet chosen and the export finishes.
+# e2e-seed: verified-user+plus+partner
+# The partner (slot B) owns the wallet and invites the signed-in account (E2E_EMAIL) as a viewer.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Shared Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: viewer }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Shared Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.export"
+    timeout: 20000
+- tapOn:
+    id: "walletDetail.export"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.wallet"
+    timeout: 15000
+- assertVisible: "Shared Alpha"
+- tapOn:
+    id: "exportRequest.submit"
+- extendedWaitUntil:
+    visible:
+      id: "exportDetail.open"
+    timeout: 120000
+- assertVisible: "Shared Alpha"

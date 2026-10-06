@@ -1,0 +1,18 @@
+# deferred: E2E on owner's device
+# e2e-between: purge
+# US6-1…3 part 2: after the backend purge the partner's transaction reads "Added by a former member"; the wallet and the owner are unchanged.
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- tapOn:
+    id: "walletDetail.transactions"
+- extendedWaitUntil:
+    visible: "Partner coffee"
+    timeout: 30000
+- tapOn: "Partner coffee"
+- extendedWaitUntil:
+    visible:
+      id: "txEditor.addedBy"
+    timeout: 15000
+- assertVisible: "Added by a former member"

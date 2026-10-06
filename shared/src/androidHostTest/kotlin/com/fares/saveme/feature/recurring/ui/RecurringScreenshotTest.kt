@@ -224,6 +224,9 @@ class RecurringScreenshotTest(
             arrayOf("editor_read_only", @Composable { RuleEditorScreen(edit.copy(readOnly = ReadOnlyReason.Ended), {}) }),
             arrayOf("editor_frequency_weekly", @Composable { RuleEditorScreen(filled.copy(frequency = Frequency.Weekly, intervalText = "2"), {}) }),
             arrayOf("rule_active", @Composable { RuleDetailScreen(ruleScreen(), {}) }),
+            arrayOf("rule_former_member", @Composable {
+                RuleDetailScreen(ruleScreen(rentRule.copy(author = com.fares.saveme.feature.recurring.domain.model.RuleAuthor.FormerMember)), {})
+            }),
             arrayOf("rule_paused", @Composable { RuleDetailScreen(ruleScreen(testRuleView(testRule(status = "paused"))), {}) }),
             arrayOf("rule_ended", @Composable { RuleDetailScreen(ruleScreen(endedRule, OccurrenceLists(history = listOf(confirmed))), {}) }),
             arrayOf("rule_gameya", @Composable { RuleDetailScreen(ruleScreen(gameyaRule, OccurrenceLists(upcoming = listOf(payoutView))), {}) }),

@@ -12,6 +12,9 @@ fun DeleteAccountRoute(
     viewModel: DeleteAccountViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(viewModel) { viewModel.effects.collect(onEffect) }
+    LaunchedEffect(viewModel) {
+        viewModel.onIntent(DeleteAccountIntent.Opened)
+        viewModel.effects.collect(onEffect)
+    }
     DeleteAccountScreen(state, viewModel::onIntent)
 }

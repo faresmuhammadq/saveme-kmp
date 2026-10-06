@@ -1,0 +1,35 @@
+# deferred: E2E on owner's device
+# US6-1…3 part 1: Given a partner who added a transaction in the signed-in person's wallet, When the partner's account is deleted and purged (between the parts), Then part 2 shows "Added by a former member".
+# e2e-seed: verified-user+plus+partner
+appId: com.fares.saveme
+tags:
+  - US6
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Alpha", OPENING: "10000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createTransaction, SLOT: C, WALLET_ID: "${output.walletId}", AMOUNT: "2500", NOTE: "Partner coffee" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-wallets.yaml
+- tapOn: "Alpha"
+- extendedWaitUntil:
+    visible:
+      id: "walletDetail.export"
+    timeout: 20000
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: requestDeletion, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }

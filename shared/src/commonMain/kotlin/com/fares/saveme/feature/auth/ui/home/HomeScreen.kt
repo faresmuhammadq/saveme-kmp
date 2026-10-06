@@ -48,6 +48,7 @@ import saveme.shared.generated.resources.recurring_rule_title
 import saveme.shared.generated.resources.action_resend_email
 import saveme.shared.generated.resources.home_verify_prompt
 import saveme.shared.generated.resources.cd_account
+import saveme.shared.generated.resources.delete_being_deleted
 import saveme.shared.generated.resources.home_cancel_deletion
 import saveme.shared.generated.resources.home_deletion_cancelled
 import saveme.shared.generated.resources.home_deletion_pending
@@ -91,7 +92,11 @@ fun HomeScreen(
             // Always visible while pending, with its way out (spec 002 FR-019).
             InlineAlert(
                 tone = AlertTone.Warning,
-                text = stringResource(Res.string.home_deletion_pending, formatDate(date, TimeZone.currentSystemDefault().id)),
+                text = if (state.beingDeleted) {
+                    stringResource(Res.string.delete_being_deleted)
+                } else {
+                    stringResource(Res.string.home_deletion_pending, formatDate(date, TimeZone.currentSystemDefault().id))
+                },
                 actionLabel = stringResource(Res.string.home_cancel_deletion),
                 onAction = { onIntent(HomeIntent.CancelDeletion) }.takeUnless { state.cancellingDeletion },
             )

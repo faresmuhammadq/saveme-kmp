@@ -17,7 +17,7 @@ data class ProblemDetails(
     val errors: List<ProblemError>? = null,
     @SerialName("retry_after_seconds") val retryAfterSeconds: Long? = null,
     @SerialName("minimum_version") val minimumVersion: String? = null,
-    /** VERSION_CONFLICT only: the record's present state, in the schema a read returns. */
+    /** VERSION_CONFLICT, and EXPORT_IN_PROGRESS (the export already queued or running): the record's present state, in the schema a read returns. */
     val current: JsonElement? = null,
     /** FEATURE_NOT_ENTITLED only: the plan feature the answer is about, e.g. `sharing.enabled` (api-conventions: Problem). */
     val feature: String? = null,

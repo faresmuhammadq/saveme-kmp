@@ -34,6 +34,12 @@ import com.fares.saveme.feature.account.ui.changepassword.ChangePasswordEffect
 import com.fares.saveme.feature.account.ui.changepassword.ChangePasswordRoute
 import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountEffect
 import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountRoute
+import com.fares.saveme.feature.account.ui.export.detail.ExportDetailEffect
+import com.fares.saveme.feature.account.ui.export.detail.ExportDetailRoute
+import com.fares.saveme.feature.account.ui.export.list.ExportsEffect
+import com.fares.saveme.feature.account.ui.export.list.ExportsRoute
+import com.fares.saveme.feature.account.ui.export.request.ExportRequestEffect
+import com.fares.saveme.feature.account.ui.export.request.ExportRequestRoute
 import com.fares.saveme.feature.account.ui.profile.ProfileEffect
 import com.fares.saveme.feature.account.ui.profile.ProfileRoute
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsEffect
@@ -271,6 +277,7 @@ fun AppNavHost(
                                 AccountDestination.ChangePassword -> ChangePasswordKey
                                 AccountDestination.DeleteAccount -> DeleteAccountKey
                                 AccountDestination.Plan -> PlanKey
+                                AccountDestination.Exports -> ExportsKey
                             },
                         )
                         AccountEffect.NavigateBack -> appStack.pop()
@@ -289,8 +296,43 @@ fun AppNavHost(
                 DeleteAccountRoute(onEffect = { effect ->
                     when (effect) {
                         DeleteAccountEffect.NavigateBack -> appStack.pop()
+                        DeleteAccountEffect.OpenExports -> appStack.add(ExportsKey)
                         // Home carries the pending-deletion notice from here on (FR-019).
                         DeleteAccountEffect.Finished -> appStack.resetTo(HomeKey)
+                    }
+                })
+            }
+            entry<ExportsKey> {
+                ExportsRoute(onEffect = { effect ->
+                    when (effect) {
+                        is ExportsEffect.OpenDetail -> appStack.add(ExportDetailKey(effect.id))
+                        ExportsEffect.OpenRequest -> appStack.add(ExportRequestKey())
+                        ExportsEffect.NavigateBack -> appStack.pop()
+                    }
+                })
+            }
+            entry<ExportRequestKey> { key ->
+                ExportRequestRoute(walletId = key.walletId, onEffect = { effect ->
+                    when (effect) {
+                        // The request screen gives way to the export it made (spec 016 FR-007).
+                        is ExportRequestEffect.OpenDetail -> {
+                            appStack.removeAt(appStack.lastIndex)
+                            appStack.add(ExportDetailKey(effect.id))
+                        }
+                        ExportRequestEffect.OpenExports -> {
+                            appStack.removeAt(appStack.lastIndex)
+                            if (appStack.lastOrNull() !is ExportsKey) appStack.add(ExportsKey)
+                        }
+                        ExportRequestEffect.NavigateBack -> appStack.pop()
+                    }
+                })
+            }
+            entry<ExportDetailKey> { key ->
+                ExportDetailRoute(exportId = key.exportId, onEffect = { effect ->
+                    when (effect) {
+                        is ExportDetailEffect.OpenRequest -> appStack.add(ExportRequestKey(effect.walletId))
+                        ExportDetailEffect.NavigateBack -> appStack.pop()
+                        is ExportDetailEffect.OpenDownload -> Unit // handed to the browser by the route
                     }
                 })
             }
@@ -348,6 +390,7 @@ fun AppNavHost(
                             is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
                             is WalletDetailEffect.NavigateMembers -> appStack.add(WalletMembersKey(effect.walletId))
                             is WalletDetailEffect.NavigateActivity -> appStack.add(WalletActivityKey(effect.walletId))
+                            is WalletDetailEffect.OpenExport -> appStack.add(ExportRequestKey(effect.walletId))
                             is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
                             WalletDetailEffect.NavigateBack -> appStack.pop()
                             is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route

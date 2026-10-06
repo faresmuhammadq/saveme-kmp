@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.time.Instant
 
 class HomeViewModel(
     authState: StateFlow<AuthState>,
@@ -29,6 +30,7 @@ class HomeViewModel(
     budgets: Flow<List<BudgetGlimpse>> = emptyFlow(),
     invitationHeld: Flow<Boolean> = emptyFlow(),
     invitationDeclined: Flow<Unit> = emptyFlow(),
+    minuteTicks: Flow<Instant> = emptyFlow(),
 ) : MviViewModel<HomeState, HomeIntent, HomeEffect>(HomeState()) {
 
     init {
@@ -41,6 +43,7 @@ class HomeViewModel(
             .launchIn(viewModelScope)
         budgets.onEach { list -> setState { reduce(it, HomeChange.Budgets(list)) } }.launchIn(viewModelScope)
         invitationDeclined.onEach { sendEffect(HomeEffect.ShowMessage(HomeMessage.InvitationDeclined)) }.launchIn(viewModelScope)
+        minuteTicks.onEach { now -> setState { reduce(it, HomeChange.Tick(now)) } }.launchIn(viewModelScope)
         invitationHeld.onEach { held -> setState { reduce(it, HomeChange.InvitationHeld(held)) } }.launchIn(viewModelScope)
     }
 

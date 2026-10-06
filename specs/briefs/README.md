@@ -28,7 +28,7 @@ backend, spec directories take the next free number, so `C4` will not become `sp
 | [C10](C10-billing-google-play.md) Google Play billing | B10 | Brief | — | C3 |
 | [C11](C11-redeem-code.md) Redeem code | B11 (app side only) → spec 020 | Built | **Built** in spec 015 (Plan → "Enter code" opens a screen excluded from screenshots and recents with a code field that normalises as typed and pasted, paste-only menu, one idempotency key per attempt, verified gate, success applies the answer's entitlements and governing subscription then the C3 refresh, confirmation naming the governing plan and a renewing Google Play subscription, a message per refusal and rate-limit wait; no Room change; live QA and device E2E pending) | C3 |
 | [C13](C13-reports.md) Reports | B13 | Brief | — | C6, C8 |
-| [C15](C15-export-deletion.md) Export & deletion completion | B15 | Brief | Deletion request/cancel done (002) | C6, C9 |
+| [C15](C15-export-deletion.md) Export & deletion completion | B15 → spec 022 | Built | **Built** in spec 016 (Account → Export my data: exports list, request for everything or one wallet, status screen polling every 5 s only while foregrounded and bounded, download only through the system browser with a fresh link per tap; Delete account extended with a plan read, new owners, review, pending view with change owners and cancel; "a former member" on transactions and recurring rules; no Room change; live QA and device E2E pending) | C6, C9 |
 | [C16](C16-push.md) Push notifications | B16 | Brief | — | C1, C7, C9 |
 
 No client brief: **B12** back-office and **D1/D2** admin dashboard are operator web surfaces; the

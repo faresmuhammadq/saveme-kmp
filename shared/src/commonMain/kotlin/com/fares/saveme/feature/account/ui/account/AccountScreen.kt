@@ -33,6 +33,7 @@ import saveme.shared.generated.resources.account_change_password
 import saveme.shared.generated.resources.account_delete
 import saveme.shared.generated.resources.account_devices
 import saveme.shared.generated.resources.account_email_unverified
+import saveme.shared.generated.resources.account_export
 import saveme.shared.generated.resources.account_email_verified
 import saveme.shared.generated.resources.account_plan
 import saveme.shared.generated.resources.account_profile
@@ -70,6 +71,13 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                 leadingIcon = AppIcons.Devices,
                 trailing = ListTrailing.Chevron,
                 onClick = { onIntent(AccountIntent.Open(AccountDestination.Devices)) },
+            )
+            AppListItem(
+                stringResource(Res.string.account_export),
+                leadingIcon = AppIcons.Sync,
+                trailing = ListTrailing.Chevron,
+                modifier = Modifier.testTag("account.export"),
+                onClick = { onIntent(AccountIntent.Open(AccountDestination.Exports)) },
             )
             AppListItem(
                 stringResource(Res.string.account_change_password),

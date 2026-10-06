@@ -41,6 +41,9 @@ sealed interface AddedBy {
     data object You : AddedBy
     data class Member(val name: String) : AddedBy
     data object AnotherMember : AddedBy
+
+    /** The author is not among the wallet's members the phone holds, and it holds some: they left (spec 016 FR-033). */
+    data object FormerMember : AddedBy
 }
 
 /** One transaction as a screen sees it, from one wallet's side. */

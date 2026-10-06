@@ -15,7 +15,7 @@ data class AccountState(
     val sync: SyncStatus = SyncStatus(),
 )
 
-enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan }
+enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Exports }
 
 sealed interface AccountIntent {
     data class Open(val destination: AccountDestination) : AccountIntent

@@ -8,7 +8,7 @@
 
 **Input**: User description: "specs/briefs/C15-export-deletion.md" — client brief C15, wave 4. Pairs with backend B15 → spec 022 (contract designed and frozen; implementation in progress, uncommitted at the time of writing). Extends spec 002's deletion request/cancel.
 
-**Backend contract**: `saveme-backend@b63e917`
+**Backend contract**: `saveme-backend@776e5b2`
 
 > The spec 022 contract this spec binds to (`docs/openapi/paths/exports.yaml`, the `/account/deletion-request` edits in `paths/identity.yaml`, `openapi.yaml` v1.13, ADR-0024) sits **uncommitted** on top of `b63e917`. The contract check must be rerun once spec 022 is committed (integration checkpoint, protocol step 4).
 
@@ -325,7 +325,7 @@ server resources read on demand (P-04.6); nothing of them is cached.
 
 ### 5. API
 
-All under `/api/v1`, frozen in backend spec 022 (`openapi.yaml` v1.13, uncommitted on `b63e917`).
+All under `/api/v1`, frozen in backend spec 022 (`openapi.yaml` v1.13, committed as `saveme-backend@776e5b2`).
 
 | Use | Endpoint | Request | Codes handled |
 |---|---|---|---|
@@ -342,7 +342,7 @@ No `Idempotency-Key` on any of these (spec 022 A-9). All API requests carry the 
 
 #### Contract changes since last spec
 
-Baseline `saveme-backend@b63e917` (spec 015) → `b63e917` plus uncommitted spec 022 work:
+Baseline `saveme-backend@b63e917` (spec 015) → `776e5b2` (spec 022 committed; checked at implementation, T001: the contract files are unchanged from the frozen design):
 
 - **Error codes**: none added or removed. `EXPORT_IN_PROGRESS` (409, automatic, since v1.1) has its meaning reworded ("the body's `current` is that export"); it was never in the client's list — FR-036, FR-017.
 - **Shared responses**: Conflict lists `EXPORT_IN_PROGRESS`; `Problem.current` is also sent on it, under the `getExport` schema — FR-017, FR-036.
