@@ -56,6 +56,7 @@ class HomeViewModel(
             HomeIntent.AddTransactionClicked -> sendEffect(HomeEffect.NavigateAddTransaction)
             HomeIntent.DueClicked -> sendEffect(HomeEffect.OpenDue)
             HomeIntent.BudgetsClicked -> sendEffect(HomeEffect.NavigateBudgets)
+            HomeIntent.ReportsClicked -> sendEffect(HomeEffect.NavigateReports)
             is HomeIntent.BudgetClicked -> sendEffect(HomeEffect.OpenBudget(intent.id))
             HomeIntent.InvitationClicked -> sendEffect(HomeEffect.OpenInvitation)
             HomeIntent.CancelDeletion -> cancel()

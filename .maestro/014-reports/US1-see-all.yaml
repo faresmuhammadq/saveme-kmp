@@ -1,0 +1,40 @@
+# deferred: E2E on owner's device
+# US1 (FR-022): Given the seeded report, When "See all" opens Spending by category, Then every expense item shows with its share, and the Income switch lists the salary.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.categories.see_all"
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: "reports.categories.see_all"
+- tapOn:
+    id: "reports.categories.see_all"
+- extendedWaitUntil:
+    visible:
+      id: "report_categories.screen"
+    timeout: 15000
+- assertVisible:
+    id: "report_categories.total"
+    text: ".*5,500.00.*"
+- assertVisible:
+    id: "report_categories.row.2"
+    text: ".*Pets.*"
+- tapOn:
+    id: "report_categories.kind.income"
+- assertVisible:
+    id: "report_categories.total"
+    text: ".*10,000.00.*"
+- assertVisible:
+    id: "report_categories.row.0"
+    text: ".*Salary.*"

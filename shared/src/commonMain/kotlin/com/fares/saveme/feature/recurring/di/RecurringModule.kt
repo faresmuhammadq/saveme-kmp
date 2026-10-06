@@ -11,6 +11,8 @@ import com.fares.saveme.feature.recurring.domain.RecurringDueSummary
 import com.fares.saveme.feature.recurring.domain.RecurringLinksImpl
 import com.fares.saveme.feature.recurring.domain.RecurringService
 import com.fares.saveme.feature.recurring.domain.RecurringWalletCleanup
+import com.fares.saveme.feature.recurring.domain.OccurrenceScheduledMoney
+import com.fares.saveme.feature.recurring.domain.ScheduledMoney
 import com.fares.saveme.feature.transactions.domain.RecurringLinks
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import kotlinx.coroutines.flow.map
@@ -129,6 +131,15 @@ val recurringModule = module {
     // Hooks the lower features own, rebound here (research R-10): the latest definition wins.
     single<RecurringLinks> { RecurringLinksImpl(service = get(), engine = { get<SyncEngine>() }) }
     single<DueSummary> { RecurringDueSummary(get()) }
+    // What reports read (spec 014 R-05): occurrences still scheduled, with the queue laid over them.
+    single<ScheduledMoney> {
+        val sessions = get<SessionManager>()
+        OccurrenceScheduledMoney(
+            engine = { get<SyncEngine>() },
+            repository = get(),
+            accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId },
+        )
+    }
     single { RecurringCategoryUses(engine = { get<SyncEngine>() }) } bind PendingCategoryUses::class
     single {
         RecurringWalletCleanup(

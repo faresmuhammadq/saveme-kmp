@@ -84,6 +84,7 @@ class WalletDetailViewModel(
         when (intent) {
             WalletDetailIntent.TransactionsClicked -> sendEffect(WalletDetailEffect.OpenTransactions(walletId))
             WalletDetailIntent.RecurringClicked -> sendEffect(WalletDetailEffect.OpenRecurring(walletId))
+            WalletDetailIntent.ReportClicked -> sendEffect(WalletDetailEffect.OpenReport(walletId))
             WalletDetailIntent.MembersClicked -> sendEffect(WalletDetailEffect.NavigateMembers(walletId))
             WalletDetailIntent.ActivityClicked -> sendEffect(WalletDetailEffect.NavigateActivity(walletId))
             WalletDetailIntent.ExportClicked -> if (currentState.exportable) sendEffect(WalletDetailEffect.OpenExport(walletId))

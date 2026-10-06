@@ -186,6 +186,39 @@ class AppGraphTest {
     }
 
     @Test
+    fun theReportsModuleResolvesItsHooks() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        // The sync engine is built from every handler: a reports class that resolved it eagerly would loop at start.
+        assertNotNull(koin.get<SyncEngine>())
+        assertTrue(koin.get<com.fares.saveme.feature.transactions.domain.ReportLedger>() is com.fares.saveme.feature.transactions.domain.TransactionReportLedger)
+        assertNotNull(koin.get<com.fares.saveme.feature.recurring.domain.ScheduledMoney>())
+        assertTrue(koin.get<com.fares.saveme.feature.recurring.domain.ScheduledMoney>() is com.fares.saveme.feature.recurring.domain.OccurrenceScheduledMoney)
+        assertTrue(koin.get<com.fares.saveme.feature.reports.domain.ReportsService>() is com.fares.saveme.feature.reports.domain.DefaultReportsService)
+        assertTrue("the development build compares", koin.get<com.fares.saveme.feature.reports.domain.ReportParityProbe>() is com.fares.saveme.feature.reports.domain.DevReportParityProbe)
+        assertTrue(koin.getAll<UserDataCleaner>().any { it is com.fares.saveme.feature.reports.domain.ReportsCleaner })
+        // Reports are computed, not synced: no handler and no applier of their own.
+        assertTrue(koin.getAll<SyncHandler>().none { "report" in it.recordType })
+        assertTrue(koin.getAll<FeedApplier>().none { "report" in it.rowType })
+        assertNotNull(koin.get<CategoriesService>())
+    }
+
+    @Test
+    fun theReleaseGraphBindsNoParityProbe() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Prod, isDebugTools = false),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        assertTrue("release never calls the report figure endpoints (FR-028)", koin.get<com.fares.saveme.feature.reports.domain.ReportParityProbe>() === com.fares.saveme.feature.reports.domain.NoParityProbe)
+    }
+
+    @Test
     fun theSharingModuleStartsWithItsHandlerApplierAndParticipant() {
         initKoin(
             config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),

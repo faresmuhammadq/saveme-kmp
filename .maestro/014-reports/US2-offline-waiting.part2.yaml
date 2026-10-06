@@ -1,0 +1,32 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; record a 200.00 expense in Groceries in Cash. Reports counts it at once and notes it waits.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- pressKey: back
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Cash" }
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "200", CATEGORY: "Groceries" }
+- pressKey: back
+- pressKey: back
+- pressKey: back
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*5,700.00.*"
+    timeout: 15000
+- assertVisible:
+    id: "reports.waiting"
+    text: "Includes changes waiting to sync"
+- assertVisible:
+    id: "reports.freshness"
+    text: "You.re offline · Updated .*"
+- assertVisible:
+    id: "reports.category.0"
+    text: ".*3,700.00.*"

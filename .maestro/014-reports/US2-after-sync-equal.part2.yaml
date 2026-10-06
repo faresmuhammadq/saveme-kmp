@@ -1,0 +1,23 @@
+# deferred: E2E on owner's device
+# e2e-between: network-off
+# Part 2: offline; record the 200.00 Groceries expense in Cash and see it counted.
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- pressKey: back
+- runFlow:
+    file: ../common/open-transactions.yaml
+    env: { WALLET: "Cash" }
+- runFlow:
+    file: ../common/add-expense.yaml
+    env: { AMOUNT: "200", CATEGORY: "Groceries" }
+- pressKey: back
+- pressKey: back
+- pressKey: back
+- runFlow: ../common/open-reports.yaml
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*5,700.00.*"
+    timeout: 15000

@@ -4,10 +4,13 @@ import com.fares.saveme.core.database.SyncScopeDao
 import com.fares.saveme.core.sync.ScopeKind
 import com.fares.saveme.core.sync.SyncScope
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
+import com.fares.saveme.feature.transactions.data.local.DaySumRow
+import com.fares.saveme.feature.transactions.data.local.ReportRow
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -54,6 +57,18 @@ class TransactionRepository(
     /** The rows budgets sum over: dated in the range, with a waiting change, or a phone-only confirmation (spec 012 R-05). */
     fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>> =
         transactions.observeForSpending(accountId, from, to, waitingIds)
+
+    /** The rows reports read (spec 014 R-03): touching the wallets in the range, with a waiting change, or a phone-only confirmation. */
+    fun observeForReport(accountId: String, walletIds: Set<String>, from: String, to: String, waitingIds: List<String>): Flow<List<ReportRow>> =
+        transactions.observeForReport(accountId, walletIds.toList(), from, to, waitingIds)
+
+    /** The server's income and expense sums per day outside [from]..[to] within [extraFrom]..[extraTo]. */
+    fun observeDailySums(accountId: String, walletIds: Set<String>, from: String, to: String, extraFrom: String, extraTo: String): Flow<List<DaySumRow>> =
+        transactions.observeDailySums(accountId, walletIds.toList(), from, to, extraFrom, extraTo)
+
+    /** Per wallet, the effect of the server's live rows dated before [before] (a wallet with none is absent). */
+    fun observeBalancesBefore(accountId: String, walletIds: Set<String>, before: String): Flow<Map<String, Long>> =
+        transactions.observeBalancesBefore(accountId, walletIds.toList(), before).map { rows -> rows.associate { it.walletId to it.total } }
 
     suspend fun get(id: String): TransactionEntity? = transactions.get(id)
 

@@ -1,0 +1,53 @@
+# deferred: E2E on owner's device
+# US5: Given the seeded report, When Previous is tapped, Then the range moves back one Budget Period and the figures are zero; "Next" goes forward again but stops at the period containing today + 35 days; a custom range of 366 days is accepted and 367 days is refused with "Pick up to 366 days, start before end".
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow: ../common/seed-reports.yaml
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-reports.yaml
+- tapOn:
+    id: "reports.range.previous"
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*0.00.*"
+    timeout: 30000
+- tapOn:
+    id: "reports.range.current"
+- extendedWaitUntil:
+    visible:
+      id: "reports.summary.expenses"
+      text: ".*5,500.00.*"
+    timeout: 30000
+- tapOn:
+    id: "reports.range.next"
+- tapOn:
+    id: "reports.range.next"
+- assertVisible:
+    id: "reports.range.label"
+- tapOn:
+    id: "reports.range.current"
+- tapOn:
+    id: "reports.range.custom"
+- extendedWaitUntil:
+    visible:
+      id: "reports.custom"
+    timeout: 15000
+# The picker is the platform date picker: pick a first day, then a last day 367 days later, then apply.
+- tapOn:
+    id: "reports.custom.from"
+- tapOn: "Done"
+- tapOn:
+    id: "reports.custom.to"
+- tapOn: "Done"
+- tapOn:
+    id: "reports.custom.apply"
+- assertVisible:
+    id: "reports.custom.problem"
+    text: "Pick up to 366 days, start before end"

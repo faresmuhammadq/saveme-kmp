@@ -22,6 +22,7 @@ import com.fares.saveme.feature.categories.domain.model.CategoryField
 import com.fares.saveme.feature.categories.domain.model.CategoryFieldProblem
 import com.fares.saveme.feature.categories.domain.model.CategoryKind
 import com.fares.saveme.feature.categories.domain.model.CategoryView
+import com.fares.saveme.feature.categories.domain.model.ReportLabels
 import com.fares.saveme.feature.categories.domain.model.CreateResult
 import com.fares.saveme.feature.categories.domain.model.SaveResult
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +62,12 @@ interface CategoriesService {
 
     /** FR-019: one snapshot per screen; resolve(id) is own → default → [walletId]'s references → unavailable. */
     fun observeDisplays(walletId: String? = null): Flow<CategoryDisplays>
+
+    /**
+     * Spec 014 R-08: the grouping key and the names for a report over [walletIds] (the union of those wallets' category
+     * references). The default body keys every id as itself and resolves with [observeDisplays] for no wallet.
+     */
+    fun observeReportLabels(walletIds: Set<String>): Flow<ReportLabels> = observeDisplays(null).map { ReportLabels.identity(it) }
 
     suspend fun create(draft: CategoryDraft): CreateResult
 
@@ -156,6 +163,22 @@ class DefaultCategoriesService(
             CategoryDisplays(
                 lookup = resolver::resolve,
                 onMiss = { if (walletId != null) scope.launch { refreshReferences(walletId, force = false) } },
+            )
+        }
+    }
+
+    override fun observeReportLabels(walletIds: Set<String>): Flow<ReportLabels> {
+        val covered = references.observeAll().map { rows -> rows.filter { it.walletId in walletIds }.map { it.toReference() } }
+        return combine(ownViews(), defaults(), covered, language) { own, defaults, partners, lang ->
+            val resolver = CategoryResolver(own, defaults, partners, lang)
+            val keys = defaults.associate { it.id to it.systemKey }
+            ReportLabels(
+                key = { id -> keys[id] ?: id },
+                displays = CategoryDisplays(
+                    lookup = resolver::resolve,
+                    // A miss asks for the references of every covered wallet, each under its own floor.
+                    onMiss = { walletIds.forEach { id -> scope.launch { refreshReferences(id, force = false) } } },
+                ),
             )
         }
     }
