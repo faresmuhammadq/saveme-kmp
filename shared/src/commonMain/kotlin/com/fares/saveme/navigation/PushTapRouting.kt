@@ -2,6 +2,8 @@ package com.fares.saveme.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorEffect
+import com.fares.saveme.feature.notifications.domain.PushRead
+import com.fares.saveme.feature.notifications.domain.PushRoute
 import com.fares.saveme.feature.notifications.domain.PushTarget
 import com.fares.saveme.feature.recurring.ui.editor.RuleEditorEffect
 import com.fares.saveme.feature.sharing.ui.invitation.InvitationEffect
@@ -38,6 +40,23 @@ internal fun MutableList<NavKey>.openPushTarget(target: PushTarget) {
     } else {
         add(key)
     }
+}
+
+/**
+ * What a tap does to this stack (FR-029, FR-033): forgotten when nobody is signed in, dropped while the blocking update
+ * screen shows, otherwise a newer tap replaces an "Opening…" screen still showing; a route with no read opens its target at
+ * once, any other waits on a new "Opening…" screen numbered by [nextNonce]. Returns whether the tap was routed.
+ */
+internal fun MutableList<NavKey>.openPushTap(route: PushRoute, signedIn: Boolean, nextNonce: () -> Long): Boolean {
+    if (!signedIn) return false
+    if (lastOrNull() is UpdateRequiredKey) return false
+    if (lastOrNull() is NotificationOpenKey) removeAt(lastIndex)
+    if (route.read == PushRead.None) {
+        openPushTarget(route.target)
+    } else {
+        add(NotificationOpenKey(route, nextNonce()))
+    }
+    return true
 }
 
 /**

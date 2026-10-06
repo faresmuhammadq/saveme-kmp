@@ -53,7 +53,6 @@ import com.fares.saveme.devtools.push.SimulatePushRoute
 import com.fares.saveme.feature.notifications.domain.NotificationPromptGate
 import com.fares.saveme.feature.notifications.domain.PushCoordinator
 import com.fares.saveme.feature.notifications.domain.PushPayloadParser
-import com.fares.saveme.feature.notifications.domain.PushRead
 import com.fares.saveme.feature.notifications.domain.PushRouter
 import com.fares.saveme.feature.notifications.ui.PermissionStatus
 import com.fares.saveme.feature.notifications.ui.invitation.InvitationNoticeEffect
@@ -209,16 +208,8 @@ fun AppNavHost(
         if (sessionManager.state.value == AuthState.Unknown) return@LaunchedEffect
         pushTaps.taps.collect { data ->
             pushTaps.consume()
-            if (sessionManager.state.value !is AuthState.SignedIn) return@collect
-            if (appStack.lastOrNull() is UpdateRequiredKey) return@collect
             val route = PushRouter.route(PushPayloadParser.parse(data))
-            // A newer tap replaces an "Opening…" screen still showing (FR-033).
-            if (appStack.lastOrNull() is NotificationOpenKey) appStack.removeAt(appStack.lastIndex)
-            if (route.read == PushRead.None) {
-                appStack.openPushTarget(route.target)
-            } else {
-                appStack.add(NotificationOpenKey(route, ++tapCount))
-            }
+            appStack.openPushTap(route, sessionManager.state.value is AuthState.SignedIn) { ++tapCount }
         }
     }
 

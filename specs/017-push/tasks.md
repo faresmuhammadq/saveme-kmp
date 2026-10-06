@@ -214,9 +214,9 @@ description: "Task list for 017-push"
 - [X] T077 Run `./gradlew :shared:testAndroidHostTest :shared:verifyRoborazziAndroidHostTest :androidApp:assembleDevDebug` and the iOS simulator compile; record goldens added/changed (Account screen rows, catalogue pickers section)
 - [X] T078 Confirm no Firebase class on any `:shared` or `:androidApp` classpath (`./gradlew :androidApp:dependencies --configuration devDebugRuntimeClasspath | grep -i firebase` is empty) (SC-009)
 - [X] T079 Review quickstart §1–3 against the built code; fix drift
-- [ ] T080 Wait for backend spec 023 to be committed; rerun T001 — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
-- [ ] T081 Live contract QA per contracts/push-api-client.md "Live QA" (curl, throwaway `qa017-*` accounts, local backend `127.0.0.1:43871`), capturing answers (tokens replaced by same-shape fakes) into `nt/data/CapturedNotificationsResponses.kt` — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
-- [ ] T082 `nt/data/NotificationsLiveReplayTest.kt`: replay the captured answers through the real `ApiClient`, `NotificationsApi`, `PushRegistrationService` and `NotificationPreferencesService` — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
+- [X] T080 Wait for backend spec 023 to be committed; rerun T001 — done in qa-report.md section 7 (backend spec 023 still uncommitted at `e8c308a`; QA ran against its working tree)
+- [X] T081 Live contract QA per contracts/push-api-client.md "Live QA" (curl, throwaway `qa017-*` accounts, local backend `127.0.0.1:43871`), capturing answers (tokens replaced by same-shape fakes) into `nt/data/CapturedNotificationsResponses.kt` — done in qa-report.md section 7 (backend spec 023 still uncommitted at `e8c308a`; QA ran against its working tree)
+- [X] T082 `nt/data/NotificationsLiveReplayTest.kt`: replay the captured answers through the real `ApiClient`, `NotificationsApi`, `PushRegistrationService` and `NotificationPreferencesService` — done in qa-report.md section 7 (backend spec 023 still uncommitted at `e8c308a`; QA ran against its working tree)
 - [X] T083 Full gate `./gradlew build allTests --continue`; note pre-existing failures separately from this spec's
 - [ ] T084 Write specs/017-push/summary.md (parent writes it)
 
@@ -243,7 +243,7 @@ description: "Task list for 017-push"
 - Phase 1 → Phase 2 → US1 (Phase 3) and US2 (Phase 4) → US3 (Phase 5), US4 (Phase 6), US5 (Phase 7) → Phase 8. Phase 9 only after owner approval, last (rebases on 018's build-file edits).
 - T001 must pass before T014 and again (T080) before T081.
 - T019's dev provider choice switches to `DevFakePushTokenProvider` once T070 lands.
-- US2's export mapping (T047) uses spec 016's `ExportDetailKey`/`ExportsKey` when 016 is merged; otherwise it maps both export targets to `AccountKey` and leaves a follow-up note.
+- US2's export mapping (T047) uses spec 016's `ExportDetailKey`/`ExportsKey` (016 merged; the `AccountKey` fallback is gone).
 
 ### Within Each User Story
 
