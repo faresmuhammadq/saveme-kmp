@@ -69,7 +69,12 @@ class BudgetsLayeringTest {
         feature.listFiles().orEmpty().filter { it.isDirectory && it.name != "budgets" }.forEach { dir ->
             // Reports (spec 014) reuses budgets' pure period derivation and day ticker through budgets' domain, so the two can never
             // disagree on a Budget Period (research R-07); nothing else of budgets, and no other feature.
-            val allowed = if (dir.name == "reports") listOf("com.fares.saveme.feature.budgets.domain.BudgetPeriods", "com.fares.saveme.feature.budgets.domain.DayTicker") else emptyList()
+            // Notifications (spec 017 R-11) asks budgets' service only whether a tapped budget is already on the phone.
+            val allowed = when (dir.name) {
+                "reports" -> listOf("com.fares.saveme.feature.budgets.domain.BudgetPeriods", "com.fares.saveme.feature.budgets.domain.DayTicker")
+                "notifications" -> listOf("com.fares.saveme.feature.budgets.domain.BudgetsService")
+                else -> emptyList()
+            }
             val offenders = imports(dir).filter { (_, i) -> i.startsWith(base + "budgets") && i !in allowed }
             assertTrue(offenders.isEmpty(), "${dir.name} imports budgets: $offenders")
         }

@@ -141,3 +141,5 @@ real push); Android 13+ for the permission flows.
 `common/open-notifications.yaml` (Account → Notifications) and `common/simulate-push.yaml`
 (Account → Developer tools → Simulate a notification → type → Post → open shade → tap).
 `api.js` gains `notificationPreferences`, `saveNotificationPreferences`.
+
+No new seed is needed in `.specify/scripts/bash/run-e2e.sh`: every flow signs in with the runner's `verified-user` account. The conflict flow (`US3-conflict`) saves the stored preferences from a second session through `api.js` (`saveNotificationPreferences`, slot B), then saves in the app. Other additions to `api.js`: `notificationPreferences` (reads the stored values) and `expectCurrentSession`; `common/open-notifications.yaml`, `common/open-shade.yaml` (pulls the shade with a swipe from the top edge) and `common/simulate-push.yaml` are the shared subflows. Flows that open a record (`occurrence_due`, `budget_exceeded`, the wallet types) seed it first through the existing `seed-*` subflows, so the tool fills real ids.

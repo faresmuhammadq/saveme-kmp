@@ -197,3 +197,24 @@ Phase 9 edits — rebase Phase 9 last.
 | Violation | Why needed | Simpler alternative rejected because |
 |---|---|---|
 | P-14.5 new dependency (`firebase-messaging`, `firebase-bom`, `com.google.gms.google-services` plugin) — **Phase 9 only, not taken until the owner approves** | Android receives FCM push only through Google Play services' messaging client; the backend already sends through FCM HTTP v1 | A self-built receiver is not possible (FCM delivery is a Play services component); a third-party push SDK is also a new dependency and a new data processor; polling is not push and drains the battery |
+
+## Implementation notes
+
+Decisions taken during implementation under the owner's delegated authority (each the choice most consistent with spec, plan and research; none adds a dependency):
+
+- **T001 contract check**: backend `e8c308a` plus the uncommitted spec 023 working tree. `notifications.yaml` v1.14 read in full; no drift from spec §5, contracts/push-api-client.md or contracts/push-domain.md. "Uncommitted at implementation time"; T080/T081/T082 are left to the QA agent.
+- **No new dependency.** `NotificationCompat` and `ComponentActivity` resolved from what `:shared` already sees; `androidApp/build.gradle.kts`, `libs.versions.toml` and the root build file are untouched. `./gradlew :androidApp:dependencies --configuration devDebugRuntimeClasspath` lists no Firebase artifact (T078/SC-009), and a layering test fails on any Firebase import or build-file mention.
+- **Permission seam**: `rememberOpenAppNotificationSettings()` is a composable returning a lambda (an `expect fun` has no Context on Android). The requester registers `RequestPermission` on the `ComponentActivity`'s `activityResultRegistry` instead of `rememberLauncherForActivityResult`, so `:shared` needs no `activity-compose`. Status is re-read on every `ON_RESUME`.
+- **`PushReconciler`**: a one-method interface that `PushRegistrationService` implements; the WorkManager worker injects it, so the worker is tested with a fake.
+- **Provider choice**: `devOrUnavailablePushProvider()` (devtools/push) is `androidPlatformModule`'s default and what `MainApplication` passes explicitly; the gated phase replaces it in `:androidApp` only. Cleaners are resolved when the session manager is built, so the fake provider reaches the receiver through a lambda (no cycle; `AppGraphTest`).
+- **`NotificationOpenKey(route, nonce)`**: a per-tap counter keeps two taps for the same route distinct keys, so the newer one replaces the older "Opening…" screen with a fresh store.
+- **Targets on the stack**: a target goes on top (an edited screen keeps its edits underneath); Home trims back to the existing Home entry rather than repeating a key. Export targets open the account screen until spec 016 is merged.
+- **Unknown type naming no category** posts to the `recurring_due` channel (the first); a channel that does not exist would drop the message on Android 8+.
+- **Added string** `notifications_discard_body` ("The changes you made here haven't been saved."), because `AppAlertDialog` requires body text; both languages.
+- **`RuleEditorEffect.Created`** is emitted before `Close` only for a create; the existing editor test was updated for the new order.
+- **Design system**: `TimeOfDayField` + `TimeOfDayList` (the sheet content, for screenshots) + `formatTimeOfDay`, and an `AppIcons.Bell`; catalogue entries added to the "rows" and "dialogs" sections (their goldens changed).
+- **`BudgetsLayeringTest`** allows `notifications` to import `budgets.domain.BudgetsService` (research R-11: is the tapped budget on the phone?), as it already does for reports.
+- **Host tests**: the Android 12 branch of the permission state is exercised by setting `Build.VERSION.SDK_INT` (only API 35 images are cached offline). `androidApp` has no host tests, so the activity's intake is `PushTapExtras.intake` in `:shared` (tested); the `savedInstanceState == null` guard stays in `MainActivity`.
+- **Logging**: the existing `api` debug line prints the request URL, which for the registration call contains the device session id (unchanged client behaviour). The `push` tag carries outcome or type only; the log-capture test asserts no address, fingerprint, payload id, title or text appears in any line.
+- **`api.js`**: added `notificationPreferences`, `saveNotificationPreferences`, `expectCurrentSession`, and a missing `break` after `redeemCode` (it fell through into `createTransfer`).
+

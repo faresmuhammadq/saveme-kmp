@@ -13,6 +13,14 @@ import com.fares.saveme.core.sync.NoopSyncScheduler
 import com.fares.saveme.core.sync.SyncScheduler
 import com.fares.saveme.feature.sharing.NoLinkSharer
 import com.fares.saveme.feature.sharing.domain.LinkSharer
+import com.fares.saveme.feature.notifications.IosNotificationPermissionState
+import com.fares.saveme.feature.notifications.NoopNotificationDisplay
+import com.fares.saveme.feature.notifications.NoopPushRegistrationScheduler
+import com.fares.saveme.feature.notifications.domain.NotificationDisplay
+import com.fares.saveme.feature.notifications.domain.NotificationPermissionState
+import com.fares.saveme.feature.notifications.domain.PushRegistrationScheduler
+import com.fares.saveme.feature.notifications.domain.PushTokenProvider
+import com.fares.saveme.feature.notifications.domain.UnavailablePushTokenProvider
 import org.koin.dsl.module
 
 fun iosPlatformModule() = module {
@@ -22,4 +30,9 @@ fun iosPlatformModule() = module {
     single<AppDatabase> { buildAppDatabase(databaseBuilder()) }
     single<SyncScheduler> { NoopSyncScheduler() }
     single<LinkSharer> { NoLinkSharer() }
+    // No push on iOS (FR-042): no provider, no channels, no permission, no display.
+    single<PushTokenProvider> { UnavailablePushTokenProvider }
+    single<NotificationPermissionState> { IosNotificationPermissionState() }
+    single<NotificationDisplay> { NoopNotificationDisplay() }
+    single<PushRegistrationScheduler> { NoopPushRegistrationScheduler() }
 }

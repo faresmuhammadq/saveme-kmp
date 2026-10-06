@@ -1,0 +1,14 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a message of a type this app does not know is shown as received and its tap opens Home.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/simulate-push.yaml
+    env: { TYPE: "future_type" }
+- extendedWaitUntil:
+    visible: "Signed in as .+"
+    timeout: 20000

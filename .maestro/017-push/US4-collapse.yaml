@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US4-S1: Given a budget on the phone, When the tool posts budget_exceeded twice for it, Then the shade holds one notification (same collapse key).
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-budget.yaml
+    env: { AMOUNT: "600000" }
+- runFlow: ../common/sign-in.yaml
+- tapOn: "Account"
+- tapOn:
+    id: "account.devTools"
+- tapOn:
+    id: "devtools.simulatePush"
+- tapOn:
+    id: "simulatePush.post.budget_exceeded"
+- tapOn:
+    id: "simulatePush.post.budget_exceeded"
+- runFlow: ../common/open-shade.yaml
+- assertVisible: "Test notification"
+# One row, not two: the lock-screen spot check (quickstart 3.5) is by hand.

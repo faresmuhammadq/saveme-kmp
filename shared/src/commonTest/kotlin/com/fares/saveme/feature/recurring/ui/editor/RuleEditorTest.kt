@@ -281,6 +281,8 @@ class RuleEditorViewModelTest {
         store.onIntent(RuleEditorIntent.NoteChanged("Rent"))
         store.effects.test {
             store.onIntent(RuleEditorIntent.SaveClicked)
+            // Spec 017: a create is told apart from an edit so the app can offer notifications once.
+            assertEquals(RuleEditorEffect.Created, awaitItem())
             assertEquals(RuleEditorEffect.Close, awaitItem())
         }
         val (wallet, draft) = created.single()
@@ -289,6 +291,23 @@ class RuleEditorViewModelTest {
         assertEquals("c1", draft.categoryId)
         assertEquals(Preset.Custom, draft.preset)
         assertFalse(store.state.value.saving)
+    }
+
+    @Test
+    fun anEditSaveAndACancelEmitOnlyClose() = runMviTest {
+        val edit = vm(ruleId = "r1", view = flowOf(testRuleView(testRule(version = 5))))
+        edit.effects.test {
+            edit.onIntent(RuleEditorIntent.AmountChanged("5000"))
+            edit.onIntent(RuleEditorIntent.SaveClicked)
+            assertEquals(RuleEditorEffect.Close, awaitItem())
+            expectNoEvents()
+        }
+        val cancel = vm()
+        cancel.effects.test {
+            cancel.onIntent(RuleEditorIntent.Back)
+            assertEquals(RuleEditorEffect.Close, awaitItem())
+            expectNoEvents()
+        }
     }
 
     @Test

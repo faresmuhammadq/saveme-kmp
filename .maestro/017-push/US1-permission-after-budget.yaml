@@ -1,0 +1,37 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US1-S1: Given a signed-in person who never answered the notification question on Android 13+, When they create their first budget, Then the explanation appears, "Turn on" shows the system dialog, and after "Allow" the Notifications screen shows no "off" card.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runFlow:
+    file: ../common/seed-category.yaml
+    env: { NAME: "Food run", KIND: "expense" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- tapOn:
+    id: "budgets.add"
+- tapOn:
+    id: "budgetEditor.limit"
+- inputText: "6000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "pushPrompt.title"
+    timeout: 15000
+- tapOn:
+    id: "pushPrompt.turnOn"
+# The system permission dialog.
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 10000
+- tapOn: "Allow"
+- runFlow: ../common/open-notifications.yaml
+- assertNotVisible:
+    id: "notifications.phoneOff"

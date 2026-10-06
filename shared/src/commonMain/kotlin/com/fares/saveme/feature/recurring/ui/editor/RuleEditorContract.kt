@@ -170,6 +170,9 @@ sealed interface RuleEditorIntent {
 sealed interface RuleEditorEffect {
     data object Close : RuleEditorEffect
 
+    /** A new rule was created (not an edit); sent just before [Close] so the app can offer notifications (spec 017 R-14). */
+    data object Created : RuleEditorEffect
+
     /** Replaces this editor with the same rule's "from a date" editor. */
     data class OpenFromDate(val ruleId: String, val walletId: String) : RuleEditorEffect
     data object OpenWalletEditor : RuleEditorEffect

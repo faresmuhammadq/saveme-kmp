@@ -44,9 +44,9 @@ description: "Task list for 017-push"
 
 ## Phase 1: Setup
 
-- [ ] T001 Rerun `.specify/scripts/bash/check-backend-contract.sh` after backend spec 023 is committed; diff `docs/openapi/paths/notifications.yaml` against v1.14 as read here (`e8c308a` + working tree) and update spec §5 "Contract changes since last spec", contracts/push-api-client.md and contracts/push-domain.md §2–3 for any drift before coding the API (T014) or running live QA (T081)
-- [ ] T002 [P] Add the `<!-- Push (spec 017) -->` string block to both `strings.xml` files with every key of contracts/ui-and-e2e.md §2–§7 (EN and AR, Western digits, `%1$s`/`%1$d` placeholders), including channel names/descriptions and the public-version text
-- [ ] T003 [P] Declare `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />` in `androidApp/src/main/AndroidManifest.xml` and add the monochrome small icon `androidApp/src/main/res/drawable/ic_stat_notification.xml` (vector, white on transparent)
+- [X] T001 Rerun `.specify/scripts/bash/check-backend-contract.sh` after backend spec 023 is committed; diff `docs/openapi/paths/notifications.yaml` against v1.14 as read here (`e8c308a` + working tree) and update spec §5 "Contract changes since last spec", contracts/push-api-client.md and contracts/push-domain.md §2–3 for any drift before coding the API (T014) or running live QA (T081)
+- [X] T002 [P] Add the `<!-- Push (spec 017) -->` string block to both `strings.xml` files with every key of contracts/ui-and-e2e.md §2–§7 (EN and AR, Western digits, `%1$s`/`%1$d` placeholders), including channel names/descriptions and the public-version text
+- [X] T003 [P] Declare `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />` in `androidApp/src/main/AndroidManifest.xml` and add the monochrome small icon `androidApp/src/main/res/drawable/ic_stat_notification.xml` (vector, white on transparent)
 
 ---
 
@@ -54,28 +54,28 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T004 [P] Payload table test in `nt/domain/PushPayloadParserTest.kt`: each of the 12 types from the backend examples and a built sample per type parses to its case with typed ids; unknown type, `schema` "2", missing `type`/`notification_id` → `Unknown`; known type with a missing or non-UUID needed id → `Malformed(type)`; extra keys ignored; `category` from data or the type's default; `toString` prints the type only (contracts/push-domain.md §2)
-- [ ] T005 [P] Collapse-key and routing table tests in `nt/domain/PushRouterTest.kt`: every row of contracts/push-domain.md §2 (collapse) and §3 (read + target), including the `Malformed` fallbacks and `Unknown` → `Home`
-- [ ] T006 [P] Contract tests in `nt/data/NotificationsApiTest.kt` (MockEngine from `notifications.yaml` examples): register path/method/body exactly `{"push_token": …}` and standard headers; 200 `registered`/`rotated` decode with an unknown member ignored; 404, 422, 429 (`Retry-After` and `retry_after_seconds`), 500; unregister `DELETE` 204 and 404; GET `defaults`; PUT body from `quieterNights` (every key, no `updated_at`), 200 `saved`, 409 with `current` decoded by the same DTO, 422 with pointer `/quiet_hours/start`, 429 (contracts/push-api-client.md)
-- [ ] T007 [P] Store tests in `nt/data/PushRecordsStoreTest.kt` over `InMemoryKeyValueStore`: registration record round trip and clear; shown ids keep the newest 100 and reset for another user; prompt and permission flags per installation; no stored value equals the token (FR-004)
-- [ ] T008 [P] Fingerprint test in `nt/domain/FingerprintTest.kt`: FNV-1a 64 known vectors, hex output, different tokens differ, never contains the input
-- [ ] T009 [P] `TimeOfDayField` tests: `ht/designsystem/TimeOfDayFieldScreenshotTest.kt` (closed with value, open sheet scrolled to value, disabled, error × EN LTR, AR RTL, font 2.0) and `ct/designsystem/format/TimeOfDayFormatTest.kt` (`00:00`, `09:15`, `23:45`, Western digits under an Arabic locale)
-- [ ] T010 [P] `SignOutUseCase` test in `ct/feature/auth/domain/SignOutUseCaseTest.kt`: participants run before the server sign-out and before the local wipe; a participant that hangs is cut at 2 s (virtual time) and a throwing one does not skip the others; the session is still readable inside a participant; existing behaviour unchanged with no participants
+- [X] T004 [P] Payload table test in `nt/domain/PushPayloadParserTest.kt`: each of the 12 types from the backend examples and a built sample per type parses to its case with typed ids; unknown type, `schema` "2", missing `type`/`notification_id` → `Unknown`; known type with a missing or non-UUID needed id → `Malformed(type)`; extra keys ignored; `category` from data or the type's default; `toString` prints the type only (contracts/push-domain.md §2)
+- [X] T005 [P] Collapse-key and routing table tests in `nt/domain/PushRouterTest.kt`: every row of contracts/push-domain.md §2 (collapse) and §3 (read + target), including the `Malformed` fallbacks and `Unknown` → `Home`
+- [X] T006 [P] Contract tests in `nt/data/NotificationsApiTest.kt` (MockEngine from `notifications.yaml` examples): register path/method/body exactly `{"push_token": …}` and standard headers; 200 `registered`/`rotated` decode with an unknown member ignored; 404, 422, 429 (`Retry-After` and `retry_after_seconds`), 500; unregister `DELETE` 204 and 404; GET `defaults`; PUT body from `quieterNights` (every key, no `updated_at`), 200 `saved`, 409 with `current` decoded by the same DTO, 422 with pointer `/quiet_hours/start`, 429 (contracts/push-api-client.md)
+- [X] T007 [P] Store tests in `nt/data/PushRecordsStoreTest.kt` over `InMemoryKeyValueStore`: registration record round trip and clear; shown ids keep the newest 100 and reset for another user; prompt and permission flags per installation; no stored value equals the token (FR-004)
+- [X] T008 [P] Fingerprint test in `nt/domain/FingerprintTest.kt`: FNV-1a 64 known vectors, hex output, different tokens differ, never contains the input
+- [X] T009 [P] `TimeOfDayField` tests: `ht/designsystem/TimeOfDayFieldScreenshotTest.kt` (closed with value, open sheet scrolled to value, disabled, error × EN LTR, AR RTL, font 2.0) and `ct/designsystem/format/TimeOfDayFormatTest.kt` (`00:00`, `09:15`, `23:45`, Western digits under an Arabic locale)
+- [X] T010 [P] `SignOutUseCase` test in `ct/feature/auth/domain/SignOutUseCaseTest.kt`: participants run before the server sign-out and before the local wipe; a participant that hangs is cut at 2 s (virtual time) and a throwing one does not skip the others; the session is still readable inside a participant; existing behaviour unchanged with no participants
 
 ### Implementation
 
-- [ ] T011 [P] Add `fun interface SignOutParticipant { suspend fun beforeSignOut() }` in `cm/core/session/SignOutParticipant.kt` (P-10.7) and extend `cm/feature/auth/domain/usecase/SignOutUseCase.kt` with `participants: () -> List<SignOutParticipant> = { emptyList() }` and `participantTimeout: Duration? = 2.seconds` (each participant guarded; total bound); wire `{ getAll<SignOutParticipant>() }` in the auth Koin module
-- [ ] T012 [P] Domain ports and values in `fn/domain/`: `PushTokenProvider`, `UnavailablePushTokenProvider`, `NotificationDisplay`, `PostedNotification`, `ChannelLabels`, `NotificationPermissionState`, `PushRegistrationScheduler`, `ReconcileTrigger`, `ReconcileOutcome`, `NotificationCategory`, `QuarterHour`, `QuietHours`, `NotificationPreferences` (data-model §2; redacted `toString`s)
-- [ ] T013 [P] `fn/domain/PushMessage.kt`, `PushPayloadParser.kt`, `PushRoute.kt` (`PushRead`, `PushTarget`, `PushRoute`), `PushRouter.kt`, `Fingerprint.kt` per contracts/push-domain.md §2–3 and research R-03/R-04 (makes T004, T005, T008 pass)
-- [ ] T014 [P] `fn/data/dto/NotificationsDtos.kt` and `fn/data/NotificationsApi.kt` (four calls, plain values, P-10.6) per contracts/push-api-client.md (makes T006 pass)
-- [ ] T015 [P] `fn/data/PushRegistrationStore.kt`, `ShownNotificationsStore.kt`, `PromptFlags.kt` over `KeyValueStore` per data-model §3 (makes T007 pass)
-- [ ] T016 `TimeOfDayField` in `cm/designsystem/component/Pickers.kt` (built on `AppSelectField` + `SelectionSheet`, 15-minute options, LTR value) and `formatTimeOfDay(minutes)` in `cm/designsystem/format/TimeOfDay.kt`; catalogue entry in the pickers section (research R-13; makes T009 pass)
-- [ ] T017 [P] Android adapters in `am/feature/notifications/`: `AndroidNotificationDisplay` (channels per R-08 with `VISIBILITY_PRIVATE`; `post` per R-09 with the host's small icon, tag, public version, `PendingIntent.getActivity` on the launch intent with the tap extras, `FLAG_IMMUTABLE`; skip when not allowed; `cancelAll`), `AndroidNotificationPermissionState` (R-14), `WorkManagerPushRegistrationScheduler` + `PushRegistrationWorker` (R-05, unique work `push-registration`, network constraint, backoff, `RetryAfter` → delayed re-enqueue), `PushTapExtras.from(bundle)` and `PushTapExtras.strip(intent)` (contract keys only, string values only)
-- [ ] T018 [P] iOS no-ops in `im/feature/notifications/`: `NoopNotificationDisplay`, permission state (never allowed), `NoopPushRegistrationScheduler`; iOS platform module binds them and `UnavailablePushTokenProvider` (FR-042)
-- [ ] T019 `fn/di/NotificationsModule.kt` (services, stores, API, coordinator start, `SignOutParticipant` and `UserDataCleaner` bindings, lazy `SyncRunner`) and `cm/AppModules.kt` (+ `notificationsModule`); `am/core/di/PlatformModule.android.kt` gains `notificationIcon: Int` and `pushTokenProvider: Scope.() -> PushTokenProvider` parameters and binds the Android adapters; `androidApp/.../MainApplication.kt` passes `R.drawable.ic_stat_notification` and the provider choice (dev: `DevFakePushTokenProvider` once T070 exists, otherwise `UnavailablePushTokenProvider`)
-- [ ] T020 [P] Robolectric tests in `ht/feature/notifications/AndroidNotificationDisplayTest.kt` (six channels: ids, names, default importance, private lock-screen visibility; second call renames without deleting; post sets channel, tag, auto-cancel, public version, PendingIntent extras exactly the contract keys; nothing posted on API 33 without permission; `cancelAll`) and `AndroidAdaptersTest.kt` (permission state on API 32 and 33; `PushTapExtras` drops non-contract and non-string extras; scheduler enqueues unique work with the network constraint; worker maps each `ReconcileOutcome`)
-- [ ] T021 [P] Layering test `ht/feature/notifications/NotificationsLayeringTest.kt`: `fn/data` imports no `fn/domain`/`fn/ui`; `fn/domain` imports no Ktor/Compose/Room/Android; `core` (incl. `core/sync`) imports nothing of `feature.notifications`; no other feature imports `feature.notifications.data`/`ui`; no `com.google.firebase` import anywhere in `shared/` or outside `androidApp/.../push/`
-- [ ] T022 `AppGraphTest` additions in `ht/core/di/AppGraphTest.kt`: the graph starts with `notificationsModule`; `PushRegistrationService`, `PushReceiver`, `PushCoordinator` resolve; one `PushSignOutParticipant` and one `PushDataCleaner` are registered; `SignOutUseCase` resolves without a cycle; with `isDebugTools = false` the provider is `UnavailablePushTokenProvider`
+- [X] T011 [P] Add `fun interface SignOutParticipant { suspend fun beforeSignOut() }` in `cm/core/session/SignOutParticipant.kt` (P-10.7) and extend `cm/feature/auth/domain/usecase/SignOutUseCase.kt` with `participants: () -> List<SignOutParticipant> = { emptyList() }` and `participantTimeout: Duration? = 2.seconds` (each participant guarded; total bound); wire `{ getAll<SignOutParticipant>() }` in the auth Koin module
+- [X] T012 [P] Domain ports and values in `fn/domain/`: `PushTokenProvider`, `UnavailablePushTokenProvider`, `NotificationDisplay`, `PostedNotification`, `ChannelLabels`, `NotificationPermissionState`, `PushRegistrationScheduler`, `ReconcileTrigger`, `ReconcileOutcome`, `NotificationCategory`, `QuarterHour`, `QuietHours`, `NotificationPreferences` (data-model §2; redacted `toString`s)
+- [X] T013 [P] `fn/domain/PushMessage.kt`, `PushPayloadParser.kt`, `PushRoute.kt` (`PushRead`, `PushTarget`, `PushRoute`), `PushRouter.kt`, `Fingerprint.kt` per contracts/push-domain.md §2–3 and research R-03/R-04 (makes T004, T005, T008 pass)
+- [X] T014 [P] `fn/data/dto/NotificationsDtos.kt` and `fn/data/NotificationsApi.kt` (four calls, plain values, P-10.6) per contracts/push-api-client.md (makes T006 pass)
+- [X] T015 [P] `fn/data/PushRegistrationStore.kt`, `ShownNotificationsStore.kt`, `PromptFlags.kt` over `KeyValueStore` per data-model §3 (makes T007 pass)
+- [X] T016 `TimeOfDayField` in `cm/designsystem/component/Pickers.kt` (built on `AppSelectField` + `SelectionSheet`, 15-minute options, LTR value) and `formatTimeOfDay(minutes)` in `cm/designsystem/format/TimeOfDay.kt`; catalogue entry in the pickers section (research R-13; makes T009 pass)
+- [X] T017 [P] Android adapters in `am/feature/notifications/`: `AndroidNotificationDisplay` (channels per R-08 with `VISIBILITY_PRIVATE`; `post` per R-09 with the host's small icon, tag, public version, `PendingIntent.getActivity` on the launch intent with the tap extras, `FLAG_IMMUTABLE`; skip when not allowed; `cancelAll`), `AndroidNotificationPermissionState` (R-14), `WorkManagerPushRegistrationScheduler` + `PushRegistrationWorker` (R-05, unique work `push-registration`, network constraint, backoff, `RetryAfter` → delayed re-enqueue), `PushTapExtras.from(bundle)` and `PushTapExtras.strip(intent)` (contract keys only, string values only)
+- [X] T018 [P] iOS no-ops in `im/feature/notifications/`: `NoopNotificationDisplay`, permission state (never allowed), `NoopPushRegistrationScheduler`; iOS platform module binds them and `UnavailablePushTokenProvider` (FR-042)
+- [X] T019 `fn/di/NotificationsModule.kt` (services, stores, API, coordinator start, `SignOutParticipant` and `UserDataCleaner` bindings, lazy `SyncRunner`) and `cm/AppModules.kt` (+ `notificationsModule`); `am/core/di/PlatformModule.android.kt` gains `notificationIcon: Int` and `pushTokenProvider: Scope.() -> PushTokenProvider` parameters and binds the Android adapters; `androidApp/.../MainApplication.kt` passes `R.drawable.ic_stat_notification` and the provider choice (dev: `DevFakePushTokenProvider` once T070 exists, otherwise `UnavailablePushTokenProvider`)
+- [X] T020 [P] Robolectric tests in `ht/feature/notifications/AndroidNotificationDisplayTest.kt` (six channels: ids, names, default importance, private lock-screen visibility; second call renames without deleting; post sets channel, tag, auto-cancel, public version, PendingIntent extras exactly the contract keys; nothing posted on API 33 without permission; `cancelAll`) and `AndroidAdaptersTest.kt` (permission state on API 32 and 33; `PushTapExtras` drops non-contract and non-string extras; scheduler enqueues unique work with the network constraint; worker maps each `ReconcileOutcome`)
+- [X] T021 [P] Layering test `ht/feature/notifications/NotificationsLayeringTest.kt`: `fn/data` imports no `fn/domain`/`fn/ui`; `fn/domain` imports no Ktor/Compose/Room/Android; `core` (incl. `core/sync`) imports nothing of `feature.notifications`; no other feature imports `feature.notifications.data`/`ui`; no `com.google.firebase` import anywhere in `shared/` or outside `androidApp/.../push/`
+- [X] T022 `AppGraphTest` additions in `ht/core/di/AppGraphTest.kt`: the graph starts with `notificationsModule`; `PushRegistrationService`, `PushReceiver`, `PushCoordinator` resolve; one `PushSignOutParticipant` and one `PushDataCleaner` are registered; `SignOutUseCase` resolves without a cycle; with `isDebugTools = false` the provider is `UnavailablePushTokenProvider`
 
 **Checkpoint**: the seam, tables, API, stores, adapters and graph exist; nothing is visible yet.
 
@@ -89,22 +89,22 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T023 [P] [US1] `nt/domain/PushRegistrationServiceTest.kt` (fake API, provider, permission, clock, `InMemoryKeyValueStore`, `InMemorySecureStore`): every row of research R-04 — nobody signed in, no provider, not allowed with/without record, null token, first register, same token < 24 h on `Foreground` (no call) vs `SignedIn`/`TokenChanged`/`PermissionChanged` (call), ≥ 24 h, new fingerprint, other session; 404 with a changed stored session (one retry) and unchanged (stop marker, later `Foreground` skipped, cleared by a new token or session); 429 → `RetryAfter`; offline/500 → `RetryLater`; 422 → `Stopped`; the token never stored; no email-verification or plan check anywhere on the path (FR-001–FR-006, FR-009)
-- [ ] T024 [P] [US1] `nt/domain/PushCoordinatorTest.kt`: sign-in transition → `request(SignedIn)` once per sign-in; `onForeground` signed in/out; `onTokenChanged`; `onPermissionChanged`
-- [ ] T025 [P] [US1] `nt/domain/PushSignOutTest.kt`: participant sends `DELETE` only when the record belongs to the stored session, ignores any answer, finishes within 2 s when the server hangs; cleaner cancels all displayed notifications, clears both stores, cancels the scheduler and discards the token without blocking (bounded on the app scope); remote session end (`ApiEvent.SessionEnded`) runs the cleaner and never the `DELETE` (FR-007, FR-043)
-- [ ] T026 [P] [US1] `nt/domain/NotificationPromptGateTest.kt`: offered only with a provider, a runtime-askable permission and not offered before; `markOffered` is permanent across sign-out; not counted when suppressed (FR-011)
-- [ ] T027 [P] [US1] `nt/ui/prompt/NotificationPromptSheetScreenshotTest.kt` in `ht/…` (EN, AR, 2.0) and a nav-level test `ht/navigation/PushPromptMomentsTest.kt`: `BudgetEditorEffect.Saved` from a create key, `InvitationEffect.OpenWallet`, and `RuleEditorEffect.Created` each offer the sheet once; an edit save does not; another sheet showing suppresses it
-- [ ] T028 [P] [US1] `ct/feature/recurring/ui/editor/RuleEditorViewModelTest.kt` addition: a successful create emits `Created` then `Close`; an edit save and a cancel emit only `Close`
+- [X] T023 [P] [US1] `nt/domain/PushRegistrationServiceTest.kt` (fake API, provider, permission, clock, `InMemoryKeyValueStore`, `InMemorySecureStore`): every row of research R-04 — nobody signed in, no provider, not allowed with/without record, null token, first register, same token < 24 h on `Foreground` (no call) vs `SignedIn`/`TokenChanged`/`PermissionChanged` (call), ≥ 24 h, new fingerprint, other session; 404 with a changed stored session (one retry) and unchanged (stop marker, later `Foreground` skipped, cleared by a new token or session); 429 → `RetryAfter`; offline/500 → `RetryLater`; 422 → `Stopped`; the token never stored; no email-verification or plan check anywhere on the path (FR-001–FR-006, FR-009)
+- [X] T024 [P] [US1] `nt/domain/PushCoordinatorTest.kt`: sign-in transition → `request(SignedIn)` once per sign-in; `onForeground` signed in/out; `onTokenChanged`; `onPermissionChanged`
+- [X] T025 [P] [US1] `nt/domain/PushSignOutTest.kt`: participant sends `DELETE` only when the record belongs to the stored session, ignores any answer, finishes within 2 s when the server hangs; cleaner cancels all displayed notifications, clears both stores, cancels the scheduler and discards the token without blocking (bounded on the app scope); remote session end (`ApiEvent.SessionEnded`) runs the cleaner and never the `DELETE` (FR-007, FR-043)
+- [X] T026 [P] [US1] `nt/domain/NotificationPromptGateTest.kt`: offered only with a provider, a runtime-askable permission and not offered before; `markOffered` is permanent across sign-out; not counted when suppressed (FR-011)
+- [X] T027 [P] [US1] `nt/ui/prompt/NotificationPromptSheetScreenshotTest.kt` in `ht/…` (EN, AR, 2.0) and a nav-level test `ht/navigation/PushPromptMomentsTest.kt`: `BudgetEditorEffect.Saved` from a create key, `InvitationEffect.OpenWallet`, and `RuleEditorEffect.Created` each offer the sheet once; an edit save does not; another sheet showing suppresses it
+- [X] T028 [P] [US1] `ct/feature/recurring/ui/editor/RuleEditorViewModelTest.kt` addition: a successful create emits `Created` then `Close`; an edit save and a cancel emit only `Close`
 
 ### Implementation
 
-- [ ] T029 [US1] `fn/domain/PushRegistrationService.kt` (`reconcile(trigger)`, research R-04) and `fn/domain/PushCoordinator.kt` (research R-06); `start()` in `NotificationsModule` (makes T023, T024 pass)
-- [ ] T030 [US1] `fn/domain/PushSignOutParticipant.kt` and `fn/domain/PushDataCleaner.kt` (research R-07), bound in `NotificationsModule` (makes T025 pass)
-- [ ] T031 [US1] Add `pushCoordinator.onForeground()` to the `LifecycleStartEffect` in `cm/App.kt`
-- [ ] T032 [US1] `fn/domain/NotificationPromptGate.kt` (makes T026 pass); `expect fun rememberNotificationPermissionRequester()` + `PermissionStatus` in `fn/ui/PermissionRequester.kt` with the Android actual (`rememberLauncherForActivityResult(RequestPermission)`, asked-before flag, rationale) in `am/feature/notifications/ui/PermissionRequester.android.kt` and an iOS actual; `expect fun openAppNotificationSettings()` with actuals (research R-14); the permission result calls `PushCoordinator.onPermissionChanged()`
-- [ ] T033 [US1] `RuleEditorEffect.Created` (additive) in `cm/feature/recurring/ui/editor/RuleEditorContract.kt` and emitted by `RuleEditorViewModel` after a successful create, before `Close` (makes T028 pass)
-- [ ] T034 [US1] `fn/ui/prompt/NotificationPromptSheet.kt` (design-system `BottomSheet`, texts and tags of contracts/ui-and-e2e.md §5) and the global sheet state in `cm/navigation/AppNavHost.kt`: offered from the three moments when `NotificationPromptGate.shouldOffer` and no other sheet shows; "Turn on" → requester; "Not now" → close (makes T027 pass)
-- [ ] T035 [US1] Write `.maestro/017-push/US1-permission-after-budget.yaml`, `US1-not-now-is-final.yaml`, `US1-registered-after-signin.yaml` (+ `common/open-notifications.yaml`), each starting `# deferred: E2E on owner's device`
+- [X] T029 [US1] `fn/domain/PushRegistrationService.kt` (`reconcile(trigger)`, research R-04) and `fn/domain/PushCoordinator.kt` (research R-06); `start()` in `NotificationsModule` (makes T023, T024 pass)
+- [X] T030 [US1] `fn/domain/PushSignOutParticipant.kt` and `fn/domain/PushDataCleaner.kt` (research R-07), bound in `NotificationsModule` (makes T025 pass)
+- [X] T031 [US1] Add `pushCoordinator.onForeground()` to the `LifecycleStartEffect` in `cm/App.kt`
+- [X] T032 [US1] `fn/domain/NotificationPromptGate.kt` (makes T026 pass); `expect fun rememberNotificationPermissionRequester()` + `PermissionStatus` in `fn/ui/PermissionRequester.kt` with the Android actual (`rememberLauncherForActivityResult(RequestPermission)`, asked-before flag, rationale) in `am/feature/notifications/ui/PermissionRequester.android.kt` and an iOS actual; `expect fun openAppNotificationSettings()` with actuals (research R-14); the permission result calls `PushCoordinator.onPermissionChanged()`
+- [X] T033 [US1] `RuleEditorEffect.Created` (additive) in `cm/feature/recurring/ui/editor/RuleEditorContract.kt` and emitted by `RuleEditorViewModel` after a successful create, before `Close` (makes T028 pass)
+- [X] T034 [US1] `fn/ui/prompt/NotificationPromptSheet.kt` (design-system `BottomSheet`, texts and tags of contracts/ui-and-e2e.md §5) and the global sheet state in `cm/navigation/AppNavHost.kt`: offered from the three moments when `NotificationPromptGate.shouldOffer` and no other sheet shows; "Turn on" → requester; "Not now" → close (makes T027 pass)
+- [X] T035 [US1] Write `.maestro/017-push/US1-permission-after-budget.yaml`, `US1-not-now-is-final.yaml`, `US1-registered-after-signin.yaml` (+ `common/open-notifications.yaml`), each starting `# deferred: E2E on owner's device`
 - [ ] T036 [US1] Run the US1 flows — **deferred: E2E on owner's device**
 
 **Checkpoint**: registration lifecycle and permission timing complete on the host with the fake provider.
@@ -119,22 +119,22 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T037 [P] [US2] `nt/domain/NotificationOpenServiceTest.kt` (recording fakes for `SyncRunner`, `SessionManager.refreshEntitlements`, `AccountRefresher`, `RecordPresence`): each `PushRead` runs exactly its read with `force = true`; present record → `Ready` at once with the read continuing; absent → waits for the read; offline/failed → `Ready`; 10 s timeout → `Ready` (virtual time); no other collaborator call (FR-029, FR-032)
-- [ ] T038 [P] [US2] `nt/ui/open/NotificationOpenReducerTest.kt` + `NotificationOpenViewModelTest.kt`: `Started` → waiting → `Replace(target)`; `Cancel` → `Close` and no later `Replace`
-- [ ] T039 [P] [US2] `nt/ui/invitation/InvitationNoticeViewModelTest.kt` + reducer test: shows the signed-in address; `OK` → close; no call made
-- [ ] T040 [P] [US2] `ht/navigation/PushTapRoutingTest.kt`: `PushTapBus` replay is consumed once; signed out → ignored; signed in: `None` read → target key pushed, otherwise `NotificationOpenKey` pushed and a second tap replaces it; update-required on top → dropped; the `PushTarget` → `NavKey` mapping for every target (`OccurrenceKey(id, confirm = false)`, `RecurringKey(null)`, `BudgetEditorKey(id)`, `BudgetsKey`, `InvitationNoticeKey`, `WalletDetailKey(id)`, `WalletsKey`, `PlanKey`, export keys or `AccountKey`, `DeleteAccountKey`, `HomeKey`)
-- [ ] T041 [P] [US2] `ht/feature/notifications/MainActivityTapIntakeTest.kt` (Robolectric, `PushTapExtras`): a background-style launch intent with FCM extras (`google.message_id`, contract keys) submits one tap and strips the keys; a launcher intent without `type`/`notification_id` submits nothing; a restored activity does not resubmit
-- [ ] T042 [P] [US2] Screenshot tests `ht/feature/notifications/NotificationOpenScreenshotTest.kt` and `InvitationNoticeScreenshotTest.kt` (EN, AR, 2.0)
+- [X] T037 [P] [US2] `nt/domain/NotificationOpenServiceTest.kt` (recording fakes for `SyncRunner`, `SessionManager.refreshEntitlements`, `AccountRefresher`, `RecordPresence`): each `PushRead` runs exactly its read with `force = true`; present record → `Ready` at once with the read continuing; absent → waits for the read; offline/failed → `Ready`; 10 s timeout → `Ready` (virtual time); no other collaborator call (FR-029, FR-032)
+- [X] T038 [P] [US2] `nt/ui/open/NotificationOpenReducerTest.kt` + `NotificationOpenViewModelTest.kt`: `Started` → waiting → `Replace(target)`; `Cancel` → `Close` and no later `Replace`
+- [X] T039 [P] [US2] `nt/ui/invitation/InvitationNoticeViewModelTest.kt` + reducer test: shows the signed-in address; `OK` → close; no call made
+- [X] T040 [P] [US2] `ht/navigation/PushTapRoutingTest.kt`: `PushTapBus` replay is consumed once; signed out → ignored; signed in: `None` read → target key pushed, otherwise `NotificationOpenKey` pushed and a second tap replaces it; update-required on top → dropped; the `PushTarget` → `NavKey` mapping for every target (`OccurrenceKey(id, confirm = false)`, `RecurringKey(null)`, `BudgetEditorKey(id)`, `BudgetsKey`, `InvitationNoticeKey`, `WalletDetailKey(id)`, `WalletsKey`, `PlanKey`, export keys or `AccountKey`, `DeleteAccountKey`, `HomeKey`)
+- [X] T041 [P] [US2] `ht/feature/notifications/MainActivityTapIntakeTest.kt` (Robolectric, `PushTapExtras`): a background-style launch intent with FCM extras (`google.message_id`, contract keys) submits one tap and strips the keys; a launcher intent without `type`/`notification_id` submits nothing; a restored activity does not resubmit
+- [X] T042 [P] [US2] Screenshot tests `ht/feature/notifications/NotificationOpenScreenshotTest.kt` and `InvitationNoticeScreenshotTest.kt` (EN, AR, 2.0)
 
 ### Implementation
 
-- [ ] T043 [US2] `fn/domain/RecordPresence.kt` with the implementation delegating to `WalletsService`, `RecurringService` and `BudgetsService` lookups (research R-11; add a one-line `exists(id)` to a service only if no lookup exists, with its own test in that feature)
-- [ ] T044 [US2] `fn/domain/NotificationOpenService.kt` (research R-10; makes T037 pass)
-- [ ] T045 [US2] `fn/ui/open/{NotificationOpenContract,NotificationOpenViewModel,NotificationOpenRoute,NotificationOpenScreen}.kt` (makes T038 pass)
-- [ ] T046 [US2] `fn/ui/invitation/{InvitationNoticeContract,…ViewModel,…Route,…Screen}.kt` (own address from `SessionManager`; makes T039 pass)
-- [ ] T047 [US2] `cm/navigation/PushTapBus.kt` (as `DeepLinkBus`), keys `NotificationOpenKey`, `InvitationNoticeKey` in `Routes.kt` (redacted `toString`), and in `AppNavHost.kt`: tap collection after the auth transition, the `PushTarget` → key mapping, `NotificationOpenKey` replace-on-ready, entries for the two screens (makes T040 pass)
-- [ ] T048 [US2] `androidApp/src/main/kotlin/com/fares/saveme/MainActivity.kt`: forward `PushTapExtras.from(intent.extras)` to `PushTapBus` in `onCreate` (no saved state) and `onNewIntent`, then strip (makes T041 pass)
-- [ ] T049 [US2] Write `.maestro/017-push/US2-route-<type>.yaml` × 12, `US2-route-unknown.yaml`, `US2-signed-out-tap.yaml` (+ `common/simulate-push.yaml`), each `# deferred: E2E on owner's device`
+- [X] T043 [US2] `fn/domain/RecordPresence.kt` with the implementation delegating to `WalletsService`, `RecurringService` and `BudgetsService` lookups (research R-11; add a one-line `exists(id)` to a service only if no lookup exists, with its own test in that feature)
+- [X] T044 [US2] `fn/domain/NotificationOpenService.kt` (research R-10; makes T037 pass)
+- [X] T045 [US2] `fn/ui/open/{NotificationOpenContract,NotificationOpenViewModel,NotificationOpenRoute,NotificationOpenScreen}.kt` (makes T038 pass)
+- [X] T046 [US2] `fn/ui/invitation/{InvitationNoticeContract,…ViewModel,…Route,…Screen}.kt` (own address from `SessionManager`; makes T039 pass)
+- [X] T047 [US2] `cm/navigation/PushTapBus.kt` (as `DeepLinkBus`), keys `NotificationOpenKey`, `InvitationNoticeKey` in `Routes.kt` (redacted `toString`), and in `AppNavHost.kt`: tap collection after the auth transition, the `PushTarget` → key mapping, `NotificationOpenKey` replace-on-ready, entries for the two screens (makes T040 pass)
+- [X] T048 [US2] `androidApp/src/main/kotlin/com/fares/saveme/MainActivity.kt`: forward `PushTapExtras.from(intent.extras)` to `PushTapBus` in `onCreate` (no saved state) and `onNewIntent`, then strip (makes T041 pass)
+- [X] T049 [US2] Write `.maestro/017-push/US2-route-<type>.yaml` × 12, `US2-route-unknown.yaml`, `US2-signed-out-tap.yaml` (+ `common/simulate-push.yaml`), each `# deferred: E2E on owner's device`
 - [ ] T050 [US2] Run the US2 flows — **deferred: E2E on owner's device**
 
 **Checkpoint**: P1 complete — registration and routing; the brief's checkpoint ("a notification that opens the invitation") is the invitation notice.
@@ -149,17 +149,17 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T051 [P] [US3] `nt/domain/NotificationPreferencesServiceTest.kt`: load outcomes (200, offline, failure with request id); save outcomes (200, 409 with `current`, 409 with unreadable `current` → `Failed`, 429 with and without wait, 422, offline); one request per call, never retried; DTO ↔ domain mapping incl. `HH:MM` ↔ `QuarterHour`
-- [ ] T052 [P] [US3] `nt/ui/settings/NotificationSettingsReducerTest.kt` + `NotificationSettingsViewModelTest.kt`: loading → ready; dirty/valid/canSave; start == end blocks Save with the message; save success → read = edited, "Saved" effect; conflict → edited and read replaced, message; rate-limit minutes rounding ("a minute" under 60 s, "later" without wait); offline keeps edits; Back with edits → discard dialog; phone status Askable/Blocked → card and effects (`RequestPermission`, `OpenPhoneSettings`); time-zone note present only when the profile is known
-- [ ] T053 [P] [US3] Screenshot tests `ht/feature/notifications/NotificationSettingsScreenshotTest.kt` for every state of contracts/ui-and-e2e.md §9 (EN, AR, 2.0)
-- [ ] T054 [P] [US3] `ct/feature/account/ui/AccountViewModelTest.kt` addition: the Notifications row shows only with an available provider and navigates to `NotificationSettingsKey`
+- [X] T051 [P] [US3] `nt/domain/NotificationPreferencesServiceTest.kt`: load outcomes (200, offline, failure with request id); save outcomes (200, 409 with `current`, 409 with unreadable `current` → `Failed`, 429 with and without wait, 422, offline); one request per call, never retried; DTO ↔ domain mapping incl. `HH:MM` ↔ `QuarterHour`
+- [X] T052 [P] [US3] `nt/ui/settings/NotificationSettingsReducerTest.kt` + `NotificationSettingsViewModelTest.kt`: loading → ready; dirty/valid/canSave; start == end blocks Save with the message; save success → read = edited, "Saved" effect; conflict → edited and read replaced, message; rate-limit minutes rounding ("a minute" under 60 s, "later" without wait); offline keeps edits; Back with edits → discard dialog; phone status Askable/Blocked → card and effects (`RequestPermission`, `OpenPhoneSettings`); time-zone note present only when the profile is known
+- [X] T053 [P] [US3] Screenshot tests `ht/feature/notifications/NotificationSettingsScreenshotTest.kt` for every state of contracts/ui-and-e2e.md §9 (EN, AR, 2.0)
+- [X] T054 [P] [US3] `ct/feature/account/ui/AccountViewModelTest.kt` addition: the Notifications row shows only with an available provider and navigates to `NotificationSettingsKey`
 
 ### Implementation
 
-- [ ] T055 [US3] `fn/domain/NotificationPreferencesService.kt` (research R-12; profile time zone via the account domain) (makes T051 pass)
-- [ ] T056 [US3] `fn/ui/settings/{NotificationSettingsContract,…ViewModel,…Route,…Screen}.kt` with `SettingsSwitchRow` × 6, quiet-hours switch, two `TimeOfDayField`s, notes, phone card (requester + `openAppNotificationSettings`), Save, discard dialog, `fn/ui/NotificationsErrorCopy.kt`; switches announced with title and state, messages as live regions, 48 dp targets (FR-040) (makes T052, T053 pass); the Route re-reads the permission status on resume and calls `PushCoordinator.onPermissionChanged()` when it changed
-- [ ] T057 [US3] `AccountDestination.Notifications` row in `cm/feature/account/ui/account/{AccountContract,AccountViewModel,AccountScreen}.kt` (shown when `PushTokenProvider.isAvailable`), `NotificationSettingsKey` in `Routes.kt` and its entry in `AppNavHost.kt` (makes T054 pass)
-- [ ] T058 [US3] Write `.maestro/017-push/US3-edit-and-save.yaml`, `US3-conflict.yaml`, `US3-offline.yaml` and `api.js` `notificationPreferences`/`saveNotificationPreferences`, each flow `# deferred: E2E on owner's device`
+- [X] T055 [US3] `fn/domain/NotificationPreferencesService.kt` (research R-12; profile time zone via the account domain) (makes T051 pass)
+- [X] T056 [US3] `fn/ui/settings/{NotificationSettingsContract,…ViewModel,…Route,…Screen}.kt` with `SettingsSwitchRow` × 6, quiet-hours switch, two `TimeOfDayField`s, notes, phone card (requester + `openAppNotificationSettings`), Save, discard dialog, `fn/ui/NotificationsErrorCopy.kt`; switches announced with title and state, messages as live regions, 48 dp targets (FR-040) (makes T052, T053 pass); the Route re-reads the permission status on resume and calls `PushCoordinator.onPermissionChanged()` when it changed
+- [X] T057 [US3] `AccountDestination.Notifications` row in `cm/feature/account/ui/account/{AccountContract,AccountViewModel,AccountScreen}.kt` (shown when `PushTokenProvider.isAvailable`), `NotificationSettingsKey` in `Routes.kt` and its entry in `AppNavHost.kt` (makes T054 pass)
+- [X] T058 [US3] Write `.maestro/017-push/US3-edit-and-save.yaml`, `US3-conflict.yaml`, `US3-offline.yaml` and `api.js` `notificationPreferences`/`saveNotificationPreferences`, each flow `# deferred: E2E on owner's device`
 - [ ] T059 [US3] Run the US3 flows — **deferred: E2E on owner's device**
 
 ---
@@ -172,15 +172,15 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T060 [P] [US4] `nt/domain/PushReceiverTest.kt` (fake display, fake sync runner, `InMemoryKeyValueStore`): signed out → dropped; blank title/body → dropped; known type → posted on its category channel with the contract collapse key as tag and the tap map = contract keys only, then one forced background read of the route's scope (none for `Entitlements`/`Account`/`None`); unknown type with text → posted with `other:{id}` tag; same `notification_id` twice → one post; channels ensured before posting; `onNewToken` → coordinator (FR-023–FR-027)
-- [ ] T061 [P] [US4] `ht/feature/notifications/ChannelLabelsTest.kt`: labels resolved in English and Arabic from resources; the `App()` channels effect re-runs on a language change (Robolectric + compose test)
-- [ ] T062 [P] [US4] Log-capture test `ht/feature/notifications/PushLogCaptureTest.kt`: register, rotate, receive each type, tap, save preferences, sign out — no token, id, title or text in any Kermit line (SC-005)
+- [X] T060 [P] [US4] `nt/domain/PushReceiverTest.kt` (fake display, fake sync runner, `InMemoryKeyValueStore`): signed out → dropped; blank title/body → dropped; known type → posted on its category channel with the contract collapse key as tag and the tap map = contract keys only, then one forced background read of the route's scope (none for `Entitlements`/`Account`/`None`); unknown type with text → posted with `other:{id}` tag; same `notification_id` twice → one post; channels ensured before posting; `onNewToken` → coordinator (FR-023–FR-027)
+- [X] T061 [P] [US4] `ht/feature/notifications/ChannelLabelsTest.kt`: labels resolved in English and Arabic from resources; the `App()` channels effect re-runs on a language change (Robolectric + compose test)
+- [X] T062 [P] [US4] Log-capture test `ht/feature/notifications/PushLogCaptureTest.kt`: register, rotate, receive each type, tap, save preferences, sign out — no token, id, title or text in any Kermit line (SC-005)
 
 ### Implementation
 
-- [ ] T063 [US4] `fn/domain/PushReceiver.kt` (research R-09; makes T060 pass)
-- [ ] T064 [US4] `fn/ui/ChannelLabelsResolver.kt` (strings → `ChannelLabels`) and a `LaunchedEffect(effectiveLanguage)` in `cm/App.kt` calling `NotificationDisplay.ensureChannels` (makes T061 pass)
-- [ ] T065 [US4] Write `.maestro/017-push/US4-collapse.yaml`, `US4-cleared-on-signout.yaml`, each `# deferred: E2E on owner's device`
+- [X] T063 [US4] `fn/domain/PushReceiver.kt` (research R-09; makes T060 pass)
+- [X] T064 [US4] `fn/ui/ChannelLabelsResolver.kt` (strings → `ChannelLabels`) and a `LaunchedEffect(effectiveLanguage)` in `cm/App.kt` calling `NotificationDisplay.ensureChannels` (makes T061 pass)
+- [X] T065 [US4] Write `.maestro/017-push/US4-collapse.yaml`, `US4-cleared-on-signout.yaml`, each `# deferred: E2E on owner's device`
 - [ ] T066 [US4] Run the US4 flows and the lock-screen spot check (quickstart §3.5) — **deferred: E2E on owner's device**
 
 ---
@@ -193,31 +193,31 @@ description: "Task list for 017-push"
 
 ### Tests first
 
-- [ ] T067 [P] [US5] `ct/devtools/push/DevFakePushTokenProviderTest.kt`: stable token per installation in the backend's format (printable ASCII, ≤ 4,096), `discard` forgets it, `rotate` creates a new one and calls `PushReceiver.onNewToken`
-- [ ] T068 [P] [US5] `ct/devtools/push/SimulatePushViewModelTest.kt` + reducer test: 13 rows; ids from the phone's first wallet/occurrence/budget when present, random UUIDs labelled "not on this phone" otherwise; `Post` hands exactly the contract data map and the dev generic text to `PushReceiver.onMessage`; `Rotate` calls the provider
-- [ ] T069 [P] [US5] `ht/core/di/AppGraphTest.kt` addition and `ht/devtools/SimulatePushScreenshotTest.kt`: with `isDebugTools = true` the provider is `DevFakePushTokenProvider` and the Account Developer tools row shows; with `false` neither (FR-036)
+- [X] T067 [P] [US5] `ct/devtools/push/DevFakePushTokenProviderTest.kt`: stable token per installation in the backend's format (printable ASCII, ≤ 4,096), `discard` forgets it, `rotate` creates a new one and calls `PushReceiver.onNewToken`
+- [X] T068 [P] [US5] `ct/devtools/push/SimulatePushViewModelTest.kt` + reducer test: 13 rows; ids from the phone's first wallet/occurrence/budget when present, random UUIDs labelled "not on this phone" otherwise; `Post` hands exactly the contract data map and the dev generic text to `PushReceiver.onMessage`; `Rotate` calls the provider
+- [X] T069 [P] [US5] `ht/core/di/AppGraphTest.kt` addition and `ht/devtools/SimulatePushScreenshotTest.kt`: with `isDebugTools = true` the provider is `DevFakePushTokenProvider` and the Account Developer tools row shows; with `false` neither (FR-036)
 
 ### Implementation
 
-- [ ] T070 [US5] `cm/devtools/push/DevFakePushTokenProvider.kt` (research R-15) and its binding for `isDebugTools` builds via `MainApplication`'s provider choice (T019) (makes T067 pass)
-- [ ] T071 [US5] `cm/devtools/push/{SimulatePushContract,…ViewModel,…Route,…Screen}.kt`, `SimulatePushKey` + entry, "Simulate a notification" item in `cm/devtools/{DevToolsContract,DevToolsViewModel,DevToolsScreen}.kt`, and `AccountDestination.DevTools` row (dev builds) opening `DevToolsKey` on the app stack (makes T068, T069 pass)
+- [X] T070 [US5] `cm/devtools/push/DevFakePushTokenProvider.kt` (research R-15) and its binding for `isDebugTools` builds via `MainApplication`'s provider choice (T019) (makes T067 pass)
+- [X] T071 [US5] `cm/devtools/push/{SimulatePushContract,…ViewModel,…Route,…Screen}.kt`, `SimulatePushKey` + entry, "Simulate a notification" item in `cm/devtools/{DevToolsContract,DevToolsViewModel,DevToolsScreen}.kt`, and `AccountDestination.DevTools` row (dev builds) opening `DevToolsKey` on the app stack (makes T068, T069 pass)
 - [ ] T072 [US5] Write `.maestro/017-push/US5-tool-absent-in-prod.yaml` (documentation-only) — **deferred: E2E on owner's device**
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T073 [P] String-scan test `ht/feature/notifications/PushStringsTest.kt`: no "token", "FCM", "Firebase", "InstaPay" in the spec 017 block (EN/AR); every key has both languages; digits Western
-- [ ] T074 [P] Invariant sweep: confirm each row of spec §4 has its named test (T004–T069); add any missing one
-- [ ] T075 [P] README "On-device database": one sentence that spec 017 adds no table (Room stays v10) and keeps four small push records in the key-value store; "Running tests": the fake provider note
-- [ ] T076 [P] `.specify/scripts/bash/run-e2e.sh`: no new seed needed beyond a signed-in account; document in contracts/ui-and-e2e.md §10 that the conflict flow saves through `api.js` from a second session
-- [ ] T077 Run `./gradlew :shared:testAndroidHostTest :shared:verifyRoborazziAndroidHostTest :androidApp:assembleDevDebug` and the iOS simulator compile; record goldens added/changed (Account screen rows, catalogue pickers section)
-- [ ] T078 Confirm no Firebase class on any `:shared` or `:androidApp` classpath (`./gradlew :androidApp:dependencies --configuration devDebugRuntimeClasspath | grep -i firebase` is empty) (SC-009)
-- [ ] T079 Review quickstart §1–3 against the built code; fix drift
-- [ ] T080 Wait for backend spec 023 to be committed; rerun T001
-- [ ] T081 Live contract QA per contracts/push-api-client.md "Live QA" (curl, throwaway `qa017-*` accounts, local backend `127.0.0.1:43871`), capturing answers (tokens replaced by same-shape fakes) into `nt/data/CapturedNotificationsResponses.kt`
-- [ ] T082 `nt/data/NotificationsLiveReplayTest.kt`: replay the captured answers through the real `ApiClient`, `NotificationsApi`, `PushRegistrationService` and `NotificationPreferencesService`
-- [ ] T083 Full gate `./gradlew build allTests --continue`; note pre-existing failures separately from this spec's
+- [X] T073 [P] String-scan test `ht/feature/notifications/PushStringsTest.kt`: no "token", "FCM", "Firebase", "InstaPay" in the spec 017 block (EN/AR); every key has both languages; digits Western
+- [X] T074 [P] Invariant sweep: confirm each row of spec §4 has its named test (T004–T069); add any missing one
+- [X] T075 [P] README "On-device database": one sentence that spec 017 adds no table (Room stays v10) and keeps four small push records in the key-value store; "Running tests": the fake provider note
+- [X] T076 [P] `.specify/scripts/bash/run-e2e.sh`: no new seed needed beyond a signed-in account; document in contracts/ui-and-e2e.md §10 that the conflict flow saves through `api.js` from a second session
+- [X] T077 Run `./gradlew :shared:testAndroidHostTest :shared:verifyRoborazziAndroidHostTest :androidApp:assembleDevDebug` and the iOS simulator compile; record goldens added/changed (Account screen rows, catalogue pickers section)
+- [X] T078 Confirm no Firebase class on any `:shared` or `:androidApp` classpath (`./gradlew :androidApp:dependencies --configuration devDebugRuntimeClasspath | grep -i firebase` is empty) (SC-009)
+- [X] T079 Review quickstart §1–3 against the built code; fix drift
+- [ ] T080 Wait for backend spec 023 to be committed; rerun T001 — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
+- [ ] T081 Live contract QA per contracts/push-api-client.md "Live QA" (curl, throwaway `qa017-*` accounts, local backend `127.0.0.1:43871`), capturing answers (tokens replaced by same-shape fakes) into `nt/data/CapturedNotificationsResponses.kt` — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
+- [ ] T082 `nt/data/NotificationsLiveReplayTest.kt`: replay the captured answers through the real `ApiClient`, `NotificationsApi`, `PushRegistrationService` and `NotificationPreferencesService` — QA step (left for the QA agent: needs backend spec 023 committed and the live local backend)
+- [X] T083 Full gate `./gradlew build allTests --continue`; note pre-existing failures separately from this spec's
 - [ ] T084 Write specs/017-push/summary.md (parent writes it)
 
 ---

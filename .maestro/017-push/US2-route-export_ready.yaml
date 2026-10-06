@@ -1,0 +1,16 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: a `export_ready` notification, tapped from the shade, opens its screen (account.notifications); the tap only navigates.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow:
+    file: ../common/simulate-push.yaml
+    env: { TYPE: "export_ready" }
+- extendedWaitUntil:
+    visible:
+      id: "account.notifications"
+    timeout: 20000
+# Spec 016's export screens are not merged: the account screen opens until they are.

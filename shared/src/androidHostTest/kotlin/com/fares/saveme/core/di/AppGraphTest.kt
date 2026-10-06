@@ -33,6 +33,7 @@ import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -248,5 +249,48 @@ class AppGraphTest {
         assertTrue(koin.get<WalletScopes>() is DefaultWalletScopes)
         assertTrue(koin.getAll<UserDataCleaner>().any { it is SyncSignOutCleaner })
         assertNotNull(koin.get<AccountSyncCoordinator>())
+    }
+
+    @Test
+    fun thePushModuleStartsWithItsReceiverCoordinatorParticipantAndCleanerAndTheFakeProviderInDevelopment() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        // The session manager's cleaners and the sign-out use case are built from the push classes: a cycle would overflow the stack at start.
+        assertNotNull(koin.get<SyncEngine>())
+        assertNotNull(koin.get<com.fares.saveme.feature.notifications.domain.PushRegistrationService>())
+        assertNotNull(koin.get<com.fares.saveme.feature.notifications.domain.PushReceiver>())
+        assertNotNull(koin.get<com.fares.saveme.feature.notifications.domain.PushCoordinator>())
+        assertEquals(1, koin.getAll<com.fares.saveme.core.session.SignOutParticipant>().count { it is com.fares.saveme.feature.notifications.domain.PushSignOutParticipant })
+        assertEquals(1, koin.getAll<UserDataCleaner>().count { it is com.fares.saveme.feature.notifications.domain.PushDataCleaner })
+        assertNotNull(koin.get<com.fares.saveme.feature.auth.domain.usecase.SignOutUseCase>())
+        assertTrue(koin.get<com.fares.saveme.feature.notifications.domain.PushTokenProvider>() is com.fares.saveme.devtools.push.DevFakePushTokenProvider)
+        assertTrue(koin.get<com.fares.saveme.feature.notifications.domain.PushTokenProvider>().isAvailable)
+        assertNotNull(koin.get<com.fares.saveme.feature.notifications.domain.NotificationOpenService>())
+        assertNotNull(koin.get<com.fares.saveme.feature.notifications.domain.NotificationPreferencesService>())
+        // The account screen offers both new rows in a development build.
+        val account = koin.get<com.fares.saveme.feature.account.ui.account.AccountViewModel>()
+        assertTrue(account.state.value.notificationsAvailable)
+        assertTrue(account.state.value.devToolsAvailable)
+        assertNotNull(koin.get<com.fares.saveme.devtools.push.SimulatePushViewModel>())
+    }
+
+    @Test
+    fun theReleaseGraphBindsNoPushProviderAndShowsNeitherRow() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Prod, isDebugTools = false),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        assertTrue(koin.get<com.fares.saveme.feature.notifications.domain.PushTokenProvider>() === com.fares.saveme.feature.notifications.domain.UnavailablePushTokenProvider)
+        assertFalse(koin.get<com.fares.saveme.feature.notifications.domain.PushTokenProvider>().isAvailable)
+        val account = koin.get<com.fares.saveme.feature.account.ui.account.AccountViewModel>()
+        assertFalse(account.state.value.notificationsAvailable)
+        assertFalse(account.state.value.devToolsAvailable)
+        assertNotNull(koin.get<SyncEngine>())
     }
 }

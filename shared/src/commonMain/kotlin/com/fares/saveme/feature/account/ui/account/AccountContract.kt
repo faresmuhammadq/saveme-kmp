@@ -13,9 +13,13 @@ data class AccountState(
     val signingOut: Boolean = false,
     /** Changes still only on this phone (spec 004 FR-016). */
     val sync: SyncStatus = SyncStatus(),
+    /** This build has a push provider (spec 017 FR-013); false in staging and production until the Firebase phase. */
+    val notificationsAvailable: Boolean = false,
+    /** Development builds only (spec 017 FR-036). */
+    val devToolsAvailable: Boolean = false,
 )
 
-enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan }
+enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Notifications, DevTools }
 
 sealed interface AccountIntent {
     data class Open(val destination: AccountDestination) : AccountIntent

@@ -18,7 +18,11 @@ class AccountViewModel(
     private val refresh: suspend () -> Unit = {},
     syncStatus: Flow<SyncStatus> = emptyFlow(),
     private val syncNow: suspend () -> Unit = {},
-) : MviViewModel<AccountState, AccountIntent, AccountEffect>(AccountState()) {
+    notificationsAvailable: Boolean = false,
+    devToolsAvailable: Boolean = false,
+) : MviViewModel<AccountState, AccountIntent, AccountEffect>(
+    AccountState(notificationsAvailable = notificationsAvailable, devToolsAvailable = devToolsAvailable),
+) {
 
     init {
         authState.filterIsInstance<AuthState.SignedIn>()

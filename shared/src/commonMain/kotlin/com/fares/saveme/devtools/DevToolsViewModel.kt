@@ -8,6 +8,7 @@ class DevToolsViewModel : MviViewModel<DevToolsState, DevToolsIntent, DevToolsEf
             when (intent) {
                 DevToolsIntent.ComponentsClicked -> DevToolsEffect.NavigateCatalog
                 DevToolsIntent.PasteLinkClicked -> DevToolsEffect.NavigatePasteLink
+                DevToolsIntent.SimulatePushClicked -> DevToolsEffect.NavigateSimulatePush
                 DevToolsIntent.Back -> DevToolsEffect.NavigateBack
             },
         )

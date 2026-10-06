@@ -1,0 +1,41 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US1-S2: Given the explanation was dismissed with "Not now", When the person creates another budget, Then it never appears again.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-budgets.yaml
+- tapOn:
+    id: "budgets.add"
+- tapOn:
+    id: "budgetEditor.limit"
+- inputText: "6000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "pushPrompt.title"
+    timeout: 15000
+- tapOn:
+    id: "pushPrompt.notNow"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.list"
+    timeout: 15000
+- tapOn:
+    id: "budgets.add"
+- tapOn:
+    id: "budgetEditor.limit"
+- inputText: "3000"
+- hideKeyboard
+- tapOn:
+    id: "budgetEditor.save"
+- extendedWaitUntil:
+    visible:
+      id: "budgets.list"
+    timeout: 15000
+- assertNotVisible:
+    id: "pushPrompt.title"
