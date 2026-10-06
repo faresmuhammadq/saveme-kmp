@@ -87,6 +87,7 @@ import saveme.shared.generated.resources.wallet_delete
 import saveme.shared.generated.resources.wallet_delete_body
 import saveme.shared.generated.resources.wallet_delete_title
 import saveme.shared.generated.resources.wallet_edit
+import saveme.shared.generated.resources.wallet_export
 import saveme.shared.generated.resources.wallet_field_amount_owed
 import saveme.shared.generated.resources.wallet_field_color
 import saveme.shared.generated.resources.wallet_field_currency
@@ -257,6 +258,14 @@ private fun MembersSection(state: WalletDetailState, onIntent: (WalletDetailInte
             trailing = ListTrailing.Chevron,
             onClick = { onIntent(WalletDetailIntent.ActivityClicked) },
         )
+        if (state.exportable) {
+            AppListItem(
+                stringResource(Res.string.wallet_export),
+                modifier = Modifier.testTag("walletDetail.export"),
+                trailing = ListTrailing.Chevron,
+                onClick = { onIntent(WalletDetailIntent.ExportClicked) },
+            )
+        }
     }
 }
 

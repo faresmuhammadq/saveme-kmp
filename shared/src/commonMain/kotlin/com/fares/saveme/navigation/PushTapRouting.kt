@@ -7,8 +7,9 @@ import com.fares.saveme.feature.recurring.ui.editor.RuleEditorEffect
 import com.fares.saveme.feature.sharing.ui.invitation.InvitationEffect
 
 /**
- * The screen a tapped notification opens (spec 017 FR-031). Exports map to the account screen until spec 016's export
- * screens are merged (tasks note): the tap still only navigates.
+ * The screen a tapped notification opens (spec 017 FR-031): a ready export opens its detail (spec 016), a malformed export
+ * payload the exports list, a deletion reminder the account-deletion screen, which shows the pending deletion and its
+ * cancellation. The tap only navigates.
  */
 internal fun PushTarget.toNavKey(): NavKey = when (this) {
     is PushTarget.Occurrence -> OccurrenceKey(id, confirm = false)
@@ -19,8 +20,8 @@ internal fun PushTarget.toNavKey(): NavKey = when (this) {
     is PushTarget.Wallet -> WalletDetailKey(id)
     PushTarget.Wallets -> WalletsKey
     PushTarget.Plan -> PlanKey
-    is PushTarget.Export -> AccountKey
-    PushTarget.Exports -> AccountKey
+    is PushTarget.Export -> ExportDetailKey(id)
+    PushTarget.Exports -> ExportsKey
     PushTarget.AccountDeletion -> DeleteAccountKey
     PushTarget.Home -> HomeKey
 }

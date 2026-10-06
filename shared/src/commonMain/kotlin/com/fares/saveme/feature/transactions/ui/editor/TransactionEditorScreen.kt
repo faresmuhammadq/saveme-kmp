@@ -72,6 +72,7 @@ import saveme.shared.generated.resources.category_unavailable
 import saveme.shared.generated.resources.category_use_theirs
 import saveme.shared.generated.resources.filter_kind
 import saveme.shared.generated.resources.tx_added_by
+import saveme.shared.generated.resources.tx_added_by_former
 import saveme.shared.generated.resources.tx_added_by_other
 import saveme.shared.generated.resources.tx_choose_destination
 import saveme.shared.generated.resources.tx_clash_body
@@ -369,6 +370,7 @@ private fun Captions(state: TransactionEditorState, onIntent: (TransactionEditor
     when (val by = state.addedBy) {
         is AddedBy.Member -> Caption(stringResource(Res.string.tx_added_by, by.name), "txEditor.addedBy")
         AddedBy.AnotherMember -> Caption(stringResource(Res.string.tx_added_by_other), "txEditor.addedBy")
+        AddedBy.FormerMember -> Caption(stringResource(Res.string.tx_added_by_former), "txEditor.addedBy")
         AddedBy.You, null -> Unit
     }
     if (state.fromRecurringRule) Caption(stringResource(Res.string.tx_from_recurring), "txEditor.recurring")

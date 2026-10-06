@@ -36,4 +36,11 @@ class ApiErrorCodeTest {
             assertEquals(retry, code.retryClass, wire)
         }
     }
+
+    @Test
+    fun exportInProgressDecodesAndIsAutomaticButNeverRetriedByTheFeature() {
+        val code = ApiErrorCode.from("EXPORT_IN_PROGRESS")
+        assertEquals(ApiErrorCode.EXPORT_IN_PROGRESS, code)
+        assertEquals(RetryClass.Automatic, code.retryClass)
+    }
 }

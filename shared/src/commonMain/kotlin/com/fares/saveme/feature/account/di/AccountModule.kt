@@ -6,6 +6,7 @@ import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.feature.notifications.domain.PushTokenProvider
 import com.fares.saveme.feature.account.data.AccountApi
 import com.fares.saveme.feature.account.data.DeviceSessionRepository
+import com.fares.saveme.feature.account.data.ExportApi
 import com.fares.saveme.core.sync.FeedApplier
 import com.fares.saveme.core.sync.SyncEngine
 import com.fares.saveme.core.sync.SyncHandler
@@ -17,6 +18,10 @@ import com.fares.saveme.feature.account.domain.AccountRefresher
 import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
 import com.fares.saveme.feature.account.domain.ProfileSyncer
 import com.fares.saveme.feature.account.domain.SessionRefresher
+import com.fares.saveme.feature.account.domain.deletion.DefaultDeletionPlanService
+import com.fares.saveme.feature.account.domain.deletion.DeletionPlanService
+import com.fares.saveme.feature.account.domain.export.DefaultExportService
+import com.fares.saveme.feature.account.domain.export.ExportService
 import com.fares.saveme.feature.account.domain.model.ActionOutcome
 import com.fares.saveme.feature.account.domain.usecase.CancelDeletionUseCase
 import com.fares.saveme.feature.account.domain.usecase.ChangePasswordUseCase
@@ -26,6 +31,10 @@ import com.fares.saveme.feature.account.domain.usecase.EndSessionUseCase
 import com.fares.saveme.feature.account.ui.account.AccountViewModel
 import com.fares.saveme.feature.account.ui.changepassword.ChangePasswordViewModel
 import com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountViewModel
+import com.fares.saveme.feature.account.ui.export.detail.ExportDetailViewModel
+import com.fares.saveme.feature.account.ui.export.list.ExportsViewModel
+import com.fares.saveme.feature.account.ui.export.request.ExportRequestViewModel
+import com.fares.saveme.feature.account.ui.export.request.WalletChoice
 import com.fares.saveme.feature.account.ui.profile.ProfileViewModel
 import com.fares.saveme.feature.account.ui.sessions.DeviceSessionsViewModel
 import com.fares.saveme.feature.auth.domain.AuthState
@@ -33,17 +42,24 @@ import com.fares.saveme.feature.auth.domain.BudgetSummary
 import com.fares.saveme.feature.auth.domain.HeldInvitationGlimpse
 import com.fares.saveme.feature.auth.domain.DueSummary
 import com.fares.saveme.feature.auth.domain.SessionManager
+import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.auth.domain.usecase.ResendVerificationUseCase
 import com.fares.saveme.feature.auth.domain.usecase.SignOutUseCase
 import com.fares.saveme.feature.auth.domain.usecase.VerifyEmailUseCase
 import com.fares.saveme.feature.auth.ui.home.CancelDeletionResult
 import com.fares.saveme.feature.auth.ui.home.HomeViewModel
 import com.fares.saveme.feature.auth.ui.verify.VerifyEmailViewModel
+import com.fares.saveme.feature.wallets.domain.WalletMemberships
+import com.fares.saveme.feature.wallets.domain.WalletsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
+import kotlin.time.Clock
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -53,6 +69,9 @@ private const val HOME_BUDGETS = 3
 
 val accountModule = module {
     single { AccountApi(get()) }
+    single { ExportApi(get()) }
+    single<ExportService> { DefaultExportService(get()) }
+    single<DeletionPlanService> { DefaultDeletionPlanService(get(), get(), get(), get()) }
     single {
         val sessions = get<SessionManager>()
         DeviceSessionRepository(
@@ -105,6 +124,7 @@ val accountModule = module {
             budgets = budgets.observeTop(HOME_BUDGETS),
             invitationHeld = held.observeHeld(),
             invitationDeclined = held.observeDeclined(),
+            minuteTicks = minuteTicks(),
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's
@@ -169,10 +189,73 @@ val accountModule = module {
         )
     }
     viewModel {
+        val exports = get<ExportService>()
+        ExportsViewModel(
+            page = { exports.page(it) },
+            walletNames = walletNames(get()),
+            signedIn = signedInFlow(get()),
+            timeZoneId = profileTimeZone(get(), get()),
+        )
+    }
+    viewModel { params ->
+        val exports = get<ExportService>()
+        val wallets = get<WalletsService>()
+        val engine = get<SyncEngine>()
+        ExportRequestViewModel(
+            request = { scope, walletId -> exports.request(scope, walletId) },
+            // A wallet made on this phone has version 0 and is not on the server yet: it cannot be exported (research R-06).
+            wallets = wallets.observeList().map { list ->
+                (list.active + list.archived).filter { it.server.version > 0 }.map { WalletChoice(it.id, it.shown.name, it.archived) }
+            },
+            unsentChanges = engine.status.map { it.pending > 0 },
+            signedIn = signedInFlow(get()),
+            presetWalletId = params.getOrNull<String>()?.takeIf { it.isNotBlank() },
+        )
+    }
+    viewModel { params ->
+        val exports = get<ExportService>()
+        ExportDetailViewModel(
+            exportId = params.get<String>(),
+            watch = { id, windowStart -> exports.watch(id, windowStart) },
+            openableLink = { exports.openableLink(it) },
+            walletNames = walletNames(get()),
+            signedIn = signedInFlow(get()),
+            timeZoneId = profileTimeZone(get(), get()),
+        )
+    }
+    viewModel {
         val request = get<RequestDeletionUseCase>()
-        DeleteAccountViewModel(requestDeletion = { request(it) })
+        val cancel = get<CancelDeletionUseCase>()
+        val plans = get<DeletionPlanService>()
+        val sessions = get<SessionManager>()
+        DeleteAccountViewModel(
+            readPlan = { plans.read() },
+            requestDeletion = { password, successors -> request(password, successors) },
+            cancelDeletion = { cancel() },
+            pendingOn = {
+                (sessions.state.value as? AuthState.SignedIn)?.account
+                    ?.takeIf { it.state == AccountState.PendingDeletion }?.deletionScheduledFor
+            },
+        )
     }
 }
+
+/** The present instant, then again at the start of every minute while collected (Home's "being deleted", spec 016 FR-032). */
+private fun minuteTicks(clock: Clock = Clock.System) = flow {
+    while (true) {
+        val now = clock.now()
+        emit(now)
+        delay(MINUTE_MS - now.toEpochMilliseconds() % MINUTE_MS)
+    }
+}
+
+private const val MINUTE_MS = 60_000L
+
+/** The wallets by id, active and archived, for naming a wallet export (spec 016 FR-005). */
+private fun walletNames(wallets: WalletsService) =
+    wallets.observeList().map { list -> (list.active + list.archived).associate { it.id to it.shown.name } }
+
+private fun signedInFlow(sessions: SessionManager) = sessions.state.map { it is AuthState.SignedIn }.distinctUntilChanged()
 
 /** Times are shown in the profile timezone (P-05); the device's until the profile is known. */
 private fun profileTimeZone(syncer: ProfileSyncer, clientInfo: ClientInfo) =

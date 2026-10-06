@@ -1,0 +1,50 @@
+# deferred: E2E on owner's device
+# US1-1…5: Given a signed-in person, When they request an export of everything and the queue worker finishes it, Then the screen shows Ready and "Open download" hands a fresh link to the browser.
+# e2e-seed: verified-user
+# The backend's queue worker runs in the container; the export is ready within a minute.
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-exports.yaml
+- assertVisible:
+    id: "exports.empty"
+- tapOn:
+    id: "exports.new"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.submit"
+    timeout: 15000
+- assertVisible:
+    id: "exportRequest.explain"
+- tapOn:
+    id: "exportRequest.submit"
+- extendedWaitUntil:
+    visible:
+      id: "exportDetail.status"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      id: "exportDetail.open"
+    timeout: 120000
+- assertVisible: "Ready"
+- assertVisible:
+    id: "exportDetail.size"
+- assertVisible:
+    id: "exportDetail.until"
+# The system browser takes over; the app never shows the link.
+- tapOn:
+    id: "exportDetail.open"
+- extendedWaitUntil:
+    notVisible:
+      id: "exportDetail.open"
+    timeout: 15000
+- assertNotVisible: ".*signature=.*"
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: listExports, SLOT: B }
+- assertTrue: ${output.exports.length == 1 && output.exports[0].status == 'ready'}

@@ -25,9 +25,8 @@ class PushTapRoutingTest {
         assertEquals(WalletDetailKey(ID), PushTarget.Wallet(ID).toNavKey())
         assertEquals(WalletsKey, PushTarget.Wallets.toNavKey())
         assertEquals(PlanKey, PushTarget.Plan.toNavKey())
-        // Spec 016's export screens are not merged here: both export targets open the account screen.
-        assertEquals(AccountKey, PushTarget.Export(ID).toNavKey())
-        assertEquals(AccountKey, PushTarget.Exports.toNavKey())
+        assertEquals(ExportDetailKey(ID), PushTarget.Export(ID).toNavKey())
+        assertEquals(ExportsKey, PushTarget.Exports.toNavKey())
         assertEquals(DeleteAccountKey, PushTarget.AccountDeletion.toNavKey())
         assertEquals(HomeKey, PushTarget.Home.toNavKey())
     }

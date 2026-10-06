@@ -34,6 +34,7 @@ import saveme.shared.generated.resources.account_delete
 import saveme.shared.generated.resources.account_devices
 import saveme.shared.generated.resources.account_email_unverified
 import saveme.shared.generated.resources.account_dev_tools
+import saveme.shared.generated.resources.account_export
 import saveme.shared.generated.resources.account_email_verified
 import saveme.shared.generated.resources.account_notifications
 import saveme.shared.generated.resources.account_plan
@@ -82,6 +83,13 @@ fun AccountScreen(state: AccountState, onIntent: (AccountIntent) -> Unit) {
                     onClick = { onIntent(AccountIntent.Open(AccountDestination.Notifications)) },
                 )
             }
+            AppListItem(
+                stringResource(Res.string.account_export),
+                leadingIcon = AppIcons.Sync,
+                trailing = ListTrailing.Chevron,
+                modifier = Modifier.testTag("account.export"),
+                onClick = { onIntent(AccountIntent.Open(AccountDestination.Exports)) },
+            )
             AppListItem(
                 stringResource(Res.string.account_change_password),
                 leadingIcon = AppIcons.Lock,

@@ -104,7 +104,7 @@ class TransactionsServiceListTest {
     }
 
     @Test
-    fun addedByNamesTheMemberOrSaysAnotherMemberAndTheRecurringLinkShows() = runTest {
+    fun addedByNamesTheMemberOrSaysAFormerMemberAndTheRecurringLinkShows() = runTest {
         val env = TransactionTestEnv(backgroundScope)
         env.seedWallet(walletJson(id = "w1"))
         env.seedMember("u2", "Omar")
@@ -114,9 +114,19 @@ class TransactionsServiceListTest {
         val byId = env.service.observeList("w1").first().days.flatMap { it.items }.associateBy { it.id }
         assertEquals(AddedBy.You, byId.getValue("mine").addedBy)
         assertEquals(AddedBy.Member("Omar"), byId.getValue("omar").addedBy)
-        assertEquals(AddedBy.AnotherMember, byId.getValue("other").addedBy)
+        // The wallet's members the phone holds do not include u3, so they left (spec 016 FR-033).
+        assertEquals(AddedBy.FormerMember, byId.getValue("other").addedBy)
         assertTrue(byId.getValue("other").fromRecurringRule)
         assertFalse(byId.getValue("mine").fromRecurringRule)
+    }
+
+    @Test
+    fun withNoMemberRecordsAtAllTheAuthorStaysAnotherMember() = runTest {
+        val env = TransactionTestEnv(backgroundScope)
+        env.seedWallet(walletJson(id = "w1"))
+        env.seed(transactionJson(id = "other", createdBy = "u3"))
+        val byId = env.service.observeList("w1").first().days.flatMap { it.items }.associateBy { it.id }
+        assertEquals(AddedBy.AnotherMember, byId.getValue("other").addedBy)
     }
 
     @Test

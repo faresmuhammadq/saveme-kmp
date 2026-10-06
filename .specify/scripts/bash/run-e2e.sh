@@ -22,6 +22,14 @@
 #   +redeem-code-other    the code was sent to a different address (e2e+<run>-<flow>-other@example.com)
 #   +redeem-code-used     as +redeem-code, then the code row is marked redeemed by someone else
 #   +redeem-code-expired  as +redeem-code, then the code row's expiry is moved into the past
+# Export and deletion seeds (spec 016, client C15) are suffixes after the base seed and before +partner:
+#   +shared-owner   also creates two more verified Plus accounts (E2E_PARTNER_EMAIL / E2E_PARTNER_PASSWORD and
+#                   E2E_PARTNER2_EMAIL / E2E_PARTNER2_PASSWORD); the flow builds the shared wallets through
+#                   .maestro/common/api.js (wallet A: one viewer; wallet B: an editor and a viewer)
+#   +export-limit   the account has used its five exports of the day: the backend's own budget key is hit five times
+#                   (RequestExport::budgetKey), so the next request answers 429 RATE_LIMITED with Retry-After
+# A flow may name `# e2e-between: purge` on a later part: the runner moves the partner account's deletion date into the
+# past and runs the backend's identity:purge-accounts command (the queue worker finishes the purge), then waits for it.
 # The seeds never run in CI; they are written for the device run the owner schedules.
 #
 # The +…-link seeds also issue two mailed links through the backend's LinkRepository (the same
@@ -282,6 +290,36 @@ seed_redeem_code() {
     printf '%s' "$code"
 }
 
+# Spec 016 +export-limit: the person has made five accepted exports in the last 24 hours (the budget the 429 answers from).
+seed_export_limit() {
+    local email="$1"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \$id = \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))->value('id');
+        for (\$i = 0; \$i < 5; \$i++) { \Illuminate\Support\Facades\RateLimiter::hit(\App\Modules\Identity\Application\Export\RequestExport::budgetKey(\$id), 86400); }
+        echo 'limited';
+    " 2>&1 | grep -q limited
+}
+
+# Spec 016 e2e-between: purge. The deletion date of <email> moves into the past, then the due purges start and finish
+# (the container's queue worker runs the steps); waits up to 60 s for the account to leave the users table's live rows.
+purge_account() {
+    local email="$1"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))
+            ->update(['deletion_scheduled_for' => now()->subMinute()]);
+        echo 'moved';
+    " 2>&1 | grep -q moved || return 1
+    docker exec "$CONTAINER" php artisan identity:purge-accounts >/dev/null 2>&1 || return 1
+    local i
+    for i in $(seq 1 30); do
+        sleep 2
+        docker exec "$CONTAINER" php artisan tinker --execute="
+            echo \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))->exists() ? 'live' : 'purged';
+        " 2>&1 | grep -q purged && return 0
+    done
+    return 1
+}
+
 # Runs one Maestro file with the current env_args; <label> names its report and log.
 run_maestro() {
     local file="$1" label="$2"
@@ -336,6 +374,10 @@ for flow in "${flows[@]}"; do
     seed=$(grep -m1 -oE '^# e2e-seed: *[a-z+-]+' "$flow" | sed -E 's/^# e2e-seed: *//' || true)
     want_partner=false
     if [[ "$seed" == *+partner ]]; then want_partner=true; seed="${seed%+partner}"; fi
+    shared_owner=false
+    export_limit=false
+    if [[ "$seed" == *+shared-owner ]]; then shared_owner=true; want_partner=true; seed="${seed%+shared-owner}"; fi
+    if [[ "$seed" == *+export-limit ]]; then export_limit=true; seed="${seed%+export-limit}"; fi
     redeem_kind=""
     if [[ "$seed" =~ ^(.*)\+(redeem-code(-other|-used|-expired)?)$ ]]; then seed="${BASH_REMATCH[1]}"; redeem_kind="${BASH_REMATCH[2]}"; fi
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
@@ -370,6 +412,16 @@ for flow in "${flows[@]}"; do
                 fi
                 env_args+=(-e "E2E_PARTNER_EMAIL=$partner_email" -e "E2E_PARTNER_PASSWORD=$PASSWORD")
             fi
+            if [[ "$shared_owner" == true ]]; then
+                partner2_email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")-partner2@example.com"
+                if ! seed_account "$partner2_email" true || ! grant_plus "$partner2_email" 30 0; then
+                    echo "FAIL $name (seeding the +shared-owner accounts failed)"; failed=1; continue
+                fi
+                env_args+=(-e "E2E_PARTNER2_EMAIL=$partner2_email" -e "E2E_PARTNER2_PASSWORD=$PASSWORD")
+            fi
+            if [[ "$export_limit" == true ]] && ! seed_export_limit "$email"; then
+                echo "FAIL $name (seeding +export-limit failed)"; failed=1; continue
+            fi
             if [[ "$seed" == *-link ]]; then
                 if [[ "$seed" == *verify-link ]]; then kind=VerifyAddress path=verify-email; else kind=ResetPassword path=reset-password; fi
                 old=$(issue_link "$email" "$kind")
@@ -402,6 +454,11 @@ for flow in "${flows[@]}"; do
             grant-plus)
                 if ! grant_plus "$email"; then
                     echo "FAIL $name (granting Plus before part $part_no failed)"; part_ok=0; break
+                fi
+                ;;
+            purge)
+                if ! purge_account "${partner_email:-$email}"; then
+                    echo "FAIL $name (purging before part $part_no failed)"; part_ok=0; break
                 fi
                 ;;
             network-off) network_off ;;

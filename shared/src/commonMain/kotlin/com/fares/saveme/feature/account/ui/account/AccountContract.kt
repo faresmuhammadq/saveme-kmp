@@ -19,7 +19,7 @@ data class AccountState(
     val devToolsAvailable: Boolean = false,
 )
 
-enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Notifications, DevTools }
+enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Exports, Notifications, DevTools }
 
 sealed interface AccountIntent {
     data class Open(val destination: AccountDestination) : AccountIntent

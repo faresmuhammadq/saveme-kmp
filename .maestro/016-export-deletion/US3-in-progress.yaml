@@ -1,0 +1,35 @@
+# deferred: E2E on owner's device
+# US3-1: Given an export being prepared, When the person asks for another, Then they are told to wait and "See it" opens the one in progress.
+# e2e-seed: verified-user
+# The first export is requested through the API just before the app opens, so it is still queued or running when the app asks for a second one.
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: requestExport, SLOT: B }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-exports.yaml
+- tapOn:
+    id: "exports.new"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.submit"
+    timeout: 15000
+- tapOn:
+    id: "exportRequest.submit"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.message"
+    timeout: 20000
+- assertVisible: "An export is already being prepared.*"
+- tapOn:
+    id: "exportRequest.seeIt"
+- extendedWaitUntil:
+    visible:
+      id: "exportDetail.status"
+    timeout: 15000

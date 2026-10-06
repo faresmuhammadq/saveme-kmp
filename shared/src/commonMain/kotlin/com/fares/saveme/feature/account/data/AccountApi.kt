@@ -4,7 +4,8 @@ import com.fares.saveme.core.network.ApiClient
 import com.fares.saveme.core.network.ApiResult
 import com.fares.saveme.feature.account.data.dto.ChangePasswordRequest
 import com.fares.saveme.feature.account.data.dto.DeletionScheduleDto
-import com.fares.saveme.feature.account.data.dto.PasswordConfirmation
+import com.fares.saveme.feature.account.data.dto.DeletionPlanDto
+import com.fares.saveme.feature.account.data.dto.DeletionRequestDto
 import com.fares.saveme.feature.account.data.dto.MeDto
 import com.fares.saveme.feature.account.data.dto.ProfileDto
 import com.fares.saveme.feature.account.data.dto.ProfileWriteRequest
@@ -48,12 +49,21 @@ class AccountApi(private val client: ApiClient) {
         setBody(request.toJson())
     }
 
-    /** A wrong password is 401 INVALID_CREDENTIALS on a live session: never a sign-out (R-04). */
-    suspend fun requestDeletion(password: String): ApiResult<DeletionScheduleDto> = client.call {
+    /** The deletion state and who would own each shared wallet the person owns (spec 016, backend spec 022). */
+    suspend fun deletionPlan(): ApiResult<DeletionPlanDto> = client.call {
+        method = HttpMethod.Get
+        url("account/deletion-request")
+    }
+
+    /**
+     * A wrong password is 401 INVALID_CREDENTIALS on a live session: never a sign-out (R-04). The body carries only the
+     * password and, when owners were chosen, `successors` (spec 016 FR-037).
+     */
+    suspend fun requestDeletion(body: DeletionRequestDto): ApiResult<DeletionScheduleDto> = client.call {
         method = HttpMethod.Post
         url("account/deletion-request")
         contentType(ContentType.Application.Json)
-        setBody(PasswordConfirmation(password))
+        setBody(body)
     }
 
     suspend fun cancelDeletion(): ApiResult<Unit> = client.call {
