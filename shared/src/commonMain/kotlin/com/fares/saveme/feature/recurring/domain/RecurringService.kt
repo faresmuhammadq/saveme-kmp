@@ -47,6 +47,7 @@ import com.fares.saveme.feature.recurring.domain.model.Preset
 import com.fares.saveme.feature.recurring.domain.model.PreviewRound
 import com.fares.saveme.feature.recurring.domain.model.RecurringRecord
 import com.fares.saveme.feature.recurring.domain.model.RecurringSyncState
+import com.fares.saveme.feature.recurring.domain.model.RuleAuthor
 import com.fares.saveme.feature.recurring.domain.model.RuleDraft
 import com.fares.saveme.feature.recurring.domain.model.RuleResult
 import com.fares.saveme.feature.recurring.domain.model.RuleStatus
@@ -161,13 +162,39 @@ class DefaultRecurringService(
         val wallets: Map<String, WalletView>,
         val now: Instant,
         val profileZone: String?,
+        /** Wallet id to (member user id to display name) for the wallets on the phone: what tells a rule's author apart (spec 016 FR-034). */
+        val members: Map<String, Map<String, String?>> = emptyMap(),
     )
 
     private fun contextFlow(): Flow<Context> = combine(
-        engine.observeAll(RecurringRuleSyncHandler.RECORD_TYPE), engine.observeAll(OccurrenceSyncHandler.RECORD_TYPE),
-        wallets.observeList(), ticker.ticks(), profileZone,
-    ) { qr, qo, list, now, zone ->
-        Context(qr.associateBy { it.recordId }, qo.associateBy { it.recordId }, list.byId(), now, zone)
+        combine(
+            engine.observeAll(RecurringRuleSyncHandler.RECORD_TYPE), engine.observeAll(OccurrenceSyncHandler.RECORD_TYPE),
+            wallets.observeList(), ticker.ticks(), profileZone,
+        ) { qr, qo, list, now, zone ->
+            Context(qr.associateBy { it.recordId }, qo.associateBy { it.recordId }, list.byId(), now, zone)
+        },
+        membersFlow(),
+    ) { base, members -> Context(base.queueRules, base.queueOccurrences, base.wallets, base.now, base.profileZone, members) }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun membersFlow(): Flow<Map<String, Map<String, String?>>> = wallets.observeList().flatMapLatest { list ->
+        val ids = (list.active + list.archived).map { it.id }
+        if (ids.isEmpty()) {
+            flowOf(emptyMap())
+        } else {
+            combine(ids.map { id -> wallets.observeMembers(id).map { members -> id to members.associate { it.userId to it.displayName } } }) { it.toMap() }
+        }
+    }
+
+    /** The author of [rule] from the wallet's members the phone holds: absent from a non-empty list means they left (FR-034). */
+    private fun authorOf(rule: Rule, members: Map<String, String?>?): RuleAuthor {
+        val author = rule.createdBy
+        return when {
+            author.isNullOrBlank() || author == accountId -> RuleAuthor.You
+            members == null -> RuleAuthor.AnotherMember
+            else -> members[author]?.takeIf { it.isNotBlank() }?.let { RuleAuthor.Member(it) }
+                ?: if (members.isNotEmpty() && author !in members) RuleAuthor.FormerMember else RuleAuthor.AnotherMember
+        }
     }
 
     private fun WalletList.byId(): Map<String, WalletView> = (active + archived).associateBy { it.id }
@@ -236,6 +263,7 @@ class DefaultRecurringService(
             myRole = role,
             walletName = context.wallets[row.walletId]?.shown?.name,
             hasOccurrences = occurrenceRows.isNotEmpty(),
+            author = authorOf(rule, context.members[row.walletId]),
         )
     }
 

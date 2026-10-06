@@ -1,0 +1,12 @@
+# From Home: Account -> Export my data, and waits for the Exports screen (spec 016).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- runFlow: open-account.yaml
+- tapOn:
+    id: "account.export"
+- extendedWaitUntil:
+    visible:
+      id: "exports.new"
+    timeout: 15000

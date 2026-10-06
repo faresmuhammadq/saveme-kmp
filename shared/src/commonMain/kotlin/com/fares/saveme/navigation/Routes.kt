@@ -152,6 +152,20 @@ data object ChangePasswordKey : NavKey
 @Serializable
 data object DeleteAccountKey : NavKey
 
+// Export (spec 016). The download link is never carried by a key.
+
+/** The person's exports of the last 30 days. */
+@Serializable
+data object ExportsKey : NavKey
+
+/** Asks for an export; [walletId] presets the one-wallet scope (wallet detail, "Try again" on a failed wallet export). */
+@Serializable
+data class ExportRequestKey(val walletId: String? = null) : NavKey
+
+/** One export's status and download. */
+@Serializable
+data class ExportDetailKey(val exportId: String) : NavKey
+
 // Auth completion (spec 003). Keys carrying a link secret never print it (FR-009).
 
 @Serializable

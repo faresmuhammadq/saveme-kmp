@@ -20,6 +20,15 @@ sealed interface RecurringSyncState {
     data class Refused(val code: String?, val requestId: String?, val fields: Map<String, String>) : RecurringSyncState
 }
 
+/** Who made a rule, as the phone can tell from the wallet's members it holds (spec 016 FR-034). */
+sealed interface RuleAuthor {
+    /** The person's own rule (or one not yet accepted): no line is shown. */
+    data object You : RuleAuthor
+    data class Member(val name: String) : RuleAuthor
+    data object AnotherMember : RuleAuthor
+    data object FormerMember : RuleAuthor
+}
+
 /** A rule as a screen sees it. */
 data class RuleView(
     val rule: Rule,
@@ -39,8 +48,11 @@ data class RuleView(
     val walletName: String?,
     /** At least one occurrence of the rule is on the phone (FR-017). */
     val hasOccurrences: Boolean,
-    val authorName: String? = null,
+    val author: RuleAuthor = RuleAuthor.You,
 ) {
+    /** The author's name when the phone knows it. */
+    val authorName: String? get() = (author as? RuleAuthor.Member)?.name
+
     val id: String get() = rule.id
     val canWrite: Boolean get() = myRole == WalletRole.Owner || myRole == WalletRole.Editor
     val hidden: Boolean get() = pendingDelete && syncState is RecurringSyncState.Waiting

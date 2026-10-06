@@ -1,0 +1,22 @@
+# deferred: E2E on owner's device
+# US3-2: Given five exports accepted in 24 hours, When the person requests a sixth, Then the screen says when to try again and the button is unavailable.
+# e2e-seed: verified-user+export-limit
+appId: com.fares.saveme
+tags:
+  - US3
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-exports.yaml
+- tapOn:
+    id: "exports.new"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.submit"
+    timeout: 15000
+- tapOn:
+    id: "exportRequest.submit"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.message"
+    timeout: 20000
+- assertVisible: "You.ve asked for the most exports allowed in a day. Try again in .+"

@@ -69,6 +69,39 @@ class WalletDetailReducerTest {
     }
 }
 
+class WalletDetailExportTest {
+    @Test
+    fun everyRoleAndArchivedWalletsAreExportableOnceTheServerHasThem() {
+        listOf(WalletRole.Owner, WalletRole.Editor, WalletRole.Viewer).forEach { role ->
+            assertTrue(reduce(WalletDetailState(), WalletDetailChange.Stored(view(role))).exportable, "$role")
+        }
+        assertTrue(reduce(WalletDetailState(), WalletDetailChange.Stored(view(archivedAt = Instant.parse("2026-09-05T00:00:00Z")))).exportable)
+    }
+
+    @Test
+    fun aWalletOnlyOnThisPhoneIsNotExportable() {
+        val local = WalletView(wallet().copy(version = 0), null, false, SyncState.None, 0)
+        assertFalse(reduce(WalletDetailState(), WalletDetailChange.Stored(local)).exportable)
+        assertFalse(WalletDetailState().exportable)
+    }
+
+    @Test
+    fun exportClickedOpensTheRequestForThisWalletOnlyWhenExportable() = runMviTest {
+        val wallet = MutableStateFlow<WalletView?>(view(WalletRole.Viewer))
+        val vm = WalletDetailViewModel(
+            "w1", wallet, MutableStateFlow(listOf(owner)), { RefreshOutcome.Done }, { SaveResult.Saved }, { SaveResult.Saved },
+            keepMine = {}, useTheirs = {}, tryAgain = {}, discard = {}, transfer = { TransferResult.Done },
+        )
+        vm.effects.test {
+            vm.onIntent(WalletDetailIntent.ExportClicked)
+            assertEquals(WalletDetailEffect.OpenExport("w1"), awaitItem())
+            wallet.value = WalletView(wallet().copy(version = 0), null, false, SyncState.None, 0)
+            vm.onIntent(WalletDetailIntent.ExportClicked)
+            expectNoEvents()
+        }
+    }
+}
+
 class WalletDetailViewModelTest {
     private val wallet = MutableStateFlow<WalletView?>(view())
     private val members = MutableStateFlow(listOf(owner))

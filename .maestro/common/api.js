@@ -335,6 +335,36 @@ switch (arg('ACTION')) {
         expect(call('POST', 'account/deletion-request', { password: password }, token()), 200, 'requestDeletion')
         break
 
+    // Spec 016. Asks for an export from this slot: SCOPE (account), WALLET_ID for scope wallet. Copies it into output.exportRecord.
+    case 'requestExport':
+        var exportBody = { scope: arg('SCOPE', 'account') }
+        if (exportBody.scope === 'wallet') exportBody.wallet_id = arg('WALLET_ID', output.walletId)
+        output.exportRecord = expect(call('POST', 'exports', exportBody, token()), 202, 'requestExport').body.data
+        break
+
+    // Lists this slot's exports into output.exports (newest first).
+    case 'listExports':
+        output.exports = expect(call('GET', 'exports?limit=20', undefined, token()), 200, 'listExports').body.data
+        break
+
+    // Reads one export (ID or output.exportRecord.id) into output.exportRecord.
+    case 'getExport':
+        output.exportRecord = expect(call('GET', 'exports/' + arg('ID', output.exportRecord.id), undefined, token()), 200, 'getExport').body.data
+        break
+
+    // Reads the deletion plan into output.plan.
+    case 'deletionPlan':
+        output.plan = expect(call('GET', 'account/deletion-request', undefined, token()), 200, 'deletionPlan').body.data
+        break
+
+    // Schedules deletion with one chosen new owner: WALLET_ID (default output.walletId), MEMBER_ID (default output.memberUserId).
+    case 'requestDeletionWithChoice':
+        expect(call('POST', 'account/deletion-request', {
+            password: password,
+            successors: [{ wallet_id: arg('WALLET_ID', output.walletId), member_user_id: arg('MEMBER_ID', output.memberUserId) }],
+        }, token()), 200, 'requestDeletionWithChoice')
+        break
+
     // Creates a wallet from this slot: NAME, TYPE (cash), CURRENCY (EGP), OPENING in minor units (10000).
     // Copies it into output.wallet and its id into output.walletId.
     case 'createWallet':

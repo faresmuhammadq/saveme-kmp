@@ -87,6 +87,7 @@ class WalletDetailViewModel(
             WalletDetailIntent.ReportClicked -> sendEffect(WalletDetailEffect.OpenReport(walletId))
             WalletDetailIntent.MembersClicked -> sendEffect(WalletDetailEffect.NavigateMembers(walletId))
             WalletDetailIntent.ActivityClicked -> sendEffect(WalletDetailEffect.NavigateActivity(walletId))
+            WalletDetailIntent.ExportClicked -> if (currentState.exportable) sendEffect(WalletDetailEffect.OpenExport(walletId))
             WalletDetailIntent.JoiningRetryClicked -> {
                 setState { reduce(it, WalletDetailChange.JoiningFailed(false)) }
                 viewModelScope.launch { readWallet() }

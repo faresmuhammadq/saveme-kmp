@@ -21,6 +21,38 @@ class HomeReducerTest {
     }
 }
 
+class HomeBeingDeletedTest {
+    private val date = Instant.parse("2026-10-28T10:00:00Z")
+    private val pending = account.copy(state = AccountState.PendingDeletion, deletionScheduledFor = date)
+
+    @Test
+    fun theNoticeBecomesBeingDeletedOnceTheDateHasPassedAndKeepsCancel() = runMviTest {
+        val ticks = MutableStateFlow(Instant.parse("2026-10-20T10:00:00Z"))
+        var cancelled = 0
+        val vm = HomeViewModel(
+            MutableStateFlow(AuthState.SignedIn(pending)),
+            cancelDeletion = { cancelled++; CancelDeletionResult.Done },
+            minuteTicks = ticks,
+        )
+        assertEquals(false, vm.state.value.beingDeleted)
+        ticks.value = date
+        assertEquals(true, vm.state.value.beingDeleted)
+        ticks.value = Instant.parse("2026-10-29T10:00:00Z")
+        assertEquals(true, vm.state.value.beingDeleted)
+        assertEquals(date, vm.state.value.deletionPendingOn)
+        vm.onIntent(HomeIntent.CancelDeletion)
+        assertEquals(1, cancelled)
+    }
+
+    @Test
+    fun withoutATickNothingIsBeingDeleted() {
+        val state = reduce(HomeState(), HomeChange.Account(AuthState.SignedIn(pending)))
+        assertEquals(false, state.beingDeleted)
+        assertEquals(true, reduce(state, HomeChange.Tick(date)).beingDeleted)
+        assertEquals(false, HomeState(now = date).beingDeleted)
+    }
+}
+
 class HomeViewModelTest {
     @Test
     fun followsTheSession() = runMviTest {

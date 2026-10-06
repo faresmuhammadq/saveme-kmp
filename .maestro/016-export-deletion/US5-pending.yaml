@@ -1,0 +1,70 @@
+# deferred: E2E on owner's device
+# US5-1…3: Given a pending deletion with a stored choice, When the person opens Delete account, Then they see the date and owners, can change owners with the password, and cancelling drops the choices.
+# e2e-seed: verified-user+plus+shared-owner
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: B }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createWallet, SLOT: B, NAME: "Bravo", OPENING: "20000" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: C, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: editor }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: C }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: login, SLOT: D, EMAIL: "${E2E_PARTNER2_EMAIL}", PASSWORD: "${E2E_PARTNER2_PASSWORD}" }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: createInvitation, SLOT: B, ROLE: viewer }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: acceptInvitation, SLOT: D }
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: requestDeletionWithChoice, SLOT: B, MEMBER_ID: "${output.memberUserId}" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-account.yaml
+- scrollUntilVisible:
+    element:
+      text: "Delete account"
+- tapOn: "Delete account"
+- extendedWaitUntil:
+    visible:
+      id: "delete.pending"
+    timeout: 20000
+- assertVisible: "Your account will be deleted on .+"
+- assertVisible: ".*your choice.*"
+- tapOn:
+    id: "delete.pending.change"
+- extendedWaitUntil:
+    visible:
+      id: "delete.owners"
+    timeout: 10000
+- tapOn:
+    id: "delete.owners.next"
+- tapOn:
+    id: "delete.review.submit"
+- tapOn: "Password"
+- inputText: "${E2E_PASSWORD}"
+- hideKeyboard
+- tapOn:
+    id: "deleteAccount.confirm"
+- extendedWaitUntil:
+    visible: "New owners saved."
+    timeout: 20000
+- tapOn:
+    id: "delete.pending.cancel"
+- extendedWaitUntil:
+    visible: "Deletion cancelled.*"
+    timeout: 20000
+- assertVisible: "Your choices of new owners were dropped."

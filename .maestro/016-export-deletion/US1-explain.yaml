@@ -1,0 +1,18 @@
+# deferred: E2E on owner's device
+# US1-7: The request screen explains the file: ZIP, JSON and CSV, smallest unit, other members unnamed, 24 hours, an email too.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-exports.yaml
+- tapOn:
+    id: "exports.new"
+- extendedWaitUntil:
+    visible:
+      id: "exportRequest.explain"
+    timeout: 15000
+- assertVisible: ".*ZIP.*JSON.*CSV.*"
+- assertVisible: ".*24 hours.*"
+- assertNotVisible: ".*(XLSX|Excel|encrypt).*"

@@ -162,6 +162,30 @@ class AppGraphTest {
     }
 
     @Test
+    fun theExportAndDeletionServicesAndStoresResolveWithoutEagerlyResolvingTheEngine() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules + org.koin.dsl.module {
+                single<com.fares.saveme.core.database.AppDatabase> {
+                    androidx.room.Room.inMemoryDatabaseBuilder<com.fares.saveme.core.database.AppDatabase>(context)
+                        .setDriver(androidx.sqlite.driver.AndroidSQLiteDriver()).build()
+                }
+            },
+        ) { androidContext(context) }
+        val koin = GlobalContext.get()
+        assertTrue(koin.get<com.fares.saveme.feature.account.domain.export.ExportService>() is com.fares.saveme.feature.account.domain.export.DefaultExportService)
+        assertNotNull(koin.get<com.fares.saveme.feature.account.domain.deletion.DeletionPlanService>())
+        assertNotNull(koin.get<com.fares.saveme.feature.account.ui.export.list.ExportsViewModel>())
+        assertNotNull(koin.get<com.fares.saveme.feature.account.ui.export.request.ExportRequestViewModel> { org.koin.core.parameter.parametersOf("") })
+        assertNotNull(koin.get<com.fares.saveme.feature.account.ui.export.request.ExportRequestViewModel> { org.koin.core.parameter.parametersOf("w1") })
+        assertNotNull(koin.get<com.fares.saveme.feature.account.ui.export.detail.ExportDetailViewModel> { org.koin.core.parameter.parametersOf("e1") })
+        assertNotNull(koin.get<com.fares.saveme.feature.account.ui.deleteaccount.DeleteAccountViewModel>())
+        assertNotNull(koin.get<com.fares.saveme.feature.auth.ui.home.HomeViewModel>())
+        assertNotNull(koin.get<SyncEngine>())
+    }
+
+    @Test
     fun theReportsModuleResolvesItsHooks() {
         initKoin(
             config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
