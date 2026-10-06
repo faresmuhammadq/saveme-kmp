@@ -215,7 +215,7 @@ description: "Task list for 016-export-deletion"
 - [X] T075 Gates: `./gradlew :shared:testAndroidHostTest`, `:shared:verifyRoborazziAndroidHostTest`, `:androidApp:assembleDevDebug`, `:shared:compileKotlinIosSimulatorArm64`; `check-backend-contract.sh` clean (client codes vs catalogue)
 - [ ] T076 Quickstart §3 spot checks (browser download, polling stops, Arabic 200 %, TalkBack, partner after purge) — **deferred: E2E on owner's device**
 - [X] T077 Update `specs/briefs/README.md` client state for C15 and plan.md "Implementation notes"
-- [ ] T078 Write specs/016-export-deletion/summary.md — written by the parent
+- [X] T078 Write specs/016-export-deletion/summary.md — written by the parent
 
 ---
 
