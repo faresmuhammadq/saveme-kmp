@@ -23,6 +23,14 @@ class PlayPricesTest {
         assertEquals(Money(14_990, "EGP"), PlayPrices.toMoney(149_900_000, "egp"))
     }
 
+    /** US5 AS3: Google Play's 149.00 EGP reads the way the app writes money, in both languages, with Western digits. */
+    @Test
+    fun googlePlaysPriceIsWrittenByTheAppsFormatterInEnglishAndArabicWithWesternDigits() {
+        val money = PlayPrices.toMoney(149_000_000, "EGP")!!
+        assertEquals("EGP 149.00", com.fares.saveme.designsystem.money.MoneyFormatter.format(money.amountMinor, money.currency, "en"))
+        assertEquals("\u2066149.00 \u062C.\u0645\u2069", com.fares.saveme.designsystem.money.MoneyFormatter.format(money.amountMinor, money.currency, "ar"))
+    }
+
     @Test
     fun anInexactOrNonPositivePriceHasNoMoney() {
         assertNull(PlayPrices.toMoney(149_005_000, "EGP"), "finer than the currency's fraction")

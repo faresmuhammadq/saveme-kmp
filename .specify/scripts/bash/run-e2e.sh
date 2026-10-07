@@ -245,7 +245,7 @@ play_account_reference() {
         | sed -nE 's/.*"credential":"([^"]+)".*/\1/p') || return 1
     [[ -n "$credential" ]] || return 1
     curl -fs --max-time 15 "http://127.0.0.1:$PORT/api/v1/billing/google/account-reference" -H 'Accept: application/json' -H "Authorization: Bearer $credential" \
-        | sed -nE 's/.*"account_reference":"([^"]+)".*/\1/p'
+        | sed -nE 's/.*"obfuscated_account_id":"([^"]+)".*/\1/p'
 }
 
 # Spec 018: writes a flow's scripted Google Play purchases into the backend fake's script file.

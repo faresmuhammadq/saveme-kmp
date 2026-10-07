@@ -186,8 +186,8 @@ description: "Task list for 018-google-play"
 
 ## Phase 10: Live contract QA (gate: backend spec 024 built and committed)
 
-- [ ] T049 Re-run `speckit-contract-check`; record the new backend commit in spec.md and plan.md; confirm `PURCHASE_ALREADY_LINKED`/`PURCHASE_NOT_VERIFIED` are in `error-catalog.yaml` (no `NOT IN CATALOGUE` line); fix drift first
-- [ ] T050 curl QA against the local backend (`BILLING_PLAY_DRIVER=fake`, scripted tokens) for every case of quickstart.md §3; capture answers (tokens/references redacted) in `bt/CapturedGooglePlayResponses.kt`; `bt/GooglePlayLiveReplayTest.kt` replays them through the real `ApiClient` → `BillingApi` → verifier/restore; record results in `qa-report.md`
+- [X] T049 Re-run `speckit-contract-check`; record the new backend commit in spec.md and plan.md; confirm `PURCHASE_ALREADY_LINKED`/`PURCHASE_NOT_VERIFIED` are in `error-catalog.yaml` (no `NOT IN CATALOGUE` line); fix drift first
+- [X] T050 curl QA against the local backend (`BILLING_PLAY_DRIVER=fake`, scripted tokens) for every case of quickstart.md §3; capture answers (made-up tokens, no credentials) in `bt/play/CapturedPlayResponses.kt`; `bt/play/GooglePlayLiveReplayTest.kt` replays them through the real `ApiClient` → `BillingApi` → verifier/restore; record results in `qa-report.md`
 
 ---
 

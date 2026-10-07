@@ -113,4 +113,11 @@ class BillingLayeringTest {
         )
         assertTrue(callers.all { it in declaring }, "a purchase path is reachable: ${callers - declaring}")
     }
+
+    /** FR-003: billing calls are online-only; nothing in billing touches the sync engine or its outbox. */
+    @Test
+    fun noBillingSourceTouchesTheSyncEngineOrItsOutbox() {
+        val offenders = imports(billing).filter { (_, i) -> i.startsWith("com.fares.saveme.core.sync") || i.contains("PendingChange") }
+        assertTrue(offenders.isEmpty(), "billing queues work in the outbox: $offenders")
+    }
 }

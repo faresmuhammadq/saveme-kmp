@@ -775,7 +775,7 @@ switch (arg('ACTION')) {
 
     // Google Play: the account reference of this slot (seen from the slot's session) into output.playReference.
     case 'playAccountReference':
-        output.playReference = expect(call('GET', 'billing/google/account-reference', undefined, token()), 200, 'playAccountReference').body.data.account_reference
+        output.playReference = expect(call('GET', 'billing/google/account-reference', undefined, token()), 200, 'playAccountReference').body.data.obfuscated_account_id
         break
 
     // Reports (spec 014). Moves money between two wallets of this slot: WALLET (source name) or WALLET_ID, COUNTER_WALLET (destination name)

@@ -240,3 +240,9 @@ the real graph (the 006 Koin-cycle lesson). The port is bound in each platform m
 - `AppConfig.inAppSubscribe` stays `false` in every flavour; no Subscribe state, intent or button exists (G2 not started).
 - Catalogue prices are no longer shown (FR-037): the Plan goldens that showed them changed on purpose.
 - Maestro flows (`.maestro/018-google-play/`, not run) and the `run-e2e.sh` seeds (`+play-subscription`, `# e2e-play-script:`) were written; `api.js` gained `playVerify` and `playAccountReference`.
+
+## Implementation notes (live QA, T049-T050)
+
+- Backend spec 024 is committed (`2062c0c`, summary `1a0e1cd`); the contract check is clean (see spec.md header). Live replay: `qa-report.md`, `CapturedPlayResponses.kt`, `GooglePlayLiveReplayTest`.
+- Fix from the live run: a server `Retry-After` is honoured in full (up to 24 h) for automatic resends; only the app's own 30 s doubling stops at 15 minutes. The live rate limit and the live gateway-unavailable answer wait about an hour.
+- Fix from the live run: `.specify/scripts/bash/run-e2e.sh` and `.maestro/common/api.js` read `data.account_reference`; the answer's member is `data.obfuscated_account_id` (as the app's DTO has it).

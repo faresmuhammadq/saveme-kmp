@@ -8,7 +8,9 @@
 
 **Input**: User description: "specs/briefs/C10-billing-google-play.md" — client brief C10, wave 3. Pairs with backend B10 → spec 024 (designed and frozen, implementation to follow; `google-play.yaml` v1.15, written in the backend working tree and not yet committed). Buy a subscription with Play Billing from the Plan screen (C3), post the purchase to the backend, show the new entitlements; "Restore purchases" sends every owned purchase after sign-in and on demand.
 
-**Backend contract**: `saveme-backend@e8c308a`
+**Backend contract**: `saveme-backend@1a0e1cd`
+
+> Re-checked 2026-10-07 (T049): backend spec 024 is committed (`2062c0c`, summary `1a0e1cd`); `google-play.yaml` is still v1.15 and was committed unchanged; `PURCHASE_ALREADY_LINKED` and `PURCHASE_NOT_VERIFIED` are in `error-catalog.yaml`; `check-backend-contract.sh` reports every client code consistent. The sections below keep the baseline `e8c308a` they were written against.
 
 **Sources**:
 - API contract: `saveme-backend/docs/openapi/paths/google-play.yaml` (v1.15, uncommitted at `e8c308a`: `GET /billing/google/account-reference`, `POST /billing/google/purchases`, `POST /billing/google/restore`; `Idempotency-Key` required on both posts), `paths/billing.yaml` (`EntitlementSummary`, `MySubscription` with `provider`, `GET /plans` `prices[]` with `channel = google_play` and `product_id`), `docs/api-conventions.md` (Idempotency: key of 16–255 characters from `[A-Za-z0-9._:-]`, scoped to the user, only `2xx` stored, 24 hours).

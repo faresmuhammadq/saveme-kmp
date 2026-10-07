@@ -274,7 +274,8 @@ class PlayPurchaseVerifier(
     private fun retryLater(userId: String, digest: String, retryAfterSeconds: Long?): VerifyOutcome {
         notes.update(userId) { held ->
             val sends = (held.retry[digest]?.sends ?: 0) + 1
-            val wait = (retryAfterSeconds ?: backoffSeconds(sends)).coerceIn(1, MAX_WAIT_SECONDS)
+            // The server's own wait is honoured (the live rate limit answers about an hour); only our doubling stops at 15 minutes.
+            val wait = retryAfterSeconds?.coerceIn(1, MAX_SERVER_WAIT_SECONDS) ?: backoffSeconds(sends)
             held.copy(retry = held.retry + (digest to RetryState(sends, clock.now() + wait.seconds)))
         }
         return VerifyOutcome.RetryLater(retryAfterSeconds)
@@ -301,6 +302,9 @@ class PlayPurchaseVerifier(
         const val MAX_SENDS = 6
         const val FIRST_WAIT_SECONDS = 30L
         const val MAX_WAIT_SECONDS = 15 * 60L
+
+        /** A server wait beyond the idempotency window (24 h) is not worth holding a timer for. */
+        const val MAX_SERVER_WAIT_SECONDS = 24 * 3600L
         const val SECONDS_PER_HOUR = 3600L
     }
 }
