@@ -13,6 +13,8 @@ data class Subscription(
     val periodEnd: Instant?,
     val graceUntil: Instant?,
     val autoRenew: Boolean?,
+    /** `google_play`, `instapay`, `manual` or null; read only to decide Google Play links, never printed (spec 018 FR-030). */
+    val provider: String? = null,
 ) {
     val isPaid: Boolean get() = status != null
 }
@@ -28,6 +30,7 @@ internal fun MySubscriptionDto.toDomain() = Subscription(
     periodEnd = currentPeriodEnd.toInstantOrNull(),
     graceUntil = graceUntil.toInstantOrNull(),
     autoRenew = autoRenew,
+    provider = provider,
 )
 
 /** A bad value becomes "no date", never a crash (data-model §2). */

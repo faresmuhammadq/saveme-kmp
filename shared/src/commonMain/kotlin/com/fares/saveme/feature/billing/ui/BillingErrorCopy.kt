@@ -3,6 +3,8 @@ package com.fares.saveme.feature.billing.ui
 import com.fares.saveme.core.network.ApiErrorCode
 import org.jetbrains.compose.resources.StringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.billing_play_another_account
+import saveme.shared.generated.resources.billing_play_not_verified
 import saveme.shared.generated.resources.error_feature_not_entitled
 import saveme.shared.generated.resources.error_redeem_code_email_mismatch
 import saveme.shared.generated.resources.error_redeem_code_expired
@@ -20,5 +22,12 @@ fun ApiErrorCode.redeemMessage(): StringResource? = when (this) {
     ApiErrorCode.REDEEM_CODE_EMAIL_MISMATCH -> Res.string.error_redeem_code_email_mismatch
     ApiErrorCode.REDEEM_CODE_USED -> Res.string.error_redeem_code_used
     ApiErrorCode.REDEEM_CODE_EXPIRED -> Res.string.error_redeem_code_expired
+    else -> null
+}
+
+/** Copy for a Google Play purchase refusal that has its own catalogue code (spec 018 FR-052); null for any other code. */
+fun ApiErrorCode.playMessage(): StringResource? = when (this) {
+    ApiErrorCode.PURCHASE_ALREADY_LINKED -> Res.string.billing_play_another_account
+    ApiErrorCode.PURCHASE_NOT_VERIFIED -> Res.string.billing_play_not_verified
     else -> null
 }

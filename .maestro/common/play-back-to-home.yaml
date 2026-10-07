@@ -1,0 +1,8 @@
+# Leaves the Developer tools screens by the system back, to Home.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- back
+- back
+- back

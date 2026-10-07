@@ -29,6 +29,8 @@ fun ApiErrorCode.message(): StringResource = when (this) {
     ApiErrorCode.REDEEM_CODE_EXPIRED -> Res.string.error_redeem_code_expired
     ApiErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS -> Res.string.redeem_in_progress
     ApiErrorCode.EXPORT_IN_PROGRESS -> Res.string.export_in_progress
+    ApiErrorCode.PURCHASE_ALREADY_LINKED -> Res.string.billing_play_another_account
+    ApiErrorCode.PURCHASE_NOT_VERIFIED -> Res.string.billing_play_not_verified
     ApiErrorCode.SERVICE_UNAVAILABLE, ApiErrorCode.INTERNAL_ERROR -> Res.string.error_service_unavailable
     ApiErrorCode.CLIENT_VERSION_REQUIRED, ApiErrorCode.CLIENT_VERSION_INVALID, ApiErrorCode.MALFORMED_JSON,
     ApiErrorCode.NOT_ACCEPTABLE, ApiErrorCode.UNSUPPORTED_MEDIA_TYPE, ApiErrorCode.FORBIDDEN,

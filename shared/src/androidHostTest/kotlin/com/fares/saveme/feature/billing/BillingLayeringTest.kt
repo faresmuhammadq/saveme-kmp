@@ -72,4 +72,52 @@ class BillingLayeringTest {
         }
         assertTrue(offenders.isEmpty(), "the redeem path persists or copies: $offenders")
     }
+
+    /** Spec 018 R-2, P-10.6: the Google Play port sits in data, imports no domain, and no Android or Play Billing type reaches common code. */
+    @Test
+    fun theGooglePlayPortImportsNoDomainAndNoPlatformTypeReachesCommonCode() {
+        val port = imports(File(billing, "data/play"))
+        assertTrue(port.isNotEmpty())
+        val offenders = port.filter { (_, i) -> i.startsWith(base + "billing.domain") || i.startsWith(base + "billing.ui") || i.startsWith(base + "auth.") }
+        assertTrue(offenders.isEmpty(), "the port reaches into domain: $offenders")
+        val platform = imports(main).filter { (_, i) -> i.startsWith("android.") || i.startsWith("com.android.billingclient") }
+        assertTrue(platform.isEmpty(), "an Android or Play Billing type in commonMain: $platform")
+    }
+
+    /** FR-002, FR-004: nothing under `shared/src` (or the host app) acknowledges or consumes a Google Play purchase. */
+    @Test
+    fun noSourceAcknowledgesOrConsumesAPurchaseAndThePortHasNoSuchMember() {
+        val roots = listOf(File("src"), File("../androidApp/src"))
+        val forbidden = listOf("acknowledgePurchase", "consumeAsync", "consumePurchase", "AcknowledgePurchaseParams", "ConsumeParams")
+        val offenders = roots.filter { it.isDirectory }.flatMap { root ->
+            root.walkTopDown().filter { it.isFile && it.extension == "kt" && !it.invariantSeparatorsPath.contains("/androidHostTest/") }
+                .filter { file -> file.readLines().filterNot { it.trimStart().startsWith("*") || it.trimStart().startsWith("//") || it.trimStart().startsWith("/*") }.any { line -> forbidden.any { it in line } } }
+                .map { it.name }.toList()
+        }
+        assertTrue(offenders.isEmpty(), "acknowledges or consumes: $offenders")
+        val members = File(billing, "data/play/PlayBillingClient.kt").readLines()
+            .dropWhile { !it.contains("interface PlayBillingClient") }.takeWhile { it.trim() != "}" }
+            .filter { it.trimStart().startsWith("suspend fun ") || it.trimStart().startsWith("fun ") || it.trimStart().startsWith("val ") }
+        assertTrue(members.isNotEmpty() && members.none { it.contains("acknowledge", ignoreCase = true) || it.contains("consume", ignoreCase = true) }, "$members")
+    }
+
+    /** FR-001, FR-040, SC-007: while the switch is off no code path can start a purchase: only the (gated) port member and the unread switch exist. */
+    @Test
+    fun noReachableCodePathLaunchesAPurchaseOrReadsTheAccountReference() {
+        val callers = main.walkTopDown().filter { it.isFile && it.extension == "kt" }
+            .filter { file -> file.readLines().filterNot { it.trimStart().startsWith("*") || it.trimStart().startsWith("//") }.any { "launchPurchase(" in it || "playAccountReference(" in it || "inAppSubscribe" in it } }
+            .map { it.name }.toSet()
+        // The port, its three implementations, the API method and the config field declare them; nothing else may call them.
+        val declaring = setOf(
+            "PlayBillingClient.kt", "UnavailablePlayBillingClient.kt", "ScriptedPlayBillingClient.kt", "BillingApi.kt", "AppConfig.kt",
+        )
+        assertTrue(callers.all { it in declaring }, "a purchase path is reachable: ${callers - declaring}")
+    }
+
+    /** FR-003: billing calls are online-only; nothing in billing touches the sync engine or its outbox. */
+    @Test
+    fun noBillingSourceTouchesTheSyncEngineOrItsOutbox() {
+        val offenders = imports(billing).filter { (_, i) -> i.startsWith("com.fares.saveme.core.sync") || i.contains("PendingChange") }
+        assertTrue(offenders.isEmpty(), "billing queues work in the outbox: $offenders")
+    }
 }

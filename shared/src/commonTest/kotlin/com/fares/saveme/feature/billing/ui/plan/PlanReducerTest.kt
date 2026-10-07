@@ -76,9 +76,9 @@ class PlanReducerTest {
     }
 
     private val catalogue = listOf(
-        CataloguePlan("free-id", "Free", BillingPeriod.Lifetime, isDefault = true, features = free, price = null),
-        CataloguePlan("plus-id", "Plus · Monthly", BillingPeriod.Monthly, isDefault = false, features = plus, price = Money(14_900, "EGP")),
-        CataloguePlan("plus-y", "Plus · Yearly", BillingPeriod.Yearly, isDefault = false, features = plus, price = null),
+        CataloguePlan("free-id", "Free", BillingPeriod.Lifetime, isDefault = true, features = free, playProductId = null),
+        CataloguePlan("plus-id", "Plus · Monthly", BillingPeriod.Monthly, isDefault = false, features = plus, playProductId = "plus_monthly"),
+        CataloguePlan("plus-y", "Plus · Yearly", BillingPeriod.Yearly, isDefault = false, features = plus, playProductId = "plus_yearly"),
     )
 
     @Test
@@ -89,7 +89,7 @@ class PlanReducerTest {
         assertEquals(listOf(true, false, false), s.cards.map { it.isCurrent })
         assertNull(s.cards[0].period)
         assertEquals(BillingPeriod.Monthly, s.cards[1].period)
-        assertEquals(Money(14_900, "EGP"), s.cards[1].price)
+        assertNull(s.cards[1].price, "no Google Play answer, no price (FR-037)")
         assertNull(s.cards[2].price)
     }
 

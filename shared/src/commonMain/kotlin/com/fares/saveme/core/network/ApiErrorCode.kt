@@ -56,6 +56,12 @@ enum class ApiErrorCode(val retryClass: RetryClass) {
 
     /** 409 on asking for an export while one is queued or running; `current` carries it (spec 016, FR-036). Not retried by this feature. */
     EXPORT_IN_PROGRESS(RetryClass.Automatic),
+
+    /** 409 on sending a Google Play purchase another account already linked (backend spec 024, `google-play.yaml` v1.15; spec 018 FR-016). */
+    PURCHASE_ALREADY_LINKED(RetryClass.Never),
+
+    /** 422 on sending a Google Play purchase the server could not verify (backend spec 024, `google-play.yaml` v1.15; spec 018 FR-016). */
+    PURCHASE_NOT_VERIFIED(RetryClass.Never),
     UNKNOWN(RetryClass.Never);
 
     companion object {

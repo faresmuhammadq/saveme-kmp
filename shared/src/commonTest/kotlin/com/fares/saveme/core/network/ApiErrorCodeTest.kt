@@ -43,4 +43,14 @@ class ApiErrorCodeTest {
         assertEquals(ApiErrorCode.EXPORT_IN_PROGRESS, code)
         assertEquals(RetryClass.Automatic, code.retryClass)
     }
+
+    @Test
+    fun theGooglePlayPurchaseCodesDecodeAndAreNeverRetried() {
+        listOf("PURCHASE_ALREADY_LINKED", "PURCHASE_NOT_VERIFIED").forEach { wire ->
+            val code = ApiErrorCode.from(wire)
+            assertNotEquals(ApiErrorCode.UNKNOWN, code, wire)
+            assertEquals(wire, code.name)
+            assertEquals(RetryClass.Never, code.retryClass, wire)
+        }
+    }
 }

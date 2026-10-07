@@ -210,3 +210,7 @@ data object InvitationNoticeKey : NavKey
 /** Development builds only: Developer tools -> Simulate a notification. */
 @Serializable
 data object SimulatePushKey : NavKey
+
+/** Development only: the scripted Google Play (spec 018 FR-056). */
+@Serializable
+data object PlayBillingDevKey : NavKey

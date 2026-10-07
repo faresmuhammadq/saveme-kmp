@@ -11,6 +11,8 @@ import com.fares.saveme.core.storage.SecureStore
 import com.fares.saveme.core.storage.StubSecureStore
 import com.fares.saveme.core.sync.NoopSyncScheduler
 import com.fares.saveme.core.sync.SyncScheduler
+import com.fares.saveme.feature.billing.data.play.PlayBillingClient
+import com.fares.saveme.feature.billing.data.play.UnavailablePlayBillingClient
 import com.fares.saveme.feature.sharing.NoLinkSharer
 import com.fares.saveme.feature.sharing.domain.LinkSharer
 import com.fares.saveme.feature.notifications.IosNotificationPermissionState
@@ -35,4 +37,6 @@ fun iosPlatformModule() = module {
     single<NotificationPermissionState> { IosNotificationPermissionState() }
     single<NotificationDisplay> { NoopNotificationDisplay() }
     single<PushRegistrationScheduler> { NoopPushRegistrationScheduler() }
+    // No Google Play on iOS (FR-055).
+    single<PlayBillingClient> { UnavailablePlayBillingClient(platformSupported = false) }
 }
