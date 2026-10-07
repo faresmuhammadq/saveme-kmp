@@ -47,10 +47,10 @@ description: "Task list for 018-google-play"
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Add `PURCHASE_ALREADY_LINKED` (retry `Never`) and `PURCHASE_NOT_VERIFIED` (retry `Never`) to `cm/core/network/ApiErrorCode.kt` with KDoc citing backend spec 024 / v1.15; extend the exhaustive `AuthErrorCopy.message()` and `BillingErrorCopy` mappings (FR-052); test in `ct/core/network/ApiErrorCodeTest.kt` (or the existing codes test)
-- [ ] T002 [P] `expect fun sha256(bytes: ByteArray): ByteArray` in `cm/core/platform/Sha256.kt`; actuals `am/core/platform/Sha256.android.kt` (`MessageDigest`) and `im/core/platform/Sha256.ios.kt` (CommonCrypto `CC_SHA256`); test vectors (empty string, "abc") in `ct/core/platform/Sha256Test.kt`
-- [ ] T003 [P] `AppConfig` gains `applicationId: String = ""` and `inAppSubscribe: Boolean = false` (`cm/core/config/AppConfig.kt`); `androidApp/src/main/kotlin/com/fares/saveme/MainApplication.kt` passes `BuildConfig.APPLICATION_ID`; iOS `MainViewController.kt` leaves defaults; no flavour sets `inAppSubscribe`
-- [ ] T004 [P] Strings block `<!-- Google Play billing (spec 018) -->` in both `strings.xml` with every key of contracts/ui-and-e2e.md "Copy" (US6 keys included, referenced only from the gated path)
+- [X] T001 [P] Add `PURCHASE_ALREADY_LINKED` (retry `Never`) and `PURCHASE_NOT_VERIFIED` (retry `Never`) to `cm/core/network/ApiErrorCode.kt` with KDoc citing backend spec 024 / v1.15; extend the exhaustive `AuthErrorCopy.message()` and `BillingErrorCopy` mappings (FR-052); test in `ct/core/network/ApiErrorCodeTest.kt` (or the existing codes test)
+- [X] T002 [P] `expect fun sha256(bytes: ByteArray): ByteArray` in `cm/core/platform/Sha256.kt`; actuals `am/core/platform/Sha256.android.kt` (`MessageDigest`) and `im/core/platform/Sha256.ios.kt` (CommonCrypto `CC_SHA256`); test vectors (empty string, "abc") in `ct/core/platform/Sha256Test.kt`
+- [X] T003 [P] `AppConfig` gains `applicationId: String = ""` and `inAppSubscribe: Boolean = false` (`cm/core/config/AppConfig.kt`); `androidApp/src/main/kotlin/com/fares/saveme/MainApplication.kt` passes `BuildConfig.APPLICATION_ID`; iOS `MainViewController.kt` leaves defaults; no flavour sets `inAppSubscribe`
+- [X] T004 [P] Strings block `<!-- Google Play billing (spec 018) -->` in both `strings.xml` with every key of contracts/ui-and-e2e.md "Copy" (US6 keys included, referenced only from the gated path)
 
 ---
 
@@ -58,23 +58,23 @@ description: "Task list for 018-google-play"
 
 ### Tests first
 
-- [ ] T005 [P] `bt/play/FakePlayBillingClient.kt` implementing the port (scripted connection, purchases, products, updates via `MutableSharedFlow`, launch results; records calls) and `bt/play/GooglePlayFixtures.kt` (the `google-play.yaml` v1.15 examples verbatim: `active`, `ackPending`, `pending`, `restored`, `reference`, plus problem bodies for each handled code)
-- [ ] T006 [P] Contract tests `bt/data/GooglePlayContractTest.kt` per contracts/google-play-api-client.md §"Contract tests" items 1–6 (MockEngine; request shape; examples decode; one test per code; restore 0/1/25 items; unknown values; reference pattern) (P-14.3)
-- [ ] T007 [P] `bt/domain/play/PlayKeysTest.kt`: same inputs → same 68-char `gp1:<hex>` key; differs by user, by state, by recheck hour; charset `[A-Za-z0-9._:-]`; key never contains the token; `attempt()` keys are random and redacted (FR-012, research R-3)
-- [ ] T008 [P] `bt/domain/play/PlayBillingNotesTest.kt`: notes per user, reset on user change and sign-out cleaner, pending recomputed from a pass, one-shot `activated` consumed once (FR-035, FR-051, R-9)
-- [ ] T009 [P] `bt/domain/BillingAnswerApplierTest.kt`: applies entitlements + subscription for the same signed-in person, refuses for another person or signed out (writes nothing), launches `refreshAfterBillingAction()` (R-6)
+- [X] T005 [P] `bt/play/FakePlayBillingClient.kt` implementing the port (scripted connection, purchases, products, updates via `MutableSharedFlow`, launch results; records calls) and `bt/play/GooglePlayFixtures.kt` (the `google-play.yaml` v1.15 examples verbatim: `active`, `ackPending`, `pending`, `restored`, `reference`, plus problem bodies for each handled code)
+- [X] T006 [P] Contract tests `bt/data/GooglePlayContractTest.kt` per contracts/google-play-api-client.md §"Contract tests" items 1–6 (MockEngine; request shape; examples decode; one test per code; restore 0/1/25 items; unknown values; reference pattern) (P-14.3)
+- [X] T007 [P] `bt/domain/play/PlayKeysTest.kt`: same inputs → same 68-char `gp1:<hex>` key; differs by user, by state, by recheck hour; charset `[A-Za-z0-9._:-]`; key never contains the token; `attempt()` keys are random and redacted (FR-012, research R-3)
+- [X] T008 [P] `bt/domain/play/PlayBillingNotesTest.kt`: notes per user, reset on user change and sign-out cleaner, pending recomputed from a pass, one-shot `activated` consumed once (FR-035, FR-051, R-9)
+- [X] T009 [P] `bt/domain/BillingAnswerApplierTest.kt`: applies entitlements + subscription for the same signed-in person, refuses for another person or signed out (writes nothing), launches `refreshAfterBillingAction()` (R-6)
 
 ### Implementation
 
-- [ ] T010 Port and plain types in `fb/data/play/PlayBillingClient.kt` (`PlayBillingClient`, `PlayConnection`, `PlayUnavailable`, `PlayResult`, `PlayError`, `PlayPurchase`, `PurchaseToken` value class with redacted `toString`, `PlayPurchaseState`, `PlayProductKind`, `PlayProduct`, `PlayPurchaseUpdate`, `PlayLaunchRequest`, `AccountReference` value class, `PlayLaunchResult`) per contracts/play-billing-port.md — **no acknowledge/consume member**
-- [ ] T011 [P] `fb/data/play/UnavailablePlayBillingClient.kt` (`platformSupported` constructor flag; `connect()` → `Unavailable(NotSupported|NotWired)`; empty lists; empty updates); bind it in `am/core/di/PlatformModule.android.kt` (`true`) and `im/core/di/PlatformModule.ios.kt` (`false`)
-- [ ] T012 [P] DTOs `fb/data/dto/GooglePlayDtos.kt` (data-model §2; redacted `toString` on request DTOs; unknown members ignored)
-- [ ] T013 `BillingApi` gains `verifyPlayPurchase(token, productId, idempotencyKey)`, `restorePlayPurchases(items: List<Pair<String, String>>, idempotencyKey)`, `playAccountReference()` (plain strings, P-10.6) in `fb/data/BillingApi.kt` (depends on T012)
-- [ ] T014 [P] `fb/domain/play/PlayKeys.kt` (R-3) using `sha256`
-- [ ] T015 [P] `fb/domain/play/PlayBillingNotes.kt` (`PlayNotes`, `StateFlow`, mutators, `activated` one-shot) + `PlayNotesCleaner` bound as `UserDataCleaner` in `fb/di/BillingModule.kt`
-- [ ] T016 Extract `fb/domain/BillingAnswerApplier.kt` from `RedeemService.applied` and make `RedeemService` use it; spec 015's redeem tests stay green unchanged (R-6)
-- [ ] T017 `Subscription` gains `provider: String?` and `CataloguePlan` gains `playProductId: String?` (`fb/domain/model/…`); `CataloguePlan.price` is no longer filled from `amount_minor` (FR-037); update `CataloguePlanTest` and spec 005 Plan tests that asserted the catalogue price (now no price without Google Play)
-- [ ] T018 Koin: register `BillingAnswerApplier`, `PlayBillingNotes` in `fb/di/BillingModule.kt`; extend `ht/core/di/AppGraphTest.kt` to resolve `PlayBillingClient` and `PlayBillingNotes` from the real graph (cycle guard)
+- [X] T010 Port and plain types in `fb/data/play/PlayBillingClient.kt` (`PlayBillingClient`, `PlayConnection`, `PlayUnavailable`, `PlayResult`, `PlayError`, `PlayPurchase`, `PurchaseToken` value class with redacted `toString`, `PlayPurchaseState`, `PlayProductKind`, `PlayProduct`, `PlayPurchaseUpdate`, `PlayLaunchRequest`, `AccountReference` value class, `PlayLaunchResult`) per contracts/play-billing-port.md — **no acknowledge/consume member**
+- [X] T011 [P] `fb/data/play/UnavailablePlayBillingClient.kt` (`platformSupported` constructor flag; `connect()` → `Unavailable(NotSupported|NotWired)`; empty lists; empty updates); bind it in `am/core/di/PlatformModule.android.kt` (`true`) and `im/core/di/PlatformModule.ios.kt` (`false`)
+- [X] T012 [P] DTOs `fb/data/dto/GooglePlayDtos.kt` (data-model §2; redacted `toString` on request DTOs; unknown members ignored)
+- [X] T013 `BillingApi` gains `verifyPlayPurchase(token, productId, idempotencyKey)`, `restorePlayPurchases(items: List<Pair<String, String>>, idempotencyKey)`, `playAccountReference()` (plain strings, P-10.6) in `fb/data/BillingApi.kt` (depends on T012)
+- [X] T014 [P] `fb/domain/play/PlayKeys.kt` (R-3) using `sha256`
+- [X] T015 [P] `fb/domain/play/PlayBillingNotes.kt` (`PlayNotes`, `StateFlow`, mutators, `activated` one-shot) + `PlayNotesCleaner` bound as `UserDataCleaner` in `fb/di/BillingModule.kt`
+- [X] T016 Extract `fb/domain/BillingAnswerApplier.kt` from `RedeemService.applied` and make `RedeemService` use it; spec 015's redeem tests stay green unchanged (R-6)
+- [X] T017 `Subscription` gains `provider: String?` and `CataloguePlan` gains `playProductId: String?` (`fb/domain/model/…`); `CataloguePlan.price` is no longer filled from `amount_minor` (FR-037); update `CataloguePlanTest` and spec 005 Plan tests that asserted the catalogue price (now no price without Google Play)
+- [X] T018 Koin: register `BillingAnswerApplier`, `PlayBillingNotes` in `fb/di/BillingModule.kt`; extend `ht/core/di/AppGraphTest.kt` to resolve `PlayBillingClient` and `PlayBillingNotes` from the real graph (cycle guard)
 
 **Checkpoint**: contract tests, keys, notes and applier green; nothing user-visible changed except catalogue prices disappearing (no Google Play answer yet).
 
@@ -88,14 +88,14 @@ description: "Task list for 018-google-play"
 
 ### Tests first
 
-- [ ] T019 [P] [US1] `bt/domain/play/PlayPurchaseVerifierTest.kt`: sends only unacknowledged purchases (FR-010); same key across a retry and across a simulated process death (new verifier instance, same fake) (FR-012, SC-004); pending sent once per run then again on purchased with a new key (FR-013); `202`-for-purchased recheck no sooner than 1 h with an hour-bucket key (FR-015); `503`/`429`/in-progress/offline → same key after `Retry-After` or 30 s doubling, max 6 per run (virtual time) (FR-016); `409 PURCHASE_ALREADY_LINKED` and `422` → refused for the run, `VALIDATION_FAILED` triggers one catalogue reload; `IDEMPOTENCY_KEY_REUSED` → refused, code logged; 401/426 stop the pass; one pass at a time with a dirty re-run (FR-011); answer discarded after sign-out or user change; `acknowledged:false` changes nothing; no acknowledge call ever and no grant without an answer (FR-002, SC-003); never queued in the outbox (FR-003); `200` applied through the applier (FR-014); `activated` note when the plan changed (FR-017); with a healthy mock, the plan applies within one pass (SC-001 host proxy)
-- [ ] T020 [P] [US1] `bt/domain/BillingSyncCoordinatorTest.kt` (extend): cold start (`Unknown → SignedIn`) runs a verify pass, not a restore; foreground floor 60 s; a purchase update runs a pass; signed out → nothing (R-4)
+- [X] T019 [P] [US1] `bt/domain/play/PlayPurchaseVerifierTest.kt`: sends only unacknowledged purchases (FR-010); same key across a retry and across a simulated process death (new verifier instance, same fake) (FR-012, SC-004); pending sent once per run then again on purchased with a new key (FR-013); `202`-for-purchased recheck no sooner than 1 h with an hour-bucket key (FR-015); `503`/`429`/in-progress/offline → same key after `Retry-After` or 30 s doubling, max 6 per run (virtual time) (FR-016); `409 PURCHASE_ALREADY_LINKED` and `422` → refused for the run, `VALIDATION_FAILED` triggers one catalogue reload; `IDEMPOTENCY_KEY_REUSED` → refused, code logged; 401/426 stop the pass; one pass at a time with a dirty re-run (FR-011); answer discarded after sign-out or user change; `acknowledged:false` changes nothing; no acknowledge call ever and no grant without an answer (FR-002, SC-003); never queued in the outbox (FR-003); `200` applied through the applier (FR-014); `activated` note when the plan changed (FR-017); with a healthy mock, the plan applies within one pass (SC-001 host proxy)
+- [X] T020 [P] [US1] `bt/domain/BillingSyncCoordinatorTest.kt` (extend): cold start (`Unknown → SignedIn`) runs a verify pass, not a restore; foreground floor 60 s; a purchase update runs a pass; signed out → nothing (R-4)
 
 ### Implementation
 
-- [ ] T021 [US1] `fb/domain/play/PlayPurchaseVerifier.kt` (R-4, R-5): `Mutex` + dirty flag, `pass(trigger)`, per-purchase send with `PlayKeys`, outcome mapping to `VerifyOutcome`, notes updates (pending, hold/paused/test from `purchase.state`/`test`), backoff timers in the coordinator scope cancelled at sign-out, fixed log events `play_pass trigger=… sent=… outcome=…`
-- [ ] T022 [US1] `fb/domain/BillingSyncCoordinator.kt`: inject the verifier; on `SignedIn` from `Unknown` → verify pass; collect `PlayBillingClient.purchaseUpdates` → pass; `onForeground()` → pass with the 60 s floor (existing `App` call); Koin wiring in `fb/di/BillingModule.kt` (coordinator stays `createdAtStart`)
-- [ ] T023 [US1] Plan screen: `PlanIntent.Opened`/`Refresh` also request a pass (domain lambda `runPurchasePass`); `PlanState.notes` collected from `PlayBillingNotes`; `activated` → `PlanEffect.ShowActivated(planName)` → snackbar `plan.activated` in `PlanRoute.kt` (FR-017); reducer + ViewModel tests in `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
+- [X] T021 [US1] `fb/domain/play/PlayPurchaseVerifier.kt` (R-4, R-5): `Mutex` + dirty flag, `pass(trigger)`, per-purchase send with `PlayKeys`, outcome mapping to `VerifyOutcome`, notes updates (pending, hold/paused/test from `purchase.state`/`test`), backoff timers in the coordinator scope cancelled at sign-out, fixed log events `play_pass trigger=… sent=… outcome=…`
+- [X] T022 [US1] `fb/domain/BillingSyncCoordinator.kt`: inject the verifier; on `SignedIn` from `Unknown` → verify pass; collect `PlayBillingClient.purchaseUpdates` → pass; `onForeground()` → pass with the 60 s floor (existing `App` call); Koin wiring in `fb/di/BillingModule.kt` (coordinator stays `createdAtStart`)
+- [X] T023 [US1] Plan screen: `PlanIntent.Opened`/`Refresh` also request a pass (domain lambda `runPurchasePass`); `PlanState.notes` collected from `PlayBillingNotes`; `activated` → `PlanEffect.ShowActivated(planName)` → snackbar `plan.activated` in `PlanRoute.kt` (FR-017); reducer + ViewModel tests in `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
 
 **Checkpoint**: US1 independently green on host with the fake port.
 
@@ -109,14 +109,14 @@ description: "Task list for 018-google-play"
 
 ### Tests first
 
-- [ ] T024 [P] [US2] `bt/domain/play/PlayRestoreServiceTest.kt`: sign-in with no purchases → no request; sign-in with purchases → one request, silent unless `linked_elsewhere`; tap sends all (refused ones included) or `[]`; 26 purchases → 25 + 1 with different keys, most recent first, tokens distinct; refusal stops remaining chunks and "Try again" resends the failed chunk with its key; each refusal → `RestoreResult`; Google Play unavailable → `GooglePlayUnavailable`, nothing sent; summary counts per outcome incl. unknown; answer applied via the applier; no email-verified or plan check before sending (FR-020, FR-021, FR-022, FR-024, FR-025, FR-026, SC-002)
-- [ ] T025 [P] [US2] Plan tests: `RestorePurchases` → `Running` (button disabled, progress) → `Result(message)` from a summary (each FR-023 sentence and combinations) or `Refused(kind, wait, requestId)`; `RetryRestore` reuses the attempt; `DismissRestoreResult`; Restore hidden when `playSupported` is false (FR-055) — `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
+- [X] T024 [P] [US2] `bt/domain/play/PlayRestoreServiceTest.kt`: sign-in with no purchases → no request; sign-in with purchases → one request, silent unless `linked_elsewhere`; tap sends all (refused ones included) or `[]`; 26 purchases → 25 + 1 with different keys, most recent first, tokens distinct; refusal stops remaining chunks and "Try again" resends the failed chunk with its key; each refusal → `RestoreResult`; Google Play unavailable → `GooglePlayUnavailable`, nothing sent; summary counts per outcome incl. unknown; answer applied via the applier; no email-verified or plan check before sending (FR-020, FR-021, FR-022, FR-024, FR-025, FR-026, SC-002)
+- [X] T025 [P] [US2] Plan tests: `RestorePurchases` → `Running` (button disabled, progress) → `Result(message)` from a summary (each FR-023 sentence and combinations) or `Refused(kind, wait, requestId)`; `RetryRestore` reuses the attempt; `DismissRestoreResult`; Restore hidden when `playSupported` is false (FR-055) — `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
 
 ### Implementation
 
-- [ ] T026 [US2] `fb/domain/play/PlayRestoreService.kt` (R-7) sharing the verifier's mutex (FR-011)
-- [ ] T027 [US2] Coordinator: on a transition from `SignedOut` (or another `userId`) to `SignedIn` → `restore(SignIn)` instead of the verify pass (FR-020, R-4)
-- [ ] T028 [US2] Plan screen: "Restore purchases" (`plan.restore`) above "Enter code" in the reserved place, progress state, result/refusal `InlineAlert` (`plan.restore.result`, `plan.restore.retry`) announced as a live region; rate-limit wait and generic-with-request-id via spec 015's helpers — `fb/ui/plan/PlanContract.kt`, `PlanViewModel.kt`, `PlanScreen.kt`, `fb/di/BillingModule.kt`
+- [X] T026 [US2] `fb/domain/play/PlayRestoreService.kt` (R-7) sharing the verifier's mutex (FR-011)
+- [X] T027 [US2] Coordinator: on a transition from `SignedOut` (or another `userId`) to `SignedIn` → `restore(SignIn)` instead of the verify pass (FR-020, R-4)
+- [X] T028 [US2] Plan screen: "Restore purchases" (`plan.restore`) above "Enter code" in the reserved place, progress state, result/refusal `InlineAlert` (`plan.restore.result`, `plan.restore.retry`) announced as a live region; rate-limit wait and generic-with-request-id via spec 015's helpers — `fb/ui/plan/PlanContract.kt`, `PlanViewModel.kt`, `PlanScreen.kt`, `fb/di/BillingModule.kt`
 
 **Checkpoint**: US1 + US2 green; the brief's "reinstall, sign in, restore" path works against the fake.
 
@@ -128,8 +128,8 @@ description: "Task list for 018-google-play"
 
 **Independent Test**: MockEngine 409 on verify and `linked_elsewhere` on restore → one note, no further send in the run.
 
-- [ ] T029 [P] [US3] Tests: verifier and restore set `anotherAccount`; the purchase is not resent by triggers in the run; a tapped restore still sends it; account switch A → B clears A's notes and pending before B's pass (FR-032, FR-051) — `bt/domain/play/PlayPurchaseVerifierTest.kt`, `PlayRestoreServiceTest.kt`, `PlayBillingNotesTest.kt`
-- [ ] T030 [US3] Plan screen "another account" `InlineAlert` (`plan.play.anotherAccount`) with no Sign out action; reducer/ViewModel tests (FR-032)
+- [X] T029 [P] [US3] Tests: verifier and restore set `anotherAccount`; the purchase is not resent by triggers in the run; a tapped restore still sends it; account switch A → B clears A's notes and pending before B's pass (FR-032, FR-051) — `bt/domain/play/PlayPurchaseVerifierTest.kt`, `PlayRestoreServiceTest.kt`, `PlayBillingNotesTest.kt`
+- [X] T030 [US3] Plan screen "another account" `InlineAlert` (`plan.play.anotherAccount`) with no Sign out action; reducer/ViewModel tests (FR-032)
 
 ---
 
@@ -141,13 +141,13 @@ description: "Task list for 018-google-play"
 
 ### Tests first
 
-- [ ] T031 [P] [US4] `bt/domain/play/PlayStoreLinksTest.kt`: URL with `package` and `sku`, without `sku` when unknown, encoding (R-8, FR-054)
-- [ ] T032 [P] [US4] Plan tests: `showManage` only for provider `google_play` and `playSupported`; grace warning with the grace end in the profile zone; hold note + Fix payment, paused note + Manage, only after a verify answer this run; pending note from notes; "Test purchase" label per FR-034 mapping (FR-031, FR-033, FR-034); `OpenManage`/`OpenFixPayment` → `OpenUrl(url)`; open failure → `plan_play_open_failed` snackbar (FR-030–FR-035) — `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
+- [X] T031 [P] [US4] `bt/domain/play/PlayStoreLinksTest.kt`: URL with `package` and `sku`, without `sku` when unknown, encoding (R-8, FR-054)
+- [X] T032 [P] [US4] Plan tests: `showManage` only for provider `google_play` and `playSupported`; grace warning with the grace end in the profile zone; hold note + Fix payment, paused note + Manage, only after a verify answer this run; pending note from notes; "Test purchase" label per FR-034 mapping (FR-031, FR-033, FR-034); `OpenManage`/`OpenFixPayment` → `OpenUrl(url)`; open failure → `plan_play_open_failed` snackbar (FR-030–FR-035) — `bt/ui/plan/PlanReducerTest.kt`, `PlanViewModelTest.kt`
 
 ### Implementation
 
-- [ ] T033 [US4] `fb/domain/play/PlayStoreLinks.kt`; `MySubscriptionDto.provider` mapped into `Subscription.provider` (T017); governing plan → catalogue `playProductId` (`manageProductId`)
-- [ ] T034 [US4] Plan screen: problem/pending alerts, Manage text button, test label, `OpenUrl` handled in `PlanRoute.kt` via `LocalUriHandler` with failure snackbar; tags per contracts/ui-and-e2e.md
+- [X] T033 [US4] `fb/domain/play/PlayStoreLinks.kt`; `MySubscriptionDto.provider` mapped into `Subscription.provider` (T017); governing plan → catalogue `playProductId` (`manageProductId`)
+- [X] T034 [US4] Plan screen: problem/pending alerts, Manage text button, test label, `OpenUrl` handled in `PlanRoute.kt` via `LocalUriHandler` with failure snackbar; tags per contracts/ui-and-e2e.md
 
 ---
 
@@ -157,30 +157,30 @@ description: "Task list for 018-google-play"
 
 **Independent Test**: fake `plus_monthly` 149,000,000 micros EGP → "EGP 149.00" / Arabic with Western digits; unavailable → no price.
 
-- [ ] T035 [P] [US5] `bt/domain/play/PlayPricesTest.kt`: micros → minor for EGP (2), KWD (3), JPY (0); inexact → null; digits > 6 → null; no `Double` (FR-036, R-10)
-- [ ] T036 [P] [US5] Plan tests: prices requested on open and when the product-id set changes, at most once a minute; card price from `playPrices[playProductId]`; catalogue `amount_minor` never shown; no placeholder while loading (FR-036–FR-038)
-- [ ] T037 [US5] `fb/domain/play/PlayPrices.kt` + Plan screen wiring (`loadPlayPrices` domain lambda; `PlanState.playPrices`; `PlanCardUi.price` from it)
+- [X] T035 [P] [US5] `bt/domain/play/PlayPricesTest.kt`: micros → minor for EGP (2), KWD (3), JPY (0); inexact → null; digits > 6 → null; no `Double` (FR-036, R-10)
+- [X] T036 [P] [US5] Plan tests: prices requested on open and when the product-id set changes, at most once a minute; card price from `playPrices[playProductId]`; catalogue `amount_minor` never shown; no placeholder while loading (FR-036–FR-038)
+- [X] T037 [US5] `fb/domain/play/PlayPrices.kt` + Plan screen wiring (`loadPlayPrices` domain lambda; `PlanState.playPrices`; `PlanCardUi.price` from it)
 
 ---
 
 ## Phase 8: Dev tools and E2E assets
 
-- [ ] T038 [P] `cm/devtools/playbilling/ScriptedPlayBillingClient.kt` + a `SwitchingPlayBillingClient(real, scripted)` bound only when `AppConfig.isDebugTools` (dev flavour); Dev tools section "Google Play (scripted)" (on/off, add purchase with token/product/state/acknowledged, emit update, mark unavailable, add product price) as an MVI section with reducer + ViewModel tests in `ct/devtools/playbilling/` (FR-056, R-12); release graph test proves the scripted client is not bound
-- [ ] T039 [P] `.specify/scripts/bash/run-e2e.sh`: seeds that write the backend's `BILLING_PLAY_FAKE_SCRIPT` for a flow's tokens (`e2e-<flow>-…`) with the fresh account's reference, and a grace seed for a `google_play` subscription
-- [ ] T040 [P] Maestro flows `.maestro/018-google-play/US1-background-verify.yaml`, `US1-pending-then-purchased.yaml`, `US2-restore-tap.yaml`, `US2-restore-nothing.yaml`, `US3-another-account.yaml`, `US4-grace-fix-payment.yaml`, `US5-prices.yaml` (+ `common/` helpers to open Dev tools and script a purchase), each starting `# deferred: E2E on owner's device`
+- [X] T038 [P] `cm/devtools/playbilling/ScriptedPlayBillingClient.kt` + a `SwitchingPlayBillingClient(real, scripted)` bound only when `AppConfig.isDebugTools` (dev flavour); Dev tools section "Google Play (scripted)" (on/off, add purchase with token/product/state/acknowledged, emit update, mark unavailable, add product price) as an MVI section with reducer + ViewModel tests in `ct/devtools/playbilling/` (FR-056, R-12); release graph test proves the scripted client is not bound
+- [X] T039 [P] `.specify/scripts/bash/run-e2e.sh`: seeds that write the backend's `BILLING_PLAY_FAKE_SCRIPT` for a flow's tokens (`e2e-<flow>-…`) with the fresh account's reference, and a grace seed for a `google_play` subscription
+- [X] T040 [P] Maestro flows `.maestro/018-google-play/US1-background-verify.yaml`, `US1-pending-then-purchased.yaml`, `US2-restore-tap.yaml`, `US2-restore-nothing.yaml`, `US3-another-account.yaml`, `US4-grace-fix-payment.yaml`, `US5-prices.yaml` (+ `common/` helpers to open Dev tools and script a purchase), each starting `# deferred: E2E on owner's device`
 - [ ] T041 Run the 018 flows and write `e2e-report.md` — **deferred: E2E on owner's device**
 
 ---
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T042 [P] Extend `ht/feature/billing/BillingLayeringTest.kt`: `fb/data/play` imports no domain; no `android.`/`com.android.billingclient` import under commonMain; no source under `shared/src` calls `acknowledgePurchase`, `consumeAsync` or `consumePurchase`; the port interface has no member named like acknowledge/consume (FR-002, FR-004)
-- [ ] T043 [P] `ht/feature/billing/GooglePlayStringsTest.kt`: every new key in both languages; no "token", "InstaPay", "acknowledge", "order", "verify" or digit-currency price literal in the new strings; Subscribe keys referenced only from the gated path; every refusal and restore outcome has its own key (P-01, P-12, SC-005)
-- [ ] T044 [P] `ct/feature/billing/GooglePlayLoggingTest.kt`: log capture over a full verify pass, a restore and a refusal — no token, key, reference or price; only fixed event names, codes, counts, request id (FR-050, SC-006); `toString` redaction of `PurchaseToken`, `AccountReference`, request DTOs
-- [ ] T045 [P] Plan screen switch-off test: with `inAppSubscribe = false` no state ever carries a Subscribe offer and the screen renders no `plan.card.N.subscribe`; the billing actions are exactly Restore + Enter code (+ Manage/Fix payment only under FR-030/FR-031) (FR-001, FR-040, SC-007)
-- [ ] T046 Roborazzi goldens in `ht/feature/billing/PlanScreenScreenshotTest.kt` (EN LTR, AR RTL, 200 %; FR-053, SC-008): restore running/result/refused, grace warning, hold, pending, another account, Manage + test label, Google Play prices; update existing goldens that change on purpose (catalogue price gone) and say so in the summary
-- [ ] T047 README "On-device database" stays v10 (state "spec 018 adds no table"); `specs/briefs/README.md` C10 row (client state); plan.md "Implementation notes"
-- [ ] T048 Gates (implementer, coordinated with other worktrees): `./gradlew :shared:testAndroidHostTest`, `verifyRoborazziAndroidHostTest`, `:androidApp:assembleDevDebug`, iOS simulator compile, `./gradlew build allTests`; confirm `git diff gradle/libs.versions.toml */build.gradle.kts` adds no dependency (P-14.5)
+- [X] T042 [P] Extend `ht/feature/billing/BillingLayeringTest.kt`: `fb/data/play` imports no domain; no `android.`/`com.android.billingclient` import under commonMain; no source under `shared/src` calls `acknowledgePurchase`, `consumeAsync` or `consumePurchase`; the port interface has no member named like acknowledge/consume (FR-002, FR-004)
+- [X] T043 [P] `ht/feature/billing/GooglePlayStringsTest.kt`: every new key in both languages; no "token", "InstaPay", "acknowledge", "order", "verify" or digit-currency price literal in the new strings; Subscribe keys referenced only from the gated path; every refusal and restore outcome has its own key (P-01, P-12, SC-005)
+- [X] T044 [P] `ct/feature/billing/GooglePlayLoggingTest.kt`: log capture over a full verify pass, a restore and a refusal — no token, key, reference or price; only fixed event names, codes, counts, request id (FR-050, SC-006); `toString` redaction of `PurchaseToken`, `AccountReference`, request DTOs
+- [X] T045 [P] Plan screen switch-off test: with `inAppSubscribe = false` no state ever carries a Subscribe offer and the screen renders no `plan.card.N.subscribe`; the billing actions are exactly Restore + Enter code (+ Manage/Fix payment only under FR-030/FR-031) (FR-001, FR-040, SC-007)
+- [X] T046 Roborazzi goldens in `ht/feature/billing/PlanScreenScreenshotTest.kt` (EN LTR, AR RTL, 200 %; FR-053, SC-008): restore running/result/refused, grace warning, hold, pending, another account, Manage + test label, Google Play prices; update existing goldens that change on purpose (catalogue price gone) and say so in the summary
+- [X] T047 README "On-device database" stays v10 (state "spec 018 adds no table"); `specs/briefs/README.md` C10 row (client state); plan.md "Implementation notes"
+- [X] T048 Gates (implementer, coordinated with other worktrees): `./gradlew :shared:testAndroidHostTest`, `verifyRoborazziAndroidHostTest`, `:androidApp:assembleDevDebug`, iOS simulator compile, `./gradlew build allTests`; confirm `git diff gradle/libs.versions.toml */build.gradle.kts` adds no dependency (P-14.5)
 
 ---
 

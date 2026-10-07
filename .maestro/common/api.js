@@ -757,6 +757,27 @@ switch (arg('ACTION')) {
         if (redeemed.status === 200) output.redeem = json(redeemed.body).data
         break
 
+    // Google Play (spec 018; backend spec 024 with the fake driver). Signs EMAIL / PASSWORD in as this slot when it is not yet,
+    // then sends TOKEN for PRODUCT to /billing/google/purchases with IDEMPOTENCY_KEY (default fresh) and checks the status
+    // (EXPECT, default 200). Copies the answer into output.play. TOKEN must be in the fake script (flow header e2e-play-script).
+    case 'playVerify':
+        if (!output['token_' + slot]) {
+            output['token_' + slot] = expect(login(email, password, 'e2e-play-' + slot.toLowerCase()), 200, 'login').body.data.credential
+        }
+        var playHeaders = headers(token())
+        playHeaders['Idempotency-Key'] = arg('IDEMPOTENCY_KEY', uuid7())
+        var played = http.post(apiBase + 'billing/google/purchases', { headers: playHeaders, body: JSON.stringify({ purchase_token: arg('TOKEN'), product_id: arg('PRODUCT', 'plus_monthly') }) })
+        if (played.status !== parseInt(arg('EXPECT', '200'))) {
+            throw new Error('playVerify: expected HTTP ' + arg('EXPECT', '200') + ', got ' + played.status + ' ' + played.body)
+        }
+        if (played.status === 200) output.play = json(played.body).data
+        break
+
+    // Google Play: the account reference of this slot (seen from the slot's session) into output.playReference.
+    case 'playAccountReference':
+        output.playReference = expect(call('GET', 'billing/google/account-reference', undefined, token()), 200, 'playAccountReference').body.data.account_reference
+        break
+
     // Reports (spec 014). Moves money between two wallets of this slot: WALLET (source name) or WALLET_ID, COUNTER_WALLET (destination name)
     // or COUNTER_WALLET_ID, AMOUNT in minor units (1000), DATE (today), NOTE. Copies it into output.transaction.
     case 'createTransfer':

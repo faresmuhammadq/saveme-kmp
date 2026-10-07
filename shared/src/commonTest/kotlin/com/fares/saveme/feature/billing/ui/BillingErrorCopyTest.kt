@@ -4,6 +4,8 @@ import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.RetryClass
 import com.fares.saveme.feature.auth.ui.message
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.billing_play_another_account
+import saveme.shared.generated.resources.billing_play_not_verified
 import saveme.shared.generated.resources.error_feature_not_entitled
 import saveme.shared.generated.resources.error_redeem_code_email_mismatch
 import saveme.shared.generated.resources.error_redeem_code_expired
@@ -33,5 +35,14 @@ class BillingErrorCopyTest {
         assertEquals(Res.string.redeem_in_progress, ApiErrorCode.IDEMPOTENCY_REQUEST_IN_PROGRESS.message())
         assertNull(ApiErrorCode.NOT_FOUND.redeemMessage())
         assertNull(ApiErrorCode.IDEMPOTENCY_KEY_REUSED.redeemMessage())
+    }
+
+    @Test
+    fun theGooglePlayPurchaseCodesHaveTheirOwnCopy() {
+        assertEquals(Res.string.billing_play_another_account, ApiErrorCode.PURCHASE_ALREADY_LINKED.playMessage())
+        assertEquals(Res.string.billing_play_not_verified, ApiErrorCode.PURCHASE_NOT_VERIFIED.playMessage())
+        assertEquals(Res.string.billing_play_another_account, ApiErrorCode.PURCHASE_ALREADY_LINKED.message())
+        assertEquals(Res.string.billing_play_not_verified, ApiErrorCode.PURCHASE_NOT_VERIFIED.message())
+        assertNull(ApiErrorCode.NOT_FOUND.playMessage())
     }
 }

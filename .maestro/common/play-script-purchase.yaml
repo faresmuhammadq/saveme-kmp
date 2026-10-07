@@ -1,0 +1,21 @@
+# On the "Google Play (scripted)" screen: adds a purchase with ${TOKEN} / ${PRODUCT} (not acknowledged; ${PENDING}: "true" for pending).
+# The same token must be in the backend fake's script (the flow header e2e-play-script).
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn:
+    id: "playDev.purchaseId"
+- inputText: ${TOKEN}
+- tapOn:
+    id: "playDev.productId"
+- inputText: ${PRODUCT}
+- hideKeyboard
+- runFlow:
+    when:
+      true: ${PENDING == 'true'}
+    commands:
+      - tapOn:
+          id: "playDev.pending"
+- tapOn:
+    id: "playDev.add"

@@ -14,6 +14,8 @@ class DevToolsViewModelTest {
             assertEquals(DevToolsEffect.NavigateCatalog, awaitItem())
             vm.onIntent(DevToolsIntent.PasteLinkClicked)
             assertEquals(DevToolsEffect.NavigatePasteLink, awaitItem())
+            vm.onIntent(DevToolsIntent.PlayBillingClicked)
+            assertEquals(DevToolsEffect.NavigatePlayBilling, awaitItem())
             vm.onIntent(DevToolsIntent.Back)
             assertEquals(DevToolsEffect.NavigateBack, awaitItem())
         }

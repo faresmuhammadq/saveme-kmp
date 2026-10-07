@@ -4,7 +4,10 @@ import com.fares.saveme.devtools.catalog.ComponentCatalogViewModel
 import com.fares.saveme.devtools.pastelink.PasteLinkViewModel
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
 import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
+import com.fares.saveme.devtools.playbilling.PlayBillingDevViewModel
+import com.fares.saveme.devtools.playbilling.SwitchingPlayBillingClient
 import com.fares.saveme.devtools.push.PhoneIds
+import com.fares.saveme.feature.billing.data.play.PlayBillingClient
 import com.fares.saveme.devtools.push.DevFakePushTokenProvider
 import com.fares.saveme.devtools.push.SimulatePushViewModel
 import com.fares.saveme.feature.budgets.domain.BudgetsService
@@ -24,6 +27,8 @@ import org.koin.dsl.module
 val devToolsModule = module {
     viewModelOf(::DevToolsViewModel)
     viewModelOf(::ComponentCatalogViewModel)
+    // Only reachable from Dev tools, which only development builds show; those bind the switching client (spec 018 R-12).
+    viewModel { PlayBillingDevViewModel(get<PlayBillingClient>() as SwitchingPlayBillingClient) }
     viewModel {
         val parser = get<AuthLinkParser>()
         val invitations = get<InvitationLinkParser>()

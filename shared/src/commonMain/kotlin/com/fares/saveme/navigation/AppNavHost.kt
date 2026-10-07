@@ -48,6 +48,8 @@ import com.fares.saveme.feature.billing.ui.plan.PlanEffect
 import com.fares.saveme.feature.billing.ui.redeem.RedeemEffect
 import com.fares.saveme.feature.billing.ui.redeem.RedeemRoute
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorEffect
+import com.fares.saveme.devtools.playbilling.PlayBillingDevEffect
+import com.fares.saveme.devtools.playbilling.PlayBillingDevRoute
 import com.fares.saveme.devtools.push.SimulatePushEffect
 import com.fares.saveme.devtools.push.SimulatePushRoute
 import com.fares.saveme.feature.notifications.domain.NotificationPromptGate
@@ -415,6 +417,7 @@ fun AppNavHost(
                     when (effect) {
                         PlanEffect.NavigateBack -> appStack.pop()
                         PlanEffect.OpenRedeem -> appStack.add(RedeemCodeKey)
+                        is PlanEffect.OpenUrl, is PlanEffect.ShowActivated -> Unit // handled by the route
                     }
                 })
             }
@@ -764,6 +767,13 @@ fun AppNavHost(
                     }
                 })
             }
+            entry<PlayBillingDevKey> {
+                PlayBillingDevRoute(onEffect = { effect ->
+                    when (effect) {
+                        PlayBillingDevEffect.NavigateBack -> activeStack.pop()
+                    }
+                })
+            }
             entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
             entry<DevToolsKey> {
                 DevToolsRoute(onEffect = { effect ->
@@ -771,6 +781,7 @@ fun AppNavHost(
                         DevToolsEffect.NavigateCatalog -> activeStack.add(CatalogKey)
                         DevToolsEffect.NavigatePasteLink -> activeStack.add(PasteLinkKey)
                         DevToolsEffect.NavigateSimulatePush -> activeStack.add(SimulatePushKey)
+                        DevToolsEffect.NavigatePlayBilling -> activeStack.add(PlayBillingDevKey)
                         DevToolsEffect.NavigateBack -> activeStack.pop()
                     }
                 })

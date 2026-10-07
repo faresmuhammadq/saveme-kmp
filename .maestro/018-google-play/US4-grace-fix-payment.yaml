@@ -1,0 +1,17 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US4: Given a Google Play subscription in its grace period, When the person opens Plan, Then the payment warning and "Fix payment" show (the button is only asserted; Google Play is not opened).
+# e2e-seed: verified-user+plus-grace+play-subscription
+appId: com.fares.saveme
+tags:
+  - US4
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/open-plan.yaml
+- extendedWaitUntil:
+    visible:
+      id: "plan.play.problem"
+    timeout: 20000
+- assertVisible:
+    id: "plan.play.fixPayment"
+- assertVisible:
+    id: "plan.play.manage"

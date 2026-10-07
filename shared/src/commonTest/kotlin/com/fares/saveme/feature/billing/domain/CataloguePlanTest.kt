@@ -6,7 +6,6 @@ import com.fares.saveme.feature.billing.PLAY_PRICE
 import com.fares.saveme.feature.billing.PLUS_FEATURES
 import com.fares.saveme.feature.billing.data.dto.PlanDto
 import com.fares.saveme.feature.billing.domain.model.BillingPeriod
-import com.fares.saveme.feature.billing.domain.model.Money
 import com.fares.saveme.feature.billing.domain.model.toDomain
 import com.fares.saveme.feature.billing.planJson
 import kotlin.test.Test
@@ -19,10 +18,10 @@ class CataloguePlanTest {
         AppJson.decodeFromString(PlanDto.serializer(), planJson("p", "Plus", period, prices = prices, features = features, periodDays = days)).toDomain()
 
     @Test
-    fun priceIsTheGooglePlayEntryOnly() {
-        assertEquals(Money(14_900, "EGP"), plan("monthly", prices = "[$INSTAPAY_PRICE,$PLAY_PRICE]").price)
-        assertNull(plan("monthly", prices = "[$INSTAPAY_PRICE]").price, "InstaPay is never shown")
-        assertNull(plan("monthly").price)
+    fun theGooglePlayProductIsTheGooglePlayEntryOnlyAndNoCataloguePriceIsKept() {
+        assertEquals("plus_monthly", plan("monthly", prices = "[$INSTAPAY_PRICE,$PLAY_PRICE]").playProductId)
+        assertNull(plan("monthly", prices = "[$INSTAPAY_PRICE]").playProductId, "InstaPay has no Google Play product")
+        assertNull(plan("monthly").playProductId)
     }
 
     @Test

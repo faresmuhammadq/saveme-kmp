@@ -1,0 +1,22 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US5: Given Google Play reports a price for plus_monthly, When the person opens Plan, Then the card shows it, formatted by the app.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US5
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/play-open-devtools.yaml
+- tapOn:
+    id: "playDev.productId"
+- inputText: "plus_monthly"
+- hideKeyboard
+- tapOn:
+    id: "playDev.setPrice"
+- runFlow: ../common/play-back-to-home.yaml
+- runFlow: ../common/open-plan.yaml
+- extendedWaitUntil:
+    visible:
+      id: "plan.card.1.price"
+      text: ".*149.*"
+    timeout: 20000

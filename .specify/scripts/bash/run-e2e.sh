@@ -30,6 +30,15 @@
 #                   (RequestExport::budgetKey), so the next request answers 429 RATE_LIMITED with Retry-After
 # A flow may name `# e2e-between: purge` on a later part: the runner moves the partner account's deletion date into the
 # past and runs the backend's identity:purge-accounts command (the queue worker finishes the purge), then waits for it.
+# Google Play seeds (spec 018, client C10; backend spec 024 with BILLING_PLAY_DRIVER=fake):
+#   +play-subscription  also marks the account's subscription as Google Play's (provider google_play), for the
+#                       "Manage in Google Play" and "Fix payment" flows (pair it with +plus or +plus-grace)
+#   # e2e-play-script: {"<token>": {"product_id": "plus_monthly", "state": "active", ...}}
+#                       a header line: the runner writes this map to E2E_PLAY_SCRIPT_PATH inside the container (the file
+#                       the backend's BILLING_PLAY_FAKE_SCRIPT must name); the string @REFERENCE@ in a value becomes the
+#                       fresh account's Google Play account reference (obfuscated_account_id). Entries per the backend's
+#                       FakePlayBillingGateway: {kind, product_id, state, expires_in_days, auto_renew, acknowledged,
+#                       obfuscated_account_id, test, linked_purchase_token}. Tokens are named e2e-<flow>-...
 # The seeds never run in CI; they are written for the device run the owner schedules.
 #
 # The +…-link seeds also issue two mailed links through the backend's LinkRepository (the same
@@ -56,7 +65,8 @@
 # The route is restored after every flow, even a failed one.
 #
 # Usage: run-e2e.sh <feature-dir-name> [--skip-install] [--flow <name>]
-# Env:   E2E_BACKEND_CONTAINER (default: saveme-backend-main)
+# Env:   E2E_PLAY_SCRIPT_PATH  (default: /tmp/e2e-play-script.json inside the container; only e2e-play-script flows)
+#        E2E_BACKEND_CONTAINER (default: saveme-backend-main)
 #        E2E_BACKEND_PORT      (default: 43871)
 #        MAILPIT_API           (default: http://mailpit.test/api/v1; only the +redeem-code* seeds read it)
 # Exit:  0 all flows passed (or none exist), 1 a flow failed, 2 preflight failed.
@@ -227,6 +237,35 @@ grant_plus() {
     " 2>&1 | grep -q granted
 }
 
+# Spec 018: the account's Google Play account reference (GET /billing/google/account-reference), read with a throwaway session.
+play_account_reference() {
+    local email="$1" credential
+    credential=$(curl -fs --max-time 15 -X POST "http://127.0.0.1:$PORT/api/v1/auth/login" -H 'Content-Type: application/json' -H 'Accept: application/json' \
+        -d "{\"email\":\"$email\",\"password\":\"$PASSWORD\",\"device\":{\"session_id\":\"$(cat /proc/sys/kernel/random/uuid)\",\"device_id\":\"e2e-play\",\"name\":\"e2e-play\",\"platform\":\"android\",\"app_version\":\"1.0.0\"}}" \
+        | sed -nE 's/.*"credential":"([^"]+)".*/\1/p') || return 1
+    [[ -n "$credential" ]] || return 1
+    curl -fs --max-time 15 "http://127.0.0.1:$PORT/api/v1/billing/google/account-reference" -H 'Accept: application/json' -H "Authorization: Bearer $credential" \
+        | sed -nE 's/.*"account_reference":"([^"]+)".*/\1/p'
+}
+
+# Spec 018: writes a flow's scripted Google Play purchases into the backend fake's script file.
+seed_play_script() {
+    local email="$1" script="$2" reference path="${E2E_PLAY_SCRIPT_PATH:-/tmp/e2e-play-script.json}"
+    reference=$(play_account_reference "$email") || reference=""
+    script="${script//@REFERENCE@/$reference}"
+    printf '%s' "$script" | docker exec -i "$CONTAINER" sh -c "cat > '$path'"
+}
+
+# Spec 018: the account's subscription is Google Play's.
+mark_play_subscription() {
+    local email="$1"
+    docker exec "$CONTAINER" php artisan tinker --execute="
+        \$id = \App\Modules\Identity\Infrastructure\Models\User::where('email_lookup', app(\App\Modules\Identity\Domain\Ports\AddressLookup::class)->for('$email'))->value('id');
+        \App\Modules\Billing\Infrastructure\Models\Subscription::where('user_id', \$id)->update(['provider' => 'google_play']);
+        echo 'marked';
+    " 2>&1 | grep -q marked
+}
+
 # Spec 015: submits a claim for <address> (Plus · Monthly at its own price) and approves it through ClaimService, then
 # prints the claim id. Approval queues the mail that carries the code (run by the container's worker).
 approve_claim_for() {
@@ -378,6 +417,9 @@ for flow in "${flows[@]}"; do
     export_limit=false
     if [[ "$seed" == *+shared-owner ]]; then shared_owner=true; want_partner=true; seed="${seed%+shared-owner}"; fi
     if [[ "$seed" == *+export-limit ]]; then export_limit=true; seed="${seed%+export-limit}"; fi
+    play_subscription=false
+    if [[ "$seed" == *+play-subscription ]]; then play_subscription=true; seed="${seed%+play-subscription}"; fi
+    play_script=$(grep -m1 -E '^# e2e-play-script:' "$flow" | sed -E 's/^# e2e-play-script: *//' || true)
     redeem_kind=""
     if [[ "$seed" =~ ^(.*)\+(redeem-code(-other|-used|-expired)?)$ ]]; then seed="${BASH_REMATCH[1]}"; redeem_kind="${BASH_REMATCH[2]}"; fi
     env_args=(-e "E2E_API=http://127.0.0.1:$PORT")
@@ -404,6 +446,12 @@ for flow in "${flows[@]}"; do
                     echo "FAIL $name (seeding $redeem_kind failed)"; failed=1; continue
                 fi
                 env_args+=(-e "E2E_CODE=$code")
+            fi
+            if [[ "$play_subscription" == true ]] && ! mark_play_subscription "$email"; then
+                echo "FAIL $name (seeding +play-subscription failed)"; failed=1; continue
+            fi
+            if [[ -n "$play_script" ]] && ! seed_play_script "$email" "$play_script"; then
+                echo "FAIL $name (writing the Google Play script failed)"; failed=1; continue
             fi
             if [[ "$want_partner" == true ]]; then
                 partner_email="e2e+$run_id-$(tr '[:upper:]' '[:lower:]' <<< "$name")-partner@example.com"

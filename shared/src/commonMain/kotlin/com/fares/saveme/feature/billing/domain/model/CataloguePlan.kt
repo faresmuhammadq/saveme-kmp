@@ -23,8 +23,11 @@ data class CataloguePlan(
     val period: BillingPeriod,
     val isDefault: Boolean,
     val features: EntitlementSet,
-    /** Google Play's price only; null when the plan has none (P-12.3, P-12.4). */
-    val price: Money?,
+    /**
+     * The Google Play product that sells this plan; null when none does. The catalogue's `amount_minor` is never read (spec 018
+     * FR-037): the only price shown is Google Play's own, from `PlayPrices`.
+     */
+    val playProductId: String?,
 )
 
 internal const val GOOGLE_PLAY_CHANNEL = "google_play"
@@ -43,5 +46,5 @@ internal fun PlanDto.toDomain() = CataloguePlan(
     features = EntitlementSet(
         features.mapNotNull { (key, value) -> (value as? JsonPrimitive)?.toFeatureValue()?.let { key to it } }.toMap(),
     ),
-    price = prices.firstOrNull { it.channel == GOOGLE_PLAY_CHANNEL }?.let { Money(it.amountMinor, it.currency) },
+    playProductId = prices.firstOrNull { it.channel == GOOGLE_PLAY_CHANNEL }?.productId,
 )

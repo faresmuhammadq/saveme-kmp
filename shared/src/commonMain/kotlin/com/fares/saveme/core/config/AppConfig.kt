@@ -10,4 +10,11 @@ data class AppConfig(
     val isDebugTools: Boolean,
     /** Port of mailed links; set only in dev, where the backend is reached on a non-default port. */
     val linkPort: Int? = null,
+    /** The installed package's id, for Google Play's subscription centre link (spec 018 R-8); empty where there is none (iOS, tests). */
+    val applicationId: String = "",
+    /**
+     * Build-time switch for the in-app Subscribe action (spec 018 US6). Off in every flavour: constitution P-12.3 allows only
+     * "Restore purchases" and "Enter code" until the owner amends it, and nothing in the shipped code reads this switch yet.
+     */
+    val inAppSubscribe: Boolean = false,
 )

@@ -1,0 +1,18 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US2: Given no Google Play purchases, When the person taps "Restore purchases", Then the nothing-to-restore message shows.
+# e2e-seed: verified-user
+appId: com.fares.saveme
+tags:
+  - US2
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/play-open-devtools.yaml
+- runFlow: ../common/play-back-to-home.yaml
+- runFlow: ../common/open-plan.yaml
+- tapOn:
+    id: "plan.restore"
+- extendedWaitUntil:
+    visible:
+      id: "plan.restore.result"
+      text: "No Google Play purchases to restore.*"
+    timeout: 20000

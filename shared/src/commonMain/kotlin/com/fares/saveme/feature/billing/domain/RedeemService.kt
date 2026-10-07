@@ -11,7 +11,6 @@ import com.fares.saveme.feature.billing.data.dto.RedeemResultDto
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import kotlin.jvm.JvmInline
 import kotlin.time.Clock
 
@@ -49,6 +48,7 @@ class RedeemService(
     private val entitlements: Entitlements,
     private val scope: CoroutineScope,
     private val clock: Clock = Clock.System,
+    private val applier: BillingAnswerApplier = BillingAnswerApplier(sessions, subscriptions, entitlements, scope),
 ) {
 
     suspend fun redeem(rawCode: String, attempt: AttemptKey): RedeemOutcome {
@@ -74,17 +74,7 @@ class RedeemService(
     }
 
     private suspend fun applied(userId: String, result: RedeemResultDto): RedeemOutcome {
-        val stillThem = (sessions.state.value as? AuthState.SignedIn)?.account?.userId == userId
-        val applied = stillThem && sessions.applyEntitlements(
-            forUserId = userId,
-            planId = result.entitlements.plan.id,
-            planName = result.entitlements.plan.name,
-            features = result.entitlements.features,
-        )
-        if (!applied) return RedeemOutcome.SignedOut
-        subscriptions.save(result.governing)
-        // The re-read only drives the Plan screen's stale note; the applied answer already shows.
-        scope.launch { entitlements.refreshAfterBillingAction() }
+        if (!applier.apply(userId, result.entitlements, result.governing)) return RedeemOutcome.SignedOut
         return RedeemOutcome.Redeemed(RedeemConfirmation.from(result, clock.now()))
     }
 

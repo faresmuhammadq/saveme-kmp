@@ -317,4 +317,40 @@ class AppGraphTest {
         assertFalse(account.state.value.devToolsAvailable)
         assertNotNull(koin.get<SyncEngine>())
     }
+
+    /** Spec 018: the verifier needs the session manager, which needs the billing cleaner; the cleaner must not resolve the verifier while the graph is built. */
+    @Test
+    fun theGooglePlayGraphResolvesWithoutACycleAndTheDevBuildWrapsThePortWithTheScriptedOne() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Dev, isDebugTools = true),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+
+        val koin = GlobalContext.get()
+        assertTrue(koin.get<com.fares.saveme.feature.billing.data.play.PlayBillingClient>() is com.fares.saveme.devtools.playbilling.SwitchingPlayBillingClient)
+        assertTrue(koin.get<com.fares.saveme.feature.billing.data.play.PlayBillingClient>().platformSupported)
+        assertNotNull(koin.get<com.fares.saveme.feature.billing.domain.play.PlayPurchaseVerifier>())
+        assertNotNull(koin.get<com.fares.saveme.feature.billing.domain.play.PlayRestoreService>())
+        assertNotNull(koin.get<com.fares.saveme.feature.billing.domain.play.PlayBillingNotes>())
+        assertNotNull(koin.get<com.fares.saveme.feature.billing.domain.BillingSyncCoordinator>())
+        assertTrue(koin.getAll<UserDataCleaner>().any { it is com.fares.saveme.feature.billing.domain.play.PlayBillingCleaner })
+        assertNotNull(koin.get<com.fares.saveme.devtools.playbilling.PlayBillingDevViewModel>())
+    }
+
+    /** FR-056, FR-004: a release graph binds the unavailable port (Android until the Play Billing wiring); the scripted client is not in it. */
+    @Test
+    fun theReleaseGraphBindsTheUnavailablePortAndNoScriptedClient() {
+        initKoin(
+            config = AppConfig(baseUrl = "http://localhost/api/v1/", linkHost = "localhost", environment = Environment.Prod, isDebugTools = false),
+            platformModule = androidPlatformModule(context, "test"),
+            featureModules = appFeatureModules,
+        ) { androidContext(context) }
+
+        val port = GlobalContext.get().get<com.fares.saveme.feature.billing.data.play.PlayBillingClient>()
+        assertTrue(port is com.fares.saveme.feature.billing.data.play.UnavailablePlayBillingClient)
+        assertTrue(port.platformSupported)
+        assertFalse(port is com.fares.saveme.devtools.playbilling.SwitchingPlayBillingClient)
+        assertNotNull(GlobalContext.get().get<com.fares.saveme.feature.billing.domain.play.PlayPurchaseVerifier>())
+    }
 }

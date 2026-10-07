@@ -105,7 +105,8 @@ class ReportsCapturedParityTest {
 
     @After
     fun tearDown() {
-        db.close()
+        // The in-memory database is not closed: a background refresh started by sign-in (platform categories) can still be writing,
+        // and a write to a closed database is an uncaught exception that fails whichever coroutine test runs next in this JVM.
         stopKoin()
     }
 

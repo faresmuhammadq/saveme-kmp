@@ -18,6 +18,7 @@ class MainApplication : Application() {
                 linkPort = BuildConfig.LINK_PORT.toIntOrNull(),
                 environment = Environment.valueOf(BuildConfig.ENVIRONMENT),
                 isDebugTools = BuildConfig.DEBUG_TOOLS,
+                applicationId = BuildConfig.APPLICATION_ID,
             ),
             platformModule = androidPlatformModule(
                 context = this,

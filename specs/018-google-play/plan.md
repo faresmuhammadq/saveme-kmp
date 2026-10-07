@@ -232,3 +232,11 @@ the real graph (the 006 Koin-cycle lesson). The port is bound in each platform m
 |-----------|------------|-------------------------------------|
 | G1 needs a new dependency (P-14.5 / Quality Gate 6) | Google Play Billing cannot be reached without the Play Billing Library | Isolated behind the port; the phase is gated and does not start without approval, so the plan itself does not break the rule |
 | US6 code exists while P-12.3 forbids its UI | The brief's headline; cheap to build and test against the fake now | Shipped switched off with a test proving no Subscribe is reachable; turning it on requires the amendment |
+
+## Implementation notes (core, T001-T048)
+
+- The port (`feature.billing.data.play.PlayBillingClient`) has no acknowledge/consume member; `UnavailablePlayBillingClient` is bound on Android (`platformSupported = true`) and iOS (`false`); the dev flavour binds `SwitchingPlayBillingClient(real, scripted)` through `devOrRealPlayClient()`. No dependency was added (`gradle/libs.versions.toml` and the build files are unchanged); `devDebugRuntimeClasspath` has no billingclient artifact.
+- `PlayBillingCleaner` (a `UserDataCleaner`) resolves the verifier lazily so the Koin graph has no cycle (`AppGraphTest`).
+- `AppConfig.inAppSubscribe` stays `false` in every flavour; no Subscribe state, intent or button exists (G2 not started).
+- Catalogue prices are no longer shown (FR-037): the Plan goldens that showed them changed on purpose.
+- Maestro flows (`.maestro/018-google-play/`, not run) and the `run-e2e.sh` seeds (`+play-subscription`, `# e2e-play-script:`) were written; `api.js` gained `playVerify` and `playAccountReference`.

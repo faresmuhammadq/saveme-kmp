@@ -1,0 +1,20 @@
+# Account -> Developer tools -> Google Play (scripted), and turns the scripted Google Play on. Dev build only.
+appId: com.fares.saveme
+tags:
+  - subflow
+---
+- tapOn: "Account"
+- extendedWaitUntil:
+    visible:
+      id: "account.devTools"
+    timeout: 10000
+- tapOn:
+    id: "account.devTools"
+- tapOn:
+    id: "devtools.playBilling"
+- extendedWaitUntil:
+    visible:
+      id: "playDev.enabled"
+    timeout: 10000
+- tapOn:
+    id: "playDev.enabled"

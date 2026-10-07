@@ -1,0 +1,23 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US1: Given a pending purchase, When the app checks, Then a pending note shows and no plan is granted; When Google Play reports it purchased, Then Plus starts.
+# e2e-seed: verified-user
+# e2e-play-script: {"e2e-us1-pend-1": {"kind": "subscription", "product_id": "plus_monthly", "state": "pending", "acknowledged": false, "obfuscated_account_id": "@REFERENCE@"}}
+appId: com.fares.saveme
+tags:
+  - US1
+---
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/play-open-devtools.yaml
+- runFlow:
+    file: ../common/play-script-purchase.yaml
+    env: { TOKEN: "e2e-us1-pend-1", PRODUCT: "plus_monthly", PENDING: "true" }
+- runFlow: ../common/play-back-to-home.yaml
+- runFlow: ../common/open-plan.yaml
+- tapOn:
+    id: "plan.refresh"
+- extendedWaitUntil:
+    visible:
+      id: "plan.play.pending"
+    timeout: 20000
+- assertNotVisible:
+    id: "plan.current.test"

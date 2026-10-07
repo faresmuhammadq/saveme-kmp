@@ -16,7 +16,9 @@ import com.fares.saveme.core.sync.SyncScheduler
 import com.fares.saveme.core.sync.WorkManagerSyncScheduler
 import com.fares.saveme.feature.sharing.AndroidLinkSharer
 import com.fares.saveme.feature.sharing.domain.LinkSharer
+import com.fares.saveme.devtools.playbilling.devOrRealPlayClient
 import com.fares.saveme.devtools.push.devOrUnavailablePushProvider
+import com.fares.saveme.feature.billing.data.play.PlayBillingClient
 import com.fares.saveme.feature.notifications.AndroidNotificationDisplay
 import com.fares.saveme.feature.notifications.AndroidNotificationPermissionState
 import com.fares.saveme.feature.notifications.WorkManagerPushRegistrationScheduler
@@ -52,4 +54,6 @@ fun androidPlatformModule(
     single<NotificationPermissionState> { AndroidNotificationPermissionState(context) }
     single<NotificationDisplay> { AndroidNotificationDisplay(context, notificationIcon, get()) }
     single<PushRegistrationScheduler> { WorkManagerPushRegistrationScheduler(context) }
+    // Google Play: the unavailable port until the Play Billing wiring is approved (spec 018 G1); development builds wrap it with the scripted one.
+    single<PlayBillingClient> { devOrRealPlayClient() }
 }

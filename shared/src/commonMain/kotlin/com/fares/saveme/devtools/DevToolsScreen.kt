@@ -15,6 +15,7 @@ import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.dev_tools_components
 import saveme.shared.generated.resources.dev_tools_paste_link
+import saveme.shared.generated.resources.dev_tools_play_billing
 import saveme.shared.generated.resources.dev_tools_simulate_push
 import saveme.shared.generated.resources.dev_tools_title
 
@@ -34,6 +35,11 @@ fun DevToolsScreen(onIntent: (DevToolsIntent) -> Unit) {
             stringResource(Res.string.dev_tools_simulate_push),
             { onIntent(DevToolsIntent.SimulatePushClicked) },
             modifier = Modifier.testTag("devtools.simulatePush"),
+        )
+        SecondaryButton(
+            stringResource(Res.string.dev_tools_play_billing),
+            { onIntent(DevToolsIntent.PlayBillingClicked) },
+            modifier = Modifier.testTag("devtools.playBilling"),
         )
     }
 }

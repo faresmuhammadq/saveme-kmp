@@ -1,0 +1,26 @@
+# deferred: E2E on owner's device (owner policy 2026-10-04)
+# US3: Given a purchase already linked to another account, When this account's app sends it, Then a note says it belongs to another account and nothing about the other account shows.
+# e2e-seed: verified-user+partner
+# e2e-play-script: {"e2e-us3-other-1": {"kind": "subscription", "product_id": "plus_monthly", "state": "active", "acknowledged": false}}
+appId: com.fares.saveme
+tags:
+  - US3
+---
+# The partner account links the token first (through the API); then the main account's app sends the same token.
+- runScript:
+    file: ../common/api.js
+    env: { ACTION: playVerify, SLOT: B, EMAIL: "${E2E_PARTNER_EMAIL}", PASSWORD: "${E2E_PARTNER_PASSWORD}", TOKEN: "e2e-us3-other-1", PRODUCT: "plus_monthly", EXPECT: "200" }
+- runFlow: ../common/sign-in.yaml
+- runFlow: ../common/play-open-devtools.yaml
+- runFlow:
+    file: ../common/play-script-purchase.yaml
+    env: { TOKEN: "e2e-us3-other-1", PRODUCT: "plus_monthly", PENDING: "false" }
+- runFlow: ../common/play-back-to-home.yaml
+- runFlow: ../common/open-plan.yaml
+- tapOn:
+    id: "plan.refresh"
+- extendedWaitUntil:
+    visible:
+      id: "plan.play.anotherAccount"
+    timeout: 20000
+- assertNotVisible: "Sign out"
