@@ -218,7 +218,7 @@ description: "Task list for 018-google-play"
 
 ## Final
 
-- [ ] T062 Write specs/018-google-play/summary.md
+- [X] T062 Write specs/018-google-play/summary.md
 
 ---
 
