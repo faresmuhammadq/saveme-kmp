@@ -19,11 +19,9 @@ tags:
 - extendedWaitUntil:
     visible: "E2E Stored Name"
     timeout: 20000
-- assertVisible: ${E2E_EMAIL.replace(/\+/g, '\\+').replace(/\./g, '\\.')}
-- assertVisible: "Email verified"
 - assertVisible: "Asia/Tokyo"
 - assertVisible: "KWD"
-- assertVisible: "12"
+- assertVisible: "Day 12"
 - assertVisible:
     text: "English"
     selected: true

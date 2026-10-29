@@ -11,9 +11,7 @@ tags:
     visible:
       id: "budgetEditor.category"
     timeout: 15000
-- tapOn:
-    id: "budgetEditor.category"
-# The category choice is a sheet in its own window, so it is tapped by its text.
+# The category grid lists the person's own categories first, so it is tapped by its text.
 - extendedWaitUntil:
     visible: "Food run"
     timeout: 15000
@@ -29,6 +27,6 @@ tags:
       id: "budgets.active.0"
     timeout: 15000
 - assertVisible: "Food run"
-- assertVisible: ".*3,500.00 of 6,000.00.*"
+- assertVisible: ".*2,500 left · 58%.*"
 - assertVisible: "Waiting to sync"
 - assertVisible: "58%"

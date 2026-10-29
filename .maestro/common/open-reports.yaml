@@ -4,7 +4,7 @@ tags:
   - subflow
 ---
 - tapOn:
-    id: "home.reports"
+    id: "tab.reports"
 - extendedWaitUntil:
     visible:
       id: "reports.screen"

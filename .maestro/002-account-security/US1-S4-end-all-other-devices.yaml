@@ -17,7 +17,7 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
     visible: "e2e-device-d"
     timeout: 20000
@@ -28,7 +28,7 @@ tags:
 - extendedWaitUntil:
     visible: "All other devices signed out."
     timeout: 20000
-- assertVisible: "This device"
+- assertVisible: "(?i)This device"
 - assertNotVisible: "e2e-device-b"
 - assertNotVisible: "e2e-device-c"
 - assertNotVisible: "e2e-device-d"

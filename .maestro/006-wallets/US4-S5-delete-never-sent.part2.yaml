@@ -11,6 +11,8 @@ tags:
       AMOUNT: "10"
 - tapOn: "Temp"
 - tapOn:
+    id: "walletDetail.more"
+- tapOn:
     id: "walletDetail.delete"
 # The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
 # testTagsAsResourceId on its own window only), so its buttons are found by their text.

@@ -5,7 +5,8 @@ tags:
   - US2
 ---
 - runFlow: ../common/launch-clean.yaml
-- tapOn: "Sign in"
+- tapOn:
+    id: "entry.signIn"
 # The first failures show the wrong-password message.
 - runFlow:
     file: ../common/sign-in-attempt.yaml

@@ -10,7 +10,7 @@ tags:
 - extendedWaitUntil:
     notVisible: "Includes changes waiting to sync"
     timeout: 60000
-- assertVisible: ".*3,700.00 of 6,000.00.*"
+- assertVisible: ".*2,300 left · 62%.*"
 - runScript:
     file: ../common/api.js
     env: { ACTION: listBudgets, SLOT: B }

@@ -5,6 +5,12 @@ appId: com.fares.saveme
 tags:
   - US6
 ---
+- extendedWaitUntil:
+    visible:
+      id: "rule.more"
+    timeout: 15000
+- tapOn:
+    id: "rule.more"
 - tapOn:
     id: "rule.catchUp"
 - extendedWaitUntil:

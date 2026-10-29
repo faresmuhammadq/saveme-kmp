@@ -14,6 +14,8 @@ tags:
 - runFlow: ../common/open-wallets.yaml
 - tapOn: "Alpha"
 - tapOn:
+    id: "walletDetail.more"
+- tapOn:
     id: "walletDetail.archive"
 - assertVisible: "Archive Alpha?"
 - assertVisible: "Archived wallets keep their balance and members and stay editable. This can’t be undone."

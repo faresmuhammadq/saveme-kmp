@@ -24,7 +24,9 @@ tags:
     timeout: 20000
 - assertVisible:
     id: "wallets.total.EGP"
+- assertVisible: "EGP 300.00"
+- tapOn:
+    id: "wallets.currency.USD"
 - assertVisible:
     id: "wallets.total.USD"
-- assertVisible: "EGP 300.00"
 - assertVisible: "USD 50.00"

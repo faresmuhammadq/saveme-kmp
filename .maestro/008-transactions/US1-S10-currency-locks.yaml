@@ -23,8 +23,10 @@ tags:
 - tapOn: "Back"
 - extendedWaitUntil:
     visible:
-      id: "walletDetail.edit"
+      id: "walletDetail.more"
     timeout: 15000
+- tapOn:
+    id: "walletDetail.more"
 - tapOn:
     id: "walletDetail.edit"
 - extendedWaitUntil:

@@ -25,11 +25,11 @@ tags:
 - tapOn:
     id: "walletEditor.save"
 - extendedWaitUntil:
-    visible: "Visa"
+    visible: "Visa.*"
     timeout: 15000
 - assertVisible: "EGP 1,000.00"
-# The card renders the suffix as its own text node, " owed".
-- assertVisible: " ?owed"
+# The tile names it "Visa · owed".
+- assertVisible: "Visa · owed"
 - runScript:
     file: ../common/api.js
     env: { ACTION: login, SLOT: B }

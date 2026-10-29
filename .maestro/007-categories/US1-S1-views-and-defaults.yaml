@@ -19,7 +19,7 @@ tags:
     timeout: 20000
 - assertVisible:
     id: "categories.default.0"
-- assertVisible: "Default"
+- assertVisible: "Defaults"
 - tapOn:
     id: "categories.kind.income"
 - extendedWaitUntil:

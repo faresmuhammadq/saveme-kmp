@@ -42,7 +42,8 @@ tags:
 - tapOn:
     id: "budgetEditor.save"
 - extendedWaitUntil:
-    visible: ".*7,000.00.*"
+    visible:
+      id: "budgets.active.0"
     timeout: 15000
 # Archive it: it moves to Archived and leaves the active list.
 - tapOn:

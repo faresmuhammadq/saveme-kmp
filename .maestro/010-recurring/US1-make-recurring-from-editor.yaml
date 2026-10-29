@@ -19,7 +19,7 @@ tags:
     file: ../common/open-transactions.yaml
     env: { WALLET: "Alpha" }
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.amount"
@@ -36,6 +36,12 @@ tags:
 - tapOn: "Rent"
 - tapOn:
     id: "txEditor.makeRecurring"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.moreDetails"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.moreDetails"
 - extendedWaitUntil:
     visible:
       id: "ruleEditor.amount"

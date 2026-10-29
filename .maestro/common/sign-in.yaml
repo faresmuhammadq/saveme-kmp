@@ -5,9 +5,11 @@ tags:
   - subflow
 ---
 - runFlow: launch-clean.yaml
-- tapOn: "Sign in"
+- tapOn:
+    id: "entry.signIn"
 - runFlow: sign-in-attempt.yaml
-# "Signed in as" only exists on the app's Home; plain "Home" also matches the launcher.
+# The tab bar only exists once signed in.
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 20000

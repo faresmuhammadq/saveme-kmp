@@ -15,4 +15,4 @@ tags:
     file: ../common/open-transactions.yaml
     env: { WALLET: "Alpha" }
 - assertVisible:
-    id: "transactions.add"
+    id: "tab.add"

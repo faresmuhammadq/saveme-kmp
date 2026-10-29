@@ -6,6 +6,8 @@ tags:
 ---
 - tapOn: "Alpha"
 - tapOn:
+    id: "walletDetail.more"
+- tapOn:
     id: "walletDetail.edit"
 - extendedWaitUntil:
     visible:

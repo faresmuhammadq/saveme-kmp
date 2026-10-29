@@ -28,7 +28,7 @@ tags:
     env: { ACTION: createTransaction, SLOT: C, WALLET_ID: "${output.walletId}", AMOUNT: "50000", NOTE: "Partner's", CATEGORY: "Groceries" }
 - runFlow: ../common/sign-in.yaml
 - tapOn:
-    id: "home.wallets"
+    id: "tab.wallets"
 - extendedWaitUntil:
     visible: "Household"
     timeout: 30000

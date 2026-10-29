@@ -18,7 +18,7 @@ tags:
     file: ../common/open-transactions.yaml
     env: { WALLET: "Alpha" }
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.category"

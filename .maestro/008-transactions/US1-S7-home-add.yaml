@@ -24,7 +24,7 @@ tags:
     file: ../common/add-expense.yaml
     env: { AMOUNT: "5", CATEGORY: "Fares" }
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.amount"
@@ -36,10 +36,10 @@ tags:
 - tapOn: "Back"
 - extendedWaitUntil:
     visible:
-      id: "home.addTransaction"
+      id: "tab.add"
     timeout: 15000
 - tapOn:
-    id: "home.addTransaction"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.wallet"

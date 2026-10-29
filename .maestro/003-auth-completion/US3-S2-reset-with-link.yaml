@@ -16,8 +16,9 @@ tags:
 - tapOn:
     id: "resetPassword.submit"
 - extendedWaitUntil:
-    visible: "Password changed\\. Sign in with your new password\\."
+    visible: "Password changed"
     timeout: 20000
+- assertVisible: "Sign in with your new password\\."
 - tapOn:
     id: "resetPassword.continue"
 - assertVisible:
@@ -27,7 +28,8 @@ tags:
     env:
       E2E_PASSWORD: ${E2E_PASSWORD + '-new'}
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 20000
 - runScript:
     file: ../common/api.js

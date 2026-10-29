@@ -20,7 +20,9 @@ tags:
 - extendedWaitUntil:
     visible: "Check your inbox"
     timeout: 20000
-- assertVisible: ${'We sent a link to ' + output.email.replace(/\+/g, '\\+').replace(/\./g, '\\.') + '\\. Open it on this phone to confirm your address\\.'}
+- assertVisible: ${output.email.replace(/\+/g, '\\+').replace(/\./g, '\\.')}
+- assertVisible: "Open it on this phone to confirm your address\\."
+- assertVisible: "We sent a link to your email\\."
 - tapOn:
     id: "checkInbox.goToSignIn"
 - assertVisible:

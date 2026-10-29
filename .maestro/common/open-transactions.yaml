@@ -4,7 +4,7 @@ tags:
   - subflow
 ---
 - tapOn:
-    id: "home.wallets"
+    id: "tab.wallets"
 - extendedWaitUntil:
     visible:
       id: "wallets.list"

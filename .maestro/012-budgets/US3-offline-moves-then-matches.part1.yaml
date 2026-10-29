@@ -23,5 +23,5 @@ tags:
 - runFlow: ../common/sign-in.yaml
 - runFlow: ../common/open-budgets.yaml
 - extendedWaitUntil:
-    visible: ".*3,500.00 of 6,000.00.*"
+    visible: ".*2,500 left · 58%.*"
     timeout: 60000

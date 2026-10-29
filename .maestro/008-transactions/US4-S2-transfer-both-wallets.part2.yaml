@@ -4,7 +4,7 @@ tags:
   - US4
 ---
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.kind.transfer"

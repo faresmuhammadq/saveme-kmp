@@ -28,7 +28,7 @@ tags:
 - tapOn: "Alpha"
 - extendedWaitUntil:
     visible:
-      id: "walletDetail.export"
+      id: "walletDetail.more"
     timeout: 20000
 - runScript:
     file: ../common/api.js

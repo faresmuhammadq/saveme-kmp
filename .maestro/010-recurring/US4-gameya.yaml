@@ -29,6 +29,12 @@ tags:
     timeout: 15000
 - tapOn:
     id: "ruleEditor.preset.gameya"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.moreDetails"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.moreDetails"
 - tapOn:
     id: "ruleEditor.amount"
 - inputText: "1000"

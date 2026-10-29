@@ -1,10 +1,11 @@
-# From Home: opens the categories screen and waits for it.
+# From Home (Account tile): opens the categories screen and waits for it.
 appId: com.fares.saveme
 tags:
   - subflow
 ---
+- tapOn: "Account"
 - tapOn:
-    id: "home.categories"
+    id: "account.categories"
 - extendedWaitUntil:
     visible:
       id: "categories.list"

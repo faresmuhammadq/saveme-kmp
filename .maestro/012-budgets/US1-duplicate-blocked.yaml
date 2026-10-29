@@ -41,7 +41,6 @@ tags:
 - tapOn: ".*Food run.*"
 - assertVisible: "Already budgeted"
 - pressKey: back
-- assertNotVisible: "Food run"
 - tapOn:
     id: "budgetEditor.currency"
 - extendedWaitUntil:

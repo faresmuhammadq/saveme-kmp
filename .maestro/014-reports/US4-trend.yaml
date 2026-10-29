@@ -15,6 +15,8 @@ tags:
     element:
       id: "reports.trend.length"
 - tapOn:
+    id: "reports.trend.length"
+- tapOn:
     id: "reports.trend.length.3"
 - extendedWaitUntil:
     visible:
@@ -28,6 +30,8 @@ tags:
 - assertVisible:
     id: "reports.trend.row.0"
     text: ".*0.00.*"
+- tapOn:
+    id: "reports.trend.length"
 - tapOn:
     id: "reports.trend.length.12"
 - extendedWaitUntil:

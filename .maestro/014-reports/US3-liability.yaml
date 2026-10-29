@@ -16,11 +16,11 @@ tags:
     env: { WALLET: "Visa", AMOUNT: "120000", NOTE: "Laptop bag", CATEGORY: "Groceries" }
 - runFlow: ../common/sign-in.yaml
 - tapOn:
-    id: "home.wallets"
+    id: "tab.wallets"
 - extendedWaitUntil:
-    visible: "Visa"
+    visible: "Visa.*"
     timeout: 30000
-- tapOn: "Visa"
+- tapOn: "Visa.*"
 - tapOn:
     id: "wallet.report"
 - extendedWaitUntil:

@@ -15,12 +15,14 @@ tags:
 - tapOn: "Alpha"
 - extendedWaitUntil:
     visible:
-      id: "walletDetail.edit"
+      id: "walletDetail.more"
     timeout: 15000
 # The other device saves after this one synced.
 - runScript:
     file: ../common/api.js
     env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.more"
 - tapOn:
     id: "walletDetail.edit"
 - tapOn:

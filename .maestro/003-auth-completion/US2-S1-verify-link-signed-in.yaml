@@ -17,7 +17,8 @@ tags:
 - tapOn:
     id: "verifyEmail.continue"
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 10000
 - assertNotVisible:
     id: "home.verifyPrompt"

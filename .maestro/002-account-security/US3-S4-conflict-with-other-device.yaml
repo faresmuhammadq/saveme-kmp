@@ -28,8 +28,10 @@ tags:
 - extendedWaitUntil:
     visible: "Your profile changed on another device."
     timeout: 20000
-- assertVisible: "This phone: Phone Name"
-- assertVisible: "Other device: Other Device Name"
+- assertVisible: "This phone"
+- assertVisible: "Phone Name"
+- assertVisible: "Other device"
+- assertVisible: "Other Device Name"
 - assertVisible: "Keep mine"
 - assertVisible: "Use the other device’s"
 # Nothing applied yet.

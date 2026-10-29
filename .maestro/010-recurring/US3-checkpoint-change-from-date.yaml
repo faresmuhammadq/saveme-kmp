@@ -40,6 +40,12 @@ tags:
     visible:
       id: "ruleEditor.from"
     timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.moreDetails"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.moreDetails"
 - tapOn:
     id: "ruleEditor.amount"
 - eraseText: 20

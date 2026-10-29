@@ -8,7 +8,8 @@ tags:
 - killApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 30000
 - runFlow:
     file: ../common/open-transactions.yaml

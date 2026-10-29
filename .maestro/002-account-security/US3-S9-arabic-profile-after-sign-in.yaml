@@ -11,7 +11,8 @@ tags:
     file: ../common/api.js
     env: { ACTION: saveProfile, SLOT: B, LOCALE: "ar" }
 - runFlow: ../common/launch-clean.yaml
-- tapOn: "Sign in"
+- tapOn:
+    id: "entry.signIn"
 - runFlow: ../common/sign-in-attempt.yaml
 - extendedWaitUntil:
     visible: "الرئيسية"

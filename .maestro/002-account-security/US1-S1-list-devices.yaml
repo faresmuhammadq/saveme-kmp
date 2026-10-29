@@ -1,4 +1,4 @@
-# US1-S1: Given the person is signed in on two devices, When they open "Devices signed in" on device A, Then both devices are listed, newest sign-in first, and device A is marked "This device" with no end action.
+# US1-S1: Given the person is signed in on two devices, When they open "Devices" on device A, Then both devices are listed, newest sign-in first, and device A is marked "This device" with no end action.
 # e2e-seed: verified-user
 # Device A is the phone; device B is a second API session named "e2e-device-b", signed in later.
 appId: com.fares.saveme
@@ -12,18 +12,14 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
     visible: "e2e-device-b"
     timeout: 20000
-# Newest first: B signed in after the phone, so "This device" is below it.
+# This device leads in its own card; other devices follow.
 - assertVisible:
-    text: "This device"
-    below: "e2e-device-b"
+    text: "(?i)This device"
+    above: "e2e-device-b"
 # Only B has an end action.
-- assertVisible:
-    text: "Sign out"
-    index: 0
-- assertNotVisible:
-    text: "Sign out"
-    index: 1
+- assertVisible: "Sign out e2e-device-b"
+- assertNotVisible: "Sign out This device.*"

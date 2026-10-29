@@ -15,11 +15,13 @@ tags:
 - tapOn: "Alpha"
 - extendedWaitUntil:
     visible:
-      id: "walletDetail.edit"
+      id: "walletDetail.more"
     timeout: 15000
 - runScript:
     file: ../common/api.js
     env: { ACTION: deleteWallet, SLOT: B, WALLET: "Alpha" }
+- tapOn:
+    id: "walletDetail.more"
 - tapOn:
     id: "walletDetail.edit"
 - tapOn:

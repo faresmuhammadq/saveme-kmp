@@ -5,7 +5,7 @@ tags:
   - subflow
 ---
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.amount"

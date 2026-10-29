@@ -15,11 +15,13 @@ tags:
 - tapOn: "Alpha"
 - extendedWaitUntil:
     visible:
-      id: "walletDetail.delete"
+      id: "walletDetail.more"
     timeout: 15000
 - runScript:
     file: ../common/api.js
     env: { ACTION: saveWallet, SLOT: B, WALLET: "Alpha", NEW_NAME: "Web name" }
+- tapOn:
+    id: "walletDetail.more"
 - tapOn:
     id: "walletDetail.delete"
 # The confirmation is a dialog window, where test tags are not exposed (MainActivity sets

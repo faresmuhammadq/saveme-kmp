@@ -18,10 +18,10 @@ tags:
       id: "walletDetail.balance"
     timeout: 15000
 - assertVisible: "EGP 100.00"
-- assertVisible: "Cash · EGP"
+- assertVisible: "Cash · Owner"
 - assertVisible:
     id: "walletDetail.member.0"
 - assertVisible: "You"
 - assertVisible: "Owner"
 - assertVisible:
-    id: "walletDetail.edit"
+    id: "walletDetail.more"

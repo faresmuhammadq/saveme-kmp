@@ -29,6 +29,12 @@ tags:
     id: "recurring.rule.0"
 - extendedWaitUntil:
     visible:
+      id: "rule.more"
+    timeout: 15000
+- tapOn:
+    id: "rule.more"
+- extendedWaitUntil:
+    visible:
       id: "rule.catchUp"
     timeout: 15000
 - tapOn:

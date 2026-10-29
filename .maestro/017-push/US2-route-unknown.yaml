@@ -10,5 +10,6 @@ tags:
     file: ../common/simulate-push.yaml
     env: { TYPE: "future_type" }
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 20000

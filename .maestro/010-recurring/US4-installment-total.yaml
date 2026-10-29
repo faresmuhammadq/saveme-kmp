@@ -26,6 +26,12 @@ tags:
     timeout: 15000
 - tapOn:
     id: "ruleEditor.preset.installment"
+- extendedWaitUntil:
+    visible:
+      id: "ruleEditor.moreDetails"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.moreDetails"
 - tapOn:
     id: "ruleEditor.basis.total"
 - tapOn:

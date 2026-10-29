@@ -26,7 +26,7 @@ tags:
       id: "transactions.due.0"
     timeout: 60000
 - tapOn:
-    id: "transactions.add"
+    id: "tab.add"
 - extendedWaitUntil:
     visible:
       id: "txEditor.amount"

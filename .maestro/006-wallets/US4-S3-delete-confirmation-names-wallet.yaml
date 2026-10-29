@@ -14,6 +14,8 @@ tags:
 - runFlow: ../common/open-wallets.yaml
 - tapOn: "Alpha"
 - tapOn:
+    id: "walletDetail.more"
+- tapOn:
     id: "walletDetail.delete"
 - assertVisible: "Delete Alpha?"
 - assertVisible: "Deleting is final. The wallet and everything recorded in it will be removed for everyone."

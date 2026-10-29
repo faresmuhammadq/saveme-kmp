@@ -44,6 +44,12 @@ tags:
     visible:
       id: "rule.pause"
     timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: "rule.more"
+    timeout: 15000
+- tapOn:
+    id: "rule.more"
 - tapOn:
     id: "rule.end"
 - tapOn: "Yes, end it"

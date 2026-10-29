@@ -28,4 +28,5 @@ tags:
 - extendedWaitUntil:
     visible: "Create account"
     timeout: 15000
-- assertNotVisible: "Signed in as .+"
+- assertNotVisible:
+    id: "tab.home"

@@ -11,11 +11,11 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
     visible: "e2e-device-b"
     timeout: 20000
-- tapOn: "Sign out"
+- tapOn: "Sign out e2e-device-b"
 - tapOn:
     text: "Sign out"
     below: "That device will need to sign in again. Your other devices stay signed in."

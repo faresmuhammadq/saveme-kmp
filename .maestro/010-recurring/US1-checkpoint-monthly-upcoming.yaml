@@ -22,6 +22,12 @@ tags:
     id: "recurring.add"
 - extendedWaitUntil:
     visible:
+      id: "ruleEditor.moreDetails"
+    timeout: 15000
+- tapOn:
+    id: "ruleEditor.moreDetails"
+- extendedWaitUntil:
+    visible:
       id: "ruleEditor.amount"
     timeout: 15000
 - tapOn:

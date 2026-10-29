@@ -8,9 +8,9 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
-    visible: "This device"
+    visible: "(?i)This device"
     timeout: 20000
 - assertVisible: "No other devices are signed in."
 - assertNotVisible: "Sign out all other devices"

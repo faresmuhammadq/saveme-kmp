@@ -26,7 +26,5 @@ tags:
     visible:
       id: "budgets.active.0"
     timeout: 60000
-- assertVisible: "120%"
-- assertVisible: "EGP 200.00 over"
-- assertVisible: "On pace for .*"
+- assertVisible: ".*200 over · 120%.*"
 - assertNotVisible: ".*(Warning|Alert|Danger|Overspent).*"

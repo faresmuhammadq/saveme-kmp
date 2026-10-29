@@ -8,7 +8,8 @@ tags:
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 15000
 - assertNotVisible: "Create account"
 - assertNotVisible:

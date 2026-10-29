@@ -11,12 +11,12 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
     visible: "e2e-device-b"
     timeout: 20000
 # Cancel ending one device.
-- tapOn: "Sign out"
+- tapOn: "Sign out e2e-device-b"
 - tapOn: "Cancel"
 - assertVisible: "e2e-device-b"
 # Cancel ending all other devices.

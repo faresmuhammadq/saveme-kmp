@@ -15,13 +15,15 @@ tags:
 - tapOn:
     id: "resetPassword.submit"
 - extendedWaitUntil:
-    visible: "Password changed\\. Sign in with your new password\\."
+    visible: "Password changed"
     timeout: 20000
+- assertVisible: "Sign in with your new password\\."
 - tapOn:
     id: "resetPassword.continue"
 # Still signed in locally (FR-019) until the next request.
 - extendedWaitUntil:
-    visible: "Signed in as .+"
+    visible:
+      id: "tab.home"
     timeout: 10000
 - runFlow:
     file: ../common/open-account.yaml

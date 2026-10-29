@@ -8,6 +8,7 @@ tags:
 - runScript:
     file: ../common/api.js
     env: { ACTION: login, SLOT: B }
+- tapOn: "Account"
 - tapOn: "Sign out"
 - tapOn:
     text: "Sign out"

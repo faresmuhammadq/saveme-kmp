@@ -1,12 +1,12 @@
 # From Home: opens the Account screen and, when ROW is given, one of its rows
-# ("Profile", "Devices signed in", "Change password", "Delete account").
+# ("Profile", "Devices", "Change password", "Delete account").
 appId: com.fares.saveme
 tags:
   - subflow
 ---
 - tapOn: "Account"
 - extendedWaitUntil:
-    visible: "Devices signed in"
+    visible: "Devices"
     timeout: 10000
 - runFlow:
     when:

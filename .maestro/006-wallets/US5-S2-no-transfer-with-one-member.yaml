@@ -18,5 +18,5 @@ tags:
       id: "walletDetail.member.0"
     timeout: 20000
 - assertVisible:
-    id: "walletDetail.edit"
+    id: "walletDetail.more"
 - assertNotVisible: "Transfer ownership"

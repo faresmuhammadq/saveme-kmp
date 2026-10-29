@@ -15,7 +15,7 @@ tags:
 - runFlow:
     file: ../common/open-account.yaml
     env:
-      ROW: "Devices signed in"
+      ROW: "Devices"
 - extendedWaitUntil:
     visible: "Your session ended. Sign in again."
     timeout: 20000

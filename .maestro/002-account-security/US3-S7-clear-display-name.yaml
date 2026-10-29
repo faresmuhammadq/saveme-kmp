@@ -34,7 +34,7 @@ tags:
 - tapOn: "Back"
 # Let Account settle; mid-transition "Profile" also matches the old screen's title.
 - extendedWaitUntil:
-    visible: "Devices signed in"
+    visible: "Devices"
     timeout: 10000
 - tapOn: "Profile"
 - extendedWaitUntil:

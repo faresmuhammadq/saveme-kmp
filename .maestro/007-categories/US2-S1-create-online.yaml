@@ -21,6 +21,8 @@ tags:
       id: "categoryEditor.icon.restaurant"
 - tapOn:
     id: "categoryEditor.icon.restaurant"
+- tapOn:
+    id: "categoryEditor.tab.color"
 - scrollUntilVisible:
     element:
       id: "categoryEditor.color.5"

@@ -6,7 +6,8 @@ tags:
   - US3
 ---
 - runFlow: ../common/launch-clean.yaml
-- tapOn: "Sign in"
+- tapOn:
+    id: "entry.signIn"
 - tapOn: "Forgot password?"
 - tapOn:
     id: "forgotPassword.email"

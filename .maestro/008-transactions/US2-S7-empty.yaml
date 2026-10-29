@@ -21,4 +21,4 @@ tags:
     id: "transactions.empty"
 - assertVisible: "No transactions yet. Add your first one."
 - assertVisible:
-    id: "transactions.add"
+    id: "tab.add"

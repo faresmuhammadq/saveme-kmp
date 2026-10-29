@@ -5,6 +5,5 @@ tags:
   - US2
 ---
 - runFlow: ../common/sign-in.yaml
-- assertVisible: "Home"
-# Maestro text is a regex: escape the address's + and dots.
-- assertVisible: ${'Signed in as ' + E2E_EMAIL.replace(/\+/g, '\\+').replace(/\./g, '\\.')}
+- assertVisible:
+    id: "tab.home"

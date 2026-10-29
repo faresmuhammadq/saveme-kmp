@@ -17,6 +17,6 @@ tags:
 - pressKey: back
 - runFlow: ../common/open-budgets.yaml
 - extendedWaitUntil:
-    visible: ".*3,700.00 of 6,000.00.*"
+    visible: ".*2,300 left · 62%.*"
     timeout: 15000
 - assertVisible: "Includes changes waiting to sync"

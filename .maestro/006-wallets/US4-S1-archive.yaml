@@ -20,6 +20,8 @@ tags:
     timeout: 20000
 - tapOn: "Alpha"
 - tapOn:
+    id: "walletDetail.more"
+- tapOn:
     id: "walletDetail.archive"
 # The confirmation is a dialog window, where test tags are not exposed (MainActivity sets
 # testTagsAsResourceId on its own window only), so its buttons are found by their text.
@@ -29,6 +31,12 @@ tags:
       id: "walletDetail.archived"
     timeout: 15000
 - back
+- extendedWaitUntil:
+    visible:
+      id: "wallets.archivedTile"
+    timeout: 15000
+- tapOn:
+    id: "wallets.archivedTile"
 - extendedWaitUntil:
     visible:
       id: "wallets.archivedHeader"
