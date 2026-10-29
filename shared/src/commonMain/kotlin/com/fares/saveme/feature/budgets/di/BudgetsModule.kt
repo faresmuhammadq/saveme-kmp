@@ -107,6 +107,7 @@ val budgetsModule = module {
             tryAgain = { budgets.tryAgain(it) },
             discard = { budgets.discard(it) },
             refreshOne = { budgets.refreshOne(it) },
+            observeHistory = { category, currency -> budgets.observeSpendHistory(category, currency) },
         )
     }
 }

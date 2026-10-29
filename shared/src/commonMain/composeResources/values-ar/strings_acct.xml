@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="acct_tile_profile_sub">الاسم واللغة والعملة</string>
+    <string name="acct_tile_notifications_sub">%1$d أنواع · ساعات الهدوء</string>
+    <string name="acct_tile_devices_sub">الأجهزة التي سجّلت الدخول منها</string>
+    <string name="acct_tile_export_sub">ملف ZIP بصيغتي JSON وCSV</string>
+    <string name="acct_tile_password_sub">يُنهي الجلسات على الأجهزة الأخرى</string>
+    <string name="acct_tile_delete_sub">بعد ٣٠ يومًا</string>
+    <string name="acct_tile_dev_sub">أدوات هذا الإصدار</string>
+    <string name="acct_plan_sub">اشتراكك</string>
+    <string name="acct_other_devices">أجهزة أخرى · %1$d</string>
+    <string name="acct_step_of">الخطوة %1$d من %2$d</string>
+    <string name="acct_pw_rule_length">من ٨ إلى ١٢٨ حرفًا</string>
+    <string name="acct_pw_rule_email">ليست بريدك الإلكتروني</string>
+    <string name="acct_pw_signs_out_others">عند تغييرها ستنتهي جلساتك على الأجهزة الأخرى.</string>
+    <string name="acct_exports_last_30">آخر ٣٠ يومًا</string>
+    <string name="acct_export_open">فتح</string>
+    <string name="acct_export_waiting">في الانتظار</string>
+    <string name="acct_export_preparing">قيد التجهيز</string>
+    <string name="acct_export_ready">جاهز</string>
+    <string name="acct_export_email_note">سنرسل لك رسالة بريد عندما يصبح جاهزًا.</string>
+    <string name="acct_export_scope_all_sub">كل المحافظ والفئات والميزانيات والقواعد</string>
+    <string name="acct_export_scope_wallet_sub">اختر المحفظة أدناه</string>
+    <string name="acct_tile_devices_count">%1$d مسجّلة</string>
+    <string name="acct_conflict_phone">هذا الهاتف</string>
+    <string name="acct_conflict_other">الجهاز الآخر</string>
+    <string name="acct_sign_out_device">تسجيل الخروج من %1$s</string>
+    <string name="acct_export_pill_zip">ZIP · JSON + CSV</string>
+    <string name="acct_export_pill_24h">جاهز لمدة ٢٤ ساعة</string>
+    <string name="acct_export_pill_email">يصلك بريد عند الجاهزية</string>
+    <string name="acct_export_requested_short">طُلب %1$s</string>
+    <string name="acct_delete_owners_sub">تنتقل كل محفظة إلى عضو تختاره.</string>
+    <string name="acct_delete_owner_becomes">سيصبح %1$s المالك.</string>
+    <string name="acct_currency_locked">مقفلة بعد أول معاملة لك</string>
+    <string name="acct_budget_period">تبدأ فترة الميزانية</string>
+    <string name="acct_day_value">اليوم %1$d</string>
+    <string name="acct_delete_owners_title">من يتولّى محافظك المشتركة؟</string>
+    <string name="acct_devices">الأجهزة</string>
+</resources>

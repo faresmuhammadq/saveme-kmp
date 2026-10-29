@@ -86,7 +86,7 @@ class SharingAccessibilityTest {
     @Test
     fun theLinkStatesAreWords() {
         compose.setContent { AppTheme { InviteScreen(InviteState(walletId = "w1", channel = InviteChannel.Link, link = LinkProgress.Ready("i1")), {}) } }
-        compose.onNodeWithText("The link is ready. Share it or copy it.").assertIsDisplayed()
+        compose.onNodeWithText("The link is ready").assertIsDisplayed()
         assertTouchTargets()
     }
 
@@ -104,7 +104,7 @@ class SharingAccessibilityTest {
             ActivitySubject(SubjectKind.Transaction, "t1", "Lunch", true), null,
         )
         compose.setContent { AppTheme { ActivityScreen(ActivityState(walletId = "w1", items = listOf(item), loading = false), {}) } }
-        compose.onNodeWithText("Karim added Lunch").assertIsDisplayed()
+        compose.onNodeWithText("Karim added a transaction").assertIsDisplayed()
         assertTouchTargets()
     }
 

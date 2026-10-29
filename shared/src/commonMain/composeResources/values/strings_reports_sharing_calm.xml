@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calm_rep_net_period">Net this period</string>
+    <string name="calm_rep_where">Where it went</string>
+    <string name="calm_rep_spent">spent</string>
+    <string name="calm_rep_spending_trend">Spending trend</string>
+    <string name="calm_rep_cats_spent">%1$s spent across %2$d categories</string>
+    <string name="calm_rep_cats_earned">%1$s earned across %2$d categories</string>
+    <string name="calm_shr_edit_places">People who can edit</string>
+    <string name="calm_shr_places_of">%1$d of %2$d</string>
+    <string name="calm_shr_places_cd">%1$d of %2$d edit places used</string>
+    <string name="calm_shr_shared_wallet">Shared wallet</string>
+    <string name="calm_shr_join_as">Join as %1$s</string>
+    <string name="calm_shr_join_wallet">Join %1$s</string>
+    <string name="calm_shr_invited_you">%1$s invited you</string>
+    <string name="calm_shr_perm_view">See the balance and transactions</string>
+    <string name="calm_shr_perm_edit">Add and change transactions</string>
+    <string name="calm_shr_perm_manage">Invite people or change roles</string>
+    <string name="calm_rep_less">%1$s less than %2$s</string>
+    <string name="calm_rep_more">%1$s more than %2$s</string>
+    <string name="calm_rep_under_one">under 1%</string>
+    <string name="calm_rep_balance">Balance</string>
+    <string name="calm_rep_transfers">Transfers</string>
+    <string name="calm_shr_invite_to">Invite to %1$s</string>
+    <string name="calm_shr_invited_as">Invited as %1$s</string>
+    <string name="calm_shr_joined">Joined %1$s</string>
+    <string name="calm_shr_invitation_actions">Invitation actions</string>
+    <string name="calm_shr_transfer_to_leave">Transfer ownership to leave</string>
+    <string name="calm_shr_link_pill">Invite link</string>
+    <string name="calm_shr_link_ready_title">The link is ready</string>
+    <string name="calm_shr_link_hint_editor">Share it or copy it. Anyone with the link can join as an editor.</string>
+    <string name="calm_shr_link_hint_viewer">Share it or copy it. Anyone with the link can join as a viewer.</string>
+    <string name="calm_shr_everyone">Everyone</string>
+    <string name="calm_shr_what_can">What can they do?</string>
+    <string name="calm_shr_today">Today</string>
+    <string name="calm_shr_yesterday">Yesterday</string>
+    <string name="calm_shr_role_changed">%1$s changed %2$s’s role to %3$s</string>
+</resources>

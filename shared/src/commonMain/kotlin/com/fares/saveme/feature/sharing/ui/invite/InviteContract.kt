@@ -43,6 +43,7 @@ data class InviteState(
     val confirmSupersede: Boolean = false,
     val link: LinkProgress = LinkProgress.None,
     val error: InviteError? = null,
+    val walletName: String = "",
 ) {
     /** The role and channel are fixed once the link invitation has been asked for. */
     val locked: Boolean get() = sending || link != LinkProgress.None
@@ -93,6 +94,7 @@ sealed interface InviteChange {
     data class Supersede(val confirm: Boolean) : InviteChange
     data class Link(val progress: LinkProgress) : InviteChange
     data class Failure(val error: InviteError?) : InviteChange
+    data class WalletName(val name: String) : InviteChange
 }
 
 fun reduce(state: InviteState, change: InviteChange): InviteState = when (change) {
@@ -105,4 +107,5 @@ fun reduce(state: InviteState, change: InviteChange): InviteState = when (change
     is InviteChange.Supersede -> state.copy(confirmSupersede = change.confirm)
     is InviteChange.Link -> state.copy(link = change.progress)
     is InviteChange.Failure -> state.copy(error = change.error)
+    is InviteChange.WalletName -> state.copy(walletName = change.name)
 }

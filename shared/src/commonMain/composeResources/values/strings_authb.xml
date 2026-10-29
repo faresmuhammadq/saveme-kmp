@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="authb_sign_in_welcome">Welcome back</string>
+    <string name="authb_register_title">Create your account</string>
+    <string name="authb_register_subtitle">Works offline. Syncs when you’re back online.</string>
+    <string name="authb_forgot_heading">Forgot your password?</string>
+    <string name="authb_back_to_sign_in">Back to sign in</string>
+    <string name="authb_update_need">You need</string>
+    <string name="authb_update_or_later">%1$s or later</string>
+    <string name="authb_state_on">On</string>
+    <string name="authb_state_off">Off</string>
+    <string name="authb_new_here">New here?</string>
+    <string name="authb_have_account">Already have an account?</string>
+    <string name="authb_reset_done_title">Password changed</string>
+    <string name="authb_reset_done_body">Sign in with your new password.</string>
+    <string name="authb_inbox_step1">We sent a link to your email.</string>
+    <string name="authb_inbox_step2">Open it %1$s to confirm your address.</string>
+    <string name="authb_inbox_this_phone">on this phone</string>
+    <string name="authb_inbox_step3">The app confirms your email, then you continue.</string>
+    <string name="authb_inbox_reset_step2">Open it %1$s to choose a new password.</string>
+    <string name="authb_inbox_reset_step3">Then sign in with your new password.</string>
+    <string name="authb_verify_resend_body">We can send a fresh link to %1$s. Open the newest email on this phone.</string>
+    <string name="authb_update_have">You have</string>
+    <string name="authb_update_newer">A newer version</string>
+    <string name="authb_update_body">This version is no longer supported. Update to continue.</string>
+    <string name="authb_notif_intro">Tap to turn each kind on or off. Notifications never show amounts.</string>
+    <string name="authb_notif_quiet_note">Held and sent when quiet hours end · %1$s</string>
+    <string name="authb_notif_quiet_note_plain">Held and sent when quiet hours end</string>
+    <string name="authb_plan_compare">Compare plans</string>
+    <string name="authb_plan_price">Price</string>
+    <string name="authb_plan_wallets">Wallets</string>
+    <string name="authb_plan_sharing">Sharing</string>
+    <string name="authb_plan_export">Export</string>
+    <string name="authb_plan_reports">Advanced reports</string>
+    <string name="authb_plan_free">Free</string>
+    <string name="authb_plan_unlimited">Unlimited</string>
+    <string name="authb_plan_up_to">Up to %1$d</string>
+    <string name="authb_plan_people">Up to %1$d people</string>
+    <string name="authb_plan_included">Included</string>
+    <string name="authb_plan_not_included">Not included</string>
+    <string name="authb_redeem_heading">Enter your code</string>
+    <string name="authb_redeem_intro">It’s in your email. It works only on the account with the email address it was sent to.</string>
+    <string name="authb_redeem_count">%1$d of 16 letters and digits</string>
+    <string name="authb_redeem_paste">Paste from email</string>
+</resources>

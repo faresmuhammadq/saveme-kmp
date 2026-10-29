@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="entryc_have_account">لدي حساب بالفعل</string>
+    <string name="entryc_left_to_spend">المتبقي للإنفاق</string>
+    <string name="entryc_emergency_fund">صندوق الطوارئ</string>
+    <string name="entryc_shared_wallet">مصاريف المنزل · مشتركة</string>
+</resources>

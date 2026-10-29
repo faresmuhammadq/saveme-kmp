@@ -1,0 +1,16 @@
+<resources>
+    <string name="server_title">عنوان الخادم</string>
+    <string name="server_entry_link">الخادم: %1$s</string>
+    <string name="acct_tile_server_sub">%1$s</string>
+    <string name="account_server">عنوان الخادم</string>
+    <string name="server_explainer">استخدم هذا فقط عند انتقال الخادم نفسه إلى عنوان جديد، مثلًا بعد أن منحه الراوتر عنوان IP جديدًا. حسابك وبياناتك تبقى كما هي.</string>
+    <string name="server_field_label">المضيف والمنفذ</string>
+    <string name="server_field_hint">مثل 192.168.1.14:8091. الافتراضي: %1$s</string>
+    <string name="server_invalid">أدخل مضيفًا ومنفذًا اختياريًا، مثل 192.168.1.14:8091.</string>
+    <string name="server_test">اختبار الاتصال</string>
+    <string name="server_testing">جارٍ الاختبار…</string>
+    <string name="server_reachable">الخادم متاح.</string>
+    <string name="server_unreachable">تعذّر الوصول إلى الخادم. تحقق من العنوان ومن أنك على نفس شبكة الواي فاي.</string>
+    <string name="server_save">حفظ وإعادة التشغيل</string>
+    <string name="server_reset">إعادة الضبط إلى الافتراضي</string>
+</resources>

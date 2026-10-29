@@ -1,7 +1,6 @@
 package com.fares.saveme.feature.sharing.di
 
 import com.fares.saveme.core.config.AppConfig
-import com.fares.saveme.core.config.Environment
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.core.session.UserDataCleaner
@@ -104,7 +103,7 @@ val sharingModule = module {
 
     single {
         val config = get<AppConfig>()
-        InvitationLinkParser(config.linkHost, config.linkPort, scheme = if (config.environment == Environment.Dev) "http" else "https")
+        InvitationLinkParser(config.linkHost, config.linkPort, scheme = config.linkScheme)
     }
 
     single<ActivityNameSource> {
@@ -161,6 +160,7 @@ val sharingModule = module {
     viewModel { params ->
         val args = params.get<InviteArgs>()
         val sharing = get<SharingService>()
+        val wallets = get<WalletsService>()
         InviteViewModel(
             walletId = args.walletId,
             replacing = args.replacing?.ifBlank { null },
@@ -172,6 +172,7 @@ val sharingModule = module {
             linkHeld = { id -> sharing.observeLinkHeld(id) },
             shareText = { id -> sharing.shareTextFor(id) },
             announce = { notice -> get<SharingNotices>().inviteClosed(notice) },
+            walletName = wallets.observeWallet(args.walletId).map { it?.shown?.name },
         )
     }
     viewModel { params ->
@@ -197,8 +198,10 @@ val sharingModule = module {
         val sharing = get<SharingService>()
         val profile = get<ProfileSyncer>()
         val clientInfo = get<ClientInfo>()
+        val wallets = get<WalletsService>()
         ActivityViewModel(
             walletId = walletId,
+            walletName = wallets.observeWallet(walletId).map { it?.shown?.name },
             page = { cursor -> sharing.activityPage(walletId, cursor) },
             timeZoneId = profile.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() },
         )

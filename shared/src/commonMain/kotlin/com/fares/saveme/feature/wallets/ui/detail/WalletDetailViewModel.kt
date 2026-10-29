@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.wallets.domain.model.Member
+import com.fares.saveme.feature.wallets.domain.model.RecentTransaction
 import com.fares.saveme.feature.wallets.domain.model.SaveResult
 import com.fares.saveme.feature.wallets.domain.model.TransferResult
 import com.fares.saveme.feature.wallets.domain.model.WalletView
@@ -37,6 +38,8 @@ class WalletDetailViewModel(
     joining: Flow<Boolean> = flowOf(false),
     /** True once the person left this wallet themself: the wallet vanishing is then not "access lost" (FR-023). */
     leftByPerson: Flow<Boolean> = flowOf(false),
+    /** The wallet's latest transactions for the "Recent" card. */
+    recent: Flow<List<RecentTransaction>> = flowOf(emptyList()),
 ) : MviViewModel<WalletDetailState, WalletDetailIntent, WalletDetailEffect>(WalletDetailState(walletId = walletId)) {
 
     /** True from a confirmed delete on, so the wallet vanishing is not reported as "gone". */
@@ -49,6 +52,7 @@ class WalletDetailViewModel(
             .launchIn(viewModelScope)
         pendingInvitations.onEach { count -> setState { reduce(it, WalletDetailChange.Pending(count)) } }.launchIn(viewModelScope)
         planLimited.onEach { limited -> setState { reduce(it, WalletDetailChange.PlanLimited(limited)) } }.launchIn(viewModelScope)
+        recent.onEach { items -> setState { reduce(it, WalletDetailChange.Recent(items)) } }.launchIn(viewModelScope)
         members.onEach { list -> setState { reduce(it, WalletDetailChange.Members(list)) } }.launchIn(viewModelScope)
         timeZoneId.onEach { id -> setState { reduce(it, WalletDetailChange.TimeZone(id)) } }.launchIn(viewModelScope)
         viewModelScope.launch { readWallet() }

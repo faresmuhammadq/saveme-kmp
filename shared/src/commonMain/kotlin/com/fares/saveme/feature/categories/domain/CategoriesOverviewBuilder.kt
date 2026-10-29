@@ -33,5 +33,7 @@ internal fun buildOverview(
         updatedAt = stamps.minOrNull(),
         loaded = stamps.isNotEmpty() || views.isNotEmpty(),
         defaultsMissing = defaults.isEmpty(),
+        otherKindCount = views.count { it.server.kind != kind && !it.hidden && !it.archived } +
+            defaults.count { it.kind != kind && it.retiredAt == null },
     )
 }

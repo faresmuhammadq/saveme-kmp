@@ -3,6 +3,8 @@ package com.fares.saveme.feature.categories.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
@@ -52,16 +54,20 @@ class CategoriesAccessibilityTest {
         compose.onNodeWithText("Changed on another device.").assertIsDisplayed()
         compose.onNodeWithText("Not saved.").assertIsDisplayed()
         compose.onNodeWithText("Not deleted: this category is in use.").assertIsDisplayed()
-        compose.onNodeWithText("Default").assertIsDisplayed()
+        compose.onNodeWithText("Defaults").assertIsDisplayed()
         compose.onAllNodes(androidx.compose.ui.test.hasText("Archived")).fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
     }
 
     @Test
     fun editorChoicesAreAnnouncedAndEveryTargetIsAtLeast48dp() {
         compose.setContent { AppTheme { CategoryEditorScreen(CategoryEditorState(loaded = true, iconKey = "cart", colorHex = "#1F7F8C"), {}) } }
-        listOf("Cart", "Restaurant", "Refund", "Lightning bolt", "Blue", "Green", "Slate", "None").forEach { label ->
+        fun assertAnnounced(vararg labels: String) = labels.forEach { label ->
             assertTrue("no choice announced as $label", compose.onAllNodes(hasContentDescription(label)).fetchSemanticsNodes().isNotEmpty())
         }
+        assertAnnounced("Cart", "Restaurant", "Refund", "Lightning bolt")
+        assertTouchTargets()
+        compose.onNodeWithTag("categoryEditor.tab.color").performClick()
+        assertAnnounced("Blue", "Green", "Slate", "None")
         assertTouchTargets()
     }
 
@@ -97,7 +103,7 @@ class CategoriesAccessibilityTest {
     fun editorStaysUsableAtDoubleFontScale() {
         RuntimeEnvironment.setFontScale(2f)
         compose.setContent { AppTheme { CategoryEditorScreen(CategoryEditorState(loaded = true, name = "Coffee"), {}) } }
-        compose.onNodeWithText("Save").assertIsDisplayed()
+        compose.onNodeWithText("Create category").assertIsDisplayed()
         assertTouchTargets()
     }
 

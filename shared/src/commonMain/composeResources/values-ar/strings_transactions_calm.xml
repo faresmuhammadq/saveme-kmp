@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="txl_all">الكل</string>
+    <string name="txl_more">المزيد</string>
+    <string name="txl_in">%1$s وارد</string>
+    <string name="txl_out">%1$s صادر</string>
+    <string name="txl_chart_cd">الإنفاق اليومي هذا الأسبوع</string>
+    <string name="txl_bar_cd">%1$s: أُنفق %2$s</string>
+    <string name="txl_week_caption">%1$s · أُنفق %2$s</string>
+    <string name="txl_week_summary">الأسبوع %1$s · المتوسط %2$s/يوم</string>
+    <string name="txl_dow_mon">الاثنين</string>
+    <string name="txl_dow_tue">الثلاثاء</string>
+    <string name="txl_dow_wed">الأربعاء</string>
+    <string name="txl_dow_thu">الخميس</string>
+    <string name="txl_dow_fri">الجمعة</string>
+    <string name="txl_dow_sat">السبت</string>
+    <string name="txl_dow_sun">الأحد</string>
+    <string name="txle_all_categories">الكل</string>
+    <string name="txl_day_mon">الاثنين</string>
+    <string name="txl_day_tue">الثلاثاء</string>
+    <string name="txl_day_wed">الأربعاء</string>
+    <string name="txl_day_thu">الخميس</string>
+    <string name="txl_day_fri">الجمعة</string>
+    <string name="txl_day_sat">السبت</string>
+    <string name="txl_day_sun">الأحد</string>
+    <string name="txle_save_expense">حفظ المصروف</string>
+    <string name="txle_save_income">حفظ الدخل</string>
+    <string name="txle_save_transfer">حفظ التحويل</string>
+</resources>

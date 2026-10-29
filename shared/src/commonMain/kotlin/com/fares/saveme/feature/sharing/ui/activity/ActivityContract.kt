@@ -17,6 +17,7 @@ data class ActivityState(
     val loadingMore: Boolean = false,
     val error: ActivityError? = null,
     val timeZoneId: String = "UTC",
+    val walletName: String = "",
 ) {
     val isEmpty: Boolean get() = !loading && error == null && items.isEmpty()
     val canLoadMore: Boolean get() = nextCursor != null && !loading && !loadingMore && error == null
@@ -43,6 +44,7 @@ sealed interface ActivityChange {
     data class LoadingMore(val loading: Boolean) : ActivityChange
     data class Error(val error: ActivityError?) : ActivityChange
     data class TimeZone(val id: String) : ActivityChange
+    data class WalletName(val name: String) : ActivityChange
 }
 
 fun reduce(state: ActivityState, change: ActivityChange): ActivityState = when (change) {
@@ -57,4 +59,5 @@ fun reduce(state: ActivityState, change: ActivityChange): ActivityState = when (
     is ActivityChange.LoadingMore -> state.copy(loadingMore = change.loading, error = if (change.loading) null else state.error)
     is ActivityChange.Error -> state.copy(error = change.error, loading = false, loadingMore = false)
     is ActivityChange.TimeZone -> state.copy(timeZoneId = change.id)
+    is ActivityChange.WalletName -> state.copy(walletName = change.name)
 }

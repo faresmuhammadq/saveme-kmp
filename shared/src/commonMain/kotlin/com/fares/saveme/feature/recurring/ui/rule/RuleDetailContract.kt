@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.recurring.ui.rule
 
+import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
 import com.fares.saveme.feature.recurring.domain.model.AmountBasis
 import com.fares.saveme.feature.recurring.domain.model.OccurrenceLists
 import com.fares.saveme.feature.recurring.domain.model.Preset
@@ -43,6 +44,8 @@ data class RuleDetailState(
     val busy: Boolean = false,
     val catchingUp: Boolean = false,
     val catchUpNote: CatchUpNote? = null,
+    val category: CategoryDisplay? = null,
+    val payoutCategory: CategoryDisplay? = null,
 ) {
     private val status: RuleStatus get() = view?.rule?.status ?: RuleStatus.Unknown
 
@@ -114,6 +117,7 @@ sealed interface RuleDetailChange {
     data class Busy(val busy: Boolean) : RuleDetailChange
     data class CatchingUp(val catchingUp: Boolean) : RuleDetailChange
     data class CatchUp(val note: CatchUpNote?) : RuleDetailChange
+    data class Categories(val category: CategoryDisplay?, val payoutCategory: CategoryDisplay?) : RuleDetailChange
 }
 
 fun reduce(state: RuleDetailState, change: RuleDetailChange): RuleDetailState = when (change) {
@@ -123,4 +127,5 @@ fun reduce(state: RuleDetailState, change: RuleDetailChange): RuleDetailState = 
     is RuleDetailChange.Busy -> state.copy(busy = change.busy)
     is RuleDetailChange.CatchingUp -> state.copy(catchingUp = change.catchingUp, catchUpNote = if (change.catchingUp) null else state.catchUpNote)
     is RuleDetailChange.CatchUp -> state.copy(catchUpNote = change.note)
+    is RuleDetailChange.Categories -> state.copy(category = change.category, payoutCategory = change.payoutCategory)
 }

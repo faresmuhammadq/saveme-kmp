@@ -2,6 +2,7 @@ package com.fares.saveme.feature.recurring.ui.list
 
 import com.fares.saveme.feature.auth.domain.model.RefreshOutcome
 import com.fares.saveme.feature.recurring.domain.model.OccurrenceLists
+import com.fares.saveme.feature.recurring.domain.model.OccurrenceState
 import com.fares.saveme.feature.recurring.domain.model.OccurrenceView
 import com.fares.saveme.feature.recurring.domain.model.RuleStatus
 import com.fares.saveme.feature.recurring.domain.model.RuleView
@@ -20,6 +21,10 @@ data class RecurringState(
     /** Missed first, then by date. */
     val due: List<OccurrenceView> = emptyList(),
     val upcoming: List<OccurrenceView> = emptyList(),
+    /** Confirmed, skipped and unknown ones: the rules' progress counts the confirmed. */
+    val history: List<OccurrenceView> = emptyList(),
+    /** Occurrences whose confirm or skip from the list is under way. */
+    val busyIds: Set<String> = emptySet(),
     val rules: List<RuleView> = emptyList(),
     val canAdd: Boolean = false,
     val refreshing: Boolean = false,
@@ -27,6 +32,9 @@ data class RecurringState(
     val refreshFailed: Boolean = false,
 ) {
     val allWallets: Boolean get() = walletId == null
+
+    /** How many rounds of [ruleId] are confirmed. */
+    fun paidCount(ruleId: String): Int = history.count { it.occurrence.ruleId == ruleId && it.state == OccurrenceState.Confirmed }
     val isEmpty: Boolean get() = !loading && rules.isEmpty() && due.isEmpty() && upcoming.isEmpty()
 
     /** Changes still waiting to sync, for the offline banner. */
@@ -44,6 +52,8 @@ sealed interface RecurringIntent {
     data object AddClicked : RecurringIntent
     data class RuleClicked(val id: String) : RecurringIntent
     data class OccurrenceClicked(val id: String) : RecurringIntent
+    data class ConfirmOccurrence(val id: String) : RecurringIntent
+    data class SkipOccurrence(val id: String) : RecurringIntent
     data object Back : RecurringIntent
 }
 
@@ -62,15 +72,17 @@ sealed interface RecurringChange {
     data class Occurrences(val lists: OccurrenceLists) : RecurringChange
     data class Rules(val rules: List<RuleView>) : RecurringChange
     data class CanAdd(val canAdd: Boolean) : RecurringChange
+    data class Busy(val id: String, val busy: Boolean) : RecurringChange
     data class Refreshing(val refreshing: Boolean) : RecurringChange
     data class RefreshDone(val outcome: RefreshOutcome) : RecurringChange
 }
 
 fun reduce(state: RecurringState, change: RecurringChange): RecurringState = when (change) {
     is RecurringChange.WalletName -> state.copy(walletName = change.name)
-    is RecurringChange.Occurrences -> state.copy(due = change.lists.due, upcoming = change.lists.upcoming, loading = false)
+    is RecurringChange.Occurrences -> state.copy(due = change.lists.due, upcoming = change.lists.upcoming, history = change.lists.history, loading = false)
     is RecurringChange.Rules -> state.copy(rules = change.rules)
     is RecurringChange.CanAdd -> state.copy(canAdd = change.canAdd)
+    is RecurringChange.Busy -> state.copy(busyIds = if (change.busy) state.busyIds + change.id else state.busyIds - change.id)
     is RecurringChange.Refreshing -> state.copy(refreshing = change.refreshing)
     is RecurringChange.RefreshDone -> state.copy(
         refreshing = false,

@@ -17,6 +17,7 @@ class VerifyEmailViewModel(
     private val verify: suspend (token: String) -> VerifyOutcome,
     private val resend: suspend () -> ResendOutcome,
     private val refreshAccount: suspend () -> Unit,
+    private val email: () -> String? = { null },
 ) : MviViewModel<VerifyEmailState, VerifyEmailIntent, VerifyEmailEffect>(VerifyEmailState()) {
 
     private var started = false
@@ -41,7 +42,7 @@ class VerifyEmailViewModel(
 
     private fun runVerify() {
         val signedIn = isSignedIn()
-        setState { reduce(reduce(it, VerifyEmailChange.SignedIn(signedIn)), VerifyEmailChange.Verifying) }
+        setState { reduce(reduce(it, VerifyEmailChange.SignedIn(signedIn)), VerifyEmailChange.Verifying).copy(email = if (signedIn) email() else null) }
         viewModelScope.launch {
             val outcome = verify(token)
             if (outcome == VerifyOutcome.Verified && signedIn) refreshAccount()

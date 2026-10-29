@@ -172,6 +172,8 @@ val recurringModule = module {
             },
             refresh = { force -> service.refresh(walletId, force) },
             isEmailVerified = { (sessions.state.value as? AuthState.SignedIn)?.account?.emailVerified == true },
+            confirm = { id, draft -> service.confirm(id, draft) },
+            skip = { id -> service.skip(id) },
         )
     }
     viewModel { params ->
@@ -223,6 +225,7 @@ val recurringModule = module {
     viewModel { params ->
         val args = params.get<RuleDetailArgs>()
         val service = get<RecurringService>()
+        val categories = get<CategoriesService>()
         RuleDetailViewModel(
             ruleId = args.ruleId,
             observe = { id -> service.observeRule(id) },
@@ -236,6 +239,7 @@ val recurringModule = module {
             useTheirs = { id -> service.useTheirs(RecurringRecord.Rule, id) },
             tryAgain = { id -> service.tryAgain(RecurringRecord.Rule, id) },
             discard = { id -> service.discard(RecurringRecord.Rule, id) },
+            displays = { wallet -> categories.observeDisplays(wallet) },
         )
     }
 }

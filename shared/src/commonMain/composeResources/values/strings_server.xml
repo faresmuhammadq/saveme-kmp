@@ -1,0 +1,16 @@
+<resources>
+    <string name="server_title">Server address</string>
+    <string name="server_entry_link">Server: %1$s</string>
+    <string name="acct_tile_server_sub">%1$s</string>
+    <string name="account_server">Server address</string>
+    <string name="server_explainer">Use this only when the same server moved to a new address, for example after your Wi-Fi gave it a new IP. Your account and data stay as they are.</string>
+    <string name="server_field_label">Host and port</string>
+    <string name="server_field_hint">Like 192.168.1.14:8091. Default: %1$s</string>
+    <string name="server_invalid">Enter a host and an optional port, like 192.168.1.14:8091.</string>
+    <string name="server_test">Test connection</string>
+    <string name="server_testing">Testing…</string>
+    <string name="server_reachable">Server reachable.</string>
+    <string name="server_unreachable">Could not reach the server. Check the address and that you are on the same Wi-Fi.</string>
+    <string name="server_save">Save and restart</string>
+    <string name="server_reset">Reset to default</string>
+</resources>

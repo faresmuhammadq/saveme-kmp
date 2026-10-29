@@ -1,7 +1,7 @@
 package com.fares.saveme.feature.auth.di
 
 import com.fares.saveme.core.config.AppConfig
-import com.fares.saveme.core.config.Environment
+import com.fares.saveme.core.config.ServerAddressSettings
 import com.fares.saveme.core.session.SignOutParticipant
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.core.sync.CurrentAccount
@@ -34,6 +34,7 @@ import com.fares.saveme.feature.auth.ui.register.RegisterViewModel
 import com.fares.saveme.feature.auth.ui.verify.EmailNotVerifiedViewModel
 import com.fares.saveme.feature.auth.ui.signin.SignInArgs
 import com.fares.saveme.feature.auth.ui.signin.SignInViewModel
+import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.feature.auth.ui.update.UpdateRequiredViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +64,7 @@ val authModule = module {
     }
     single {
         val config = get<AppConfig>()
-        AuthLinkParser(config.linkHost, config.linkPort, scheme = if (config.environment == Environment.Dev) "http" else "https")
+        AuthLinkParser(config.linkHost, config.linkPort, scheme = config.linkScheme)
     }
     single<CurrentAccount> {
         val sessions = get<SessionManager>()
@@ -82,12 +83,15 @@ val authModule = module {
     factory { ForgotPasswordUseCase(get()) }
     factory { ResetPasswordUseCase(get()) }
 
-    viewModelOf(::EntryViewModel)
+    viewModel {
+        val config = get<AppConfig>()
+        EntryViewModel(config, serverAddress = if (config.serverAddressEditable) get<ServerAddressSettings>().current() else null)
+    }
     viewModel { params ->
         val signIn = get<SignInUseCase>()
         SignInViewModel(params.get<SignInArgs>(), signIn = { e, p, id -> signIn(e, p, id) })
     }
-    viewModel { params -> UpdateRequiredViewModel(params.get<String>().ifBlank { null }) }
+    viewModel { params -> UpdateRequiredViewModel(params.get<String>().ifBlank { null }, get<ClientInfo>().appVersion) }
     viewModel { params ->
         val register = get<RegisterUseCase>()
         RegisterViewModel(params.get<String>().ifBlank { null }, register = { e, p, n -> register(e, p, n) })

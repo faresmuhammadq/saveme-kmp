@@ -7,6 +7,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.sp
+import com.fares.saveme.designsystem.component.CalmAlert
+import com.fares.saveme.designsystem.component.CalmCard
+import com.fares.saveme.designsystem.component.CalmCircleButton
+import com.fares.saveme.designsystem.component.CalmScreen
+import com.fares.saveme.designsystem.icon.FlowCrown
+import com.fares.saveme.designsystem.icon.FlowOpenInNew
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -18,16 +37,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.component.AlertTone
-import com.fares.saveme.designsystem.component.AppIconButton
-import com.fares.saveme.designsystem.component.AppListItem
-import com.fares.saveme.designsystem.component.AppScreen
 import com.fares.saveme.designsystem.component.AppTextButton
-import com.fares.saveme.designsystem.component.AppTopAppBar
 import com.fares.saveme.designsystem.component.EmptyState
-import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.PlanCapability
-import com.fares.saveme.designsystem.component.PlanCard
-import com.fares.saveme.designsystem.component.SecondaryButton
 import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.icon.AppIcons
@@ -88,47 +100,49 @@ fun PlanScreen(
     onIntent: (PlanIntent) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    AppScreen(
+    CalmScreen(
+        title = stringResource(Res.string.plan_title),
+        onBack = { onIntent(PlanIntent.Back) },
+        backDescription = stringResource(Res.string.cd_back),
         snackbarHostState = snackbar,
-        topBar = {
-            AppTopAppBar(
-                title = stringResource(Res.string.plan_title),
-                navigationIcon = { AppIconButton(AppIcons.ArrowBack, stringResource(Res.string.cd_back), { onIntent(PlanIntent.Back) }) },
-                actions = {
-                    AppIconButton(
-                        AppIcons.Sync,
-                        stringResource(Res.string.cd_refresh),
-                        { onIntent(PlanIntent.Refresh) },
-                        enabled = !state.refreshing,
-                        modifier = Modifier.testTag("plan.refresh"),
-                    )
-                },
+        actions = {
+            CalmCircleButton(
+                AppIcons.Sync,
+                stringResource(Res.string.cd_refresh),
+                { onIntent(PlanIntent.Refresh) },
+                enabled = !state.refreshing,
+                modifier = Modifier.testTag("plan.refresh"),
             )
         },
     ) {
+        state.current?.let { CurrentSection(it, state, onIntent) }
         if (state.stale) {
-            InlineAlert(AlertTone.Info, stringResource(Res.string.plan_stale), modifier = Modifier.testTag("plan.stale"))
+            CalmAlert(AlertTone.Warning, stringResource(Res.string.plan_stale), modifier = Modifier.testTag("plan.stale"))
         }
         PlayNotesSection(state, onIntent)
-        state.current?.let { CurrentSection(it, state, onIntent) }
         CatalogueSection(state, onIntent)
-        // The billing actions, and only these (P-12.3): "Restore purchases" (C10, Android) above "Enter code" (C11).
-        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.s)) {
-            if (state.playSupported) {
-                SecondaryButton(
-                    stringResource(Res.string.plan_restore),
-                    { onIntent(PlanIntent.RestorePurchases) },
-                    Modifier.testTag("plan.restore"),
-                    enabled = state.restore != RestoreUi.Running,
-                    loading = state.restore == RestoreUi.Running,
+        // The billing actions, and only these (P-12.3): "Restore purchases" (C10, Android) beside "Enter code" (C11).
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+                if (state.playSupported) {
+                    val running = state.restore == RestoreUi.Running
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (running) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = AppTheme.colors.primary)
+                        AppTextButton(
+                            stringResource(Res.string.plan_restore),
+                            { onIntent(PlanIntent.RestorePurchases) },
+                            Modifier.testTag("plan.restore"),
+                            enabled = !running,
+                        )
+                    }
+                }
+                AppTextButton(
+                    stringResource(Res.string.plan_enter_code),
+                    { onIntent(PlanIntent.EnterCode) },
+                    Modifier.testTag("plan.enterCode"),
                 )
-                RestoreMessage(state.restore, onIntent)
             }
-            SecondaryButton(
-                stringResource(Res.string.plan_enter_code),
-                { onIntent(PlanIntent.EnterCode) },
-                Modifier.testTag("plan.enterCode"),
-            )
+            if (state.playSupported) RestoreMessage(state.restore, onIntent)
         }
     }
 }
@@ -162,18 +176,18 @@ private fun PlayNotesSection(state: PlanState, onIntent: (PlanIntent) -> Unit) {
         }
     }
     if (state.showPending) {
-        InlineAlert(AlertTone.Info, stringResource(Res.string.plan_play_pending), Modifier.testTag("plan.play.pending"))
+        CalmAlert(AlertTone.Info, stringResource(Res.string.plan_play_pending), Modifier.testTag("plan.play.pending"))
     }
     if (state.showAnotherAccount) {
         // No "Sign out" and nothing about the other account (FR-032).
-        InlineAlert(AlertTone.Info, stringResource(Res.string.billing_play_another_account), Modifier.testTag("plan.play.anotherAccount"))
+        CalmAlert(AlertTone.Info, stringResource(Res.string.billing_play_another_account), Modifier.testTag("plan.play.anotherAccount"))
     }
 }
 
 @Composable
 private fun ProblemAlert(tone: AlertTone, text: String, action: String, tag: String, actionTag: String, onAction: () -> Unit) {
     Column {
-        InlineAlert(tone, text, Modifier.testTag(tag))
+        CalmAlert(tone, text, Modifier.testTag(tag))
         AppTextButton(action, onAction, Modifier.align(Alignment.End).testTag(actionTag))
     }
 }
@@ -184,7 +198,7 @@ private fun RestoreMessage(restore: RestoreUi, onIntent: (PlanIntent) -> Unit) {
         RestoreUi.Idle, RestoreUi.Running -> Unit
         is RestoreUi.Result -> Column {
             val sentences = restore.parts.map { it.text() }
-            InlineAlert(
+            CalmAlert(
                 AlertTone.Info,
                 sentences.joinToString(" "),
                 Modifier.testTag("plan.restore.result"),
@@ -192,7 +206,7 @@ private fun RestoreMessage(restore: RestoreUi, onIntent: (PlanIntent) -> Unit) {
             AppTextButton(stringResource(Res.string.action_done), { onIntent(PlanIntent.DismissRestoreResult) }, Modifier.align(Alignment.End).testTag("plan.restore.dismiss"))
         }
         is RestoreUi.Refused -> Column {
-            InlineAlert(AlertTone.Error, restore.text(), Modifier.testTag("plan.restore.result"))
+            CalmAlert(AlertTone.Error, restore.text(), Modifier.testTag("plan.restore.result"))
             if (restore.kind != RestoreRefusal.GooglePlayUnavailable) {
                 AppTextButton(stringResource(Res.string.action_retry), { onIntent(PlanIntent.RetryRestore) }, Modifier.align(Alignment.End).testTag("plan.restore.retry"))
             }
@@ -227,52 +241,74 @@ private fun RestoreUi.Refused.text(): String = when (kind) {
 }
 
 @Composable
-private fun SectionHeading(text: String) {
-    Text(text, style = AppTheme.type.title, color = AppTheme.colors.ink, modifier = Modifier.semantics { heading() })
-}
-
-@Composable
 private fun CurrentSection(current: CurrentPlanUi, state: PlanState, onIntent: (PlanIntent) -> Unit) {
     val timeZoneId = state.timeZoneId
-    Column(Modifier.testTag("plan.current")) {
-        SectionHeading(stringResource(Res.string.plan_current_heading))
-        Text(
-            current.name,
-            style = AppTheme.type.title,
-            color = AppTheme.colors.ink,
-            modifier = Modifier.padding(top = AppTheme.spacing.xs).testTag("plan.current.name"),
-        )
+    val onInk = AppTheme.colors.background
+    Column(
+        modifier = Modifier
+            .testTag("plan.current")
+            .fillMaxWidth()
+            .background(AppTheme.colors.ink, RoundedCornerShape(26.dp))
+            .padding(20.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(AppIcons.FlowCrown, contentDescription = null, tint = PlanGold, modifier = Modifier.size(28.dp))
+            Text(
+                current.name,
+                style = AppTheme.type.headline.copy(fontSize = 22.sp),
+                color = onInk,
+                modifier = Modifier.testTag("plan.current.name").semantics { heading() },
+            )
+        }
         when {
             current.status != null -> Text(
                 current.status.text(timeZoneId),
-                style = AppTheme.type.body,
-                color = AppTheme.colors.ink2,
-                modifier = Modifier.testTag("plan.current.status"),
+                style = AppTheme.type.label,
+                color = onInk.copy(alpha = 0.8f),
+                modifier = Modifier.padding(top = 6.dp).testTag("plan.current.status"),
             )
-            current.statusLoading -> Skeleton(Modifier.padding(top = AppTheme.spacing.xxs).fillMaxWidth(0.5f).height(20.dp))
+            current.statusLoading -> Skeleton(
+                Modifier.padding(top = 6.dp).fillMaxWidth(0.5f).height(20.dp),
+                AppTheme.shapes.control,
+            )
         }
         if (state.showTestLabel) {
             Text(
                 stringResource(Res.string.plan_current_test),
                 style = AppTheme.type.label,
-                color = AppTheme.colors.caption,
-                modifier = Modifier.testTag("plan.current.test"),
+                color = onInk.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 4.dp).testTag("plan.current.test"),
             )
         }
         if (state.showManage) {
-            AppTextButton(
-                stringResource(Res.string.plan_play_manage),
-                { onIntent(PlanIntent.OpenManage) },
-                Modifier.testTag("plan.play.manage"),
-            )
-        }
-    }
-    Column(Modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) {
-        current.capabilities.forEach { line ->
-            AppListItem(if (line.count != null) stringResource(line.text, line.count) else stringResource(line.text))
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp)
+                    .testTag("plan.play.manage")
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Button) { onIntent(PlanIntent.OpenManage) },
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .height(40.dp)
+                        .background(onInk.copy(alpha = 0.14f), AppTheme.shapes.pill)
+                        .padding(horizontal = 14.dp),
+                ) {
+                    Text(stringResource(Res.string.plan_play_manage), style = AppTheme.type.label.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold), color = onInk)
+                    Icon(AppIcons.FlowOpenInNew, contentDescription = null, tint = onInk, modifier = Modifier.size(18.dp))
+                }
+            }
         }
     }
 }
+
+private val PlanGold = Color(0xFFE3B45A)
 
 @Composable
 private fun PlanStatusUi.text(timeZoneId: String): String = when (this) {
@@ -284,9 +320,8 @@ private fun PlanStatusUi.text(timeZoneId: String): String = when (this) {
 
 @Composable
 private fun CatalogueSection(state: PlanState, onIntent: (PlanIntent) -> Unit) {
-    SectionHeading(stringResource(Res.string.plan_catalogue_heading))
     when (state.catalogueStatus) {
-        CatalogueStatus.Loading -> repeat(2) { Skeleton(Modifier.fillMaxWidth().height(120.dp), AppTheme.shapes.card) }
+        CatalogueStatus.Loading -> repeat(2) { Skeleton(Modifier.fillMaxWidth().height(120.dp), RoundedCornerShape(24.dp)) }
         CatalogueStatus.Unavailable -> EmptyState(
             title = stringResource(Res.string.plan_catalogue_unavailable),
             body = stringResource(Res.string.plan_catalogue_unavailable_body),
@@ -294,21 +329,7 @@ private fun CatalogueSection(state: PlanState, onIntent: (PlanIntent) -> Unit) {
             onAction = { onIntent(PlanIntent.Refresh) },
             actionModifier = Modifier.testTag("plan.catalogue.retry"),
         )
-        CatalogueStatus.Loaded -> state.cards.forEachIndexed { index, card ->
-            PlanCard(
-                name = card.name,
-                periodLine = card.period?.let { periodText(it) },
-                priceMinor = card.price?.amountMinor,
-                priceCurrency = card.price?.currency,
-                capabilities = card.capabilities.map {
-                    PlanCapability(if (it.count != null) stringResource(it.text, it.count) else stringResource(it.text), it.included)
-                },
-                currentLabel = if (card.isCurrent) stringResource(Res.string.plan_current_label) else null,
-                modifier = Modifier.testTag("plan.card.$index"),
-                priceModifier = Modifier.testTag("plan.card.$index.price"),
-                currentLabelModifier = Modifier.testTag("plan.card.$index.current"),
-            )
-        }
+        CatalogueStatus.Loaded -> PlanTable(state)
     }
 }
 

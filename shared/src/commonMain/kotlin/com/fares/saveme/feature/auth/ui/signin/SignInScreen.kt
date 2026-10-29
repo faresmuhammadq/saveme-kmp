@@ -3,21 +3,26 @@ package com.fares.saveme.feature.auth.ui.signin
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import com.fares.saveme.designsystem.component.CalmTitle
+import com.fares.saveme.feature.auth.ui.AuthLogo
+import com.fares.saveme.feature.auth.ui.AuthSheetScreen
+import com.fares.saveme.feature.auth.ui.CalmPasswordField
+import com.fares.saveme.feature.auth.ui.CalmTextField
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.fares.saveme.designsystem.component.AlertTone
-import com.fares.saveme.designsystem.component.AppIconButton
-import com.fares.saveme.designsystem.component.AppScreen
-import com.fares.saveme.designsystem.component.AppTextButton
-import com.fares.saveme.designsystem.component.AppTextField
-import com.fares.saveme.designsystem.component.AppTopAppBar
-import com.fares.saveme.designsystem.component.InlineAlert
-import com.fares.saveme.designsystem.component.PasswordField
-import com.fares.saveme.designsystem.component.PrimaryButton
+import com.fares.saveme.designsystem.component.CalmAlert
+import com.fares.saveme.designsystem.component.linkSentence
 import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.designsystem.icon.FlowLockClock
+import androidx.compose.ui.text.AnnotatedString
+import com.fares.saveme.feature.auth.ui.AuthLink
+import com.fares.saveme.designsystem.component.PrimaryButton
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.auth.ui.message
 import com.fares.saveme.feature.auth.ui.text
@@ -27,27 +32,28 @@ import saveme.shared.generated.resources.*
 
 @Composable
 fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
-    AppScreen(
-        topBar = {
-            AppTopAppBar(
-                title = stringResource(Res.string.sign_in_title),
-                navigationIcon = { AppIconButton(AppIcons.ArrowBack, stringResource(Res.string.cd_back), { onIntent(SignInIntent.Back) }) },
-            )
+    AuthSheetScreen(
+        onBack = { onIntent(SignInIntent.Back) },
+        headerAlignment = Alignment.CenterHorizontally,
+        header = {
+            AuthLogo(64.dp)
+            CalmTitle(stringResource(Res.string.authb_sign_in_welcome))
         },
     ) {
         state.banner?.let { banner ->
-            InlineAlert(
+            CalmAlert(
                 tone = when (banner) {
                     SignInBanner.SessionEnded, SignInBanner.PasswordReset -> AlertTone.Info
                     SignInBanner.Offline, is SignInBanner.RateLimited -> AlertTone.Warning
                     else -> AlertTone.Error
                 },
                 text = bannerText(banner),
+                icon = if (banner is SignInBanner.Locked) AppIcons.FlowLockClock else null,
                 actionLabel = if (banner is SignInBanner.Locked) stringResource(Res.string.sign_in_forgot_password) else null,
                 onAction = if (banner is SignInBanner.Locked) ({ onIntent(SignInIntent.ForgotPasswordClicked) }) else null,
             )
         }
-        AppTextField(
+        CalmTextField(
             value = state.email,
             onValueChange = { onIntent(SignInIntent.EmailChanged(it)) },
             label = stringResource(Res.string.field_email),
@@ -56,7 +62,7 @@ fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
             enabled = !state.submitting,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
         )
-        PasswordField(
+        CalmPasswordField(
             value = state.password,
             onValueChange = { onIntent(SignInIntent.PasswordChanged(it)) },
             label = stringResource(Res.string.field_password),
@@ -74,8 +80,18 @@ fun SignInScreen(state: SignInState, onIntent: (SignInIntent) -> Unit) {
             modifier = Modifier.testTag("signIn.submit"),
             loading = state.submitting,
         )
-        AppTextButton(stringResource(Res.string.sign_in_forgot_password), { onIntent(SignInIntent.ForgotPasswordClicked) })
-        AppTextButton(stringResource(Res.string.sign_in_create_account), { onIntent(SignInIntent.CreateAccountClicked) })
+        if (state.banner !is SignInBanner.Locked) {
+            AuthLink(
+                AnnotatedString(stringResource(Res.string.sign_in_forgot_password)),
+                { onIntent(SignInIntent.ForgotPasswordClicked) },
+                modifier = Modifier.testTag("signIn.forgot"),
+            )
+        }
+        AuthLink(
+            linkSentence(stringResource(Res.string.authb_new_here), stringResource(Res.string.action_create_account)),
+            { onIntent(SignInIntent.CreateAccountClicked) },
+            modifier = Modifier.testTag("signIn.createAccount"),
+        )
     }
 }
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="txl_all">All</string>
+    <string name="txl_more">More</string>
+    <string name="txl_in">%1$s in</string>
+    <string name="txl_out">%1$s out</string>
+    <string name="txl_chart_cd">Spending per day this week</string>
+    <string name="txl_bar_cd">%1$s: %2$s spent</string>
+    <string name="txl_week_caption">%1$s · %2$s spent</string>
+    <string name="txl_week_summary">Week %1$s · avg %2$s/day</string>
+    <string name="txl_dow_mon">Mon</string>
+    <string name="txl_dow_tue">Tue</string>
+    <string name="txl_dow_wed">Wed</string>
+    <string name="txl_dow_thu">Thu</string>
+    <string name="txl_dow_fri">Fri</string>
+    <string name="txl_dow_sat">Sat</string>
+    <string name="txl_dow_sun">Sun</string>
+    <string name="txle_all_categories">All</string>
+    <string name="txl_day_mon">Monday</string>
+    <string name="txl_day_tue">Tuesday</string>
+    <string name="txl_day_wed">Wednesday</string>
+    <string name="txl_day_thu">Thursday</string>
+    <string name="txl_day_fri">Friday</string>
+    <string name="txl_day_sat">Saturday</string>
+    <string name="txl_day_sun">Sunday</string>
+    <string name="txle_save_expense">Save expense</string>
+    <string name="txle_save_income">Save income</string>
+    <string name="txle_save_transfer">Save transfer</string>
+</resources>

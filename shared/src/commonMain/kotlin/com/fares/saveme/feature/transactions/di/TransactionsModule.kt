@@ -36,6 +36,7 @@ import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorArgs
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorViewModel
 import com.fares.saveme.feature.transactions.ui.list.TransactionsViewModel
 import com.fares.saveme.feature.wallets.domain.PendingPostings
+import com.fares.saveme.feature.wallets.domain.RecentTransactionsSource
 import com.fares.saveme.feature.wallets.domain.SharingGlance
 import com.fares.saveme.feature.wallets.domain.WalletCopyParticipant
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
@@ -102,6 +103,7 @@ val transactionsModule = module {
         val sessions = get<SessionManager>()
         DefaultOccurrenceTransactions(repository = get(), accountId = { (sessions.state.value as? AuthState.SignedIn)?.account?.userId })
     }
+    single<RecentTransactionsSource> { TransactionRecents(get(), get()) }
     single<PendingPostings> { TransactionPostings(engine = { get<SyncEngine>() }, repository = get()) }
     // What budgets sum (spec 012 R-05): the person's own expenses with waiting changes applied. Everything it needs from
     // other features is resolved on use, so the graph keeps no cycle.

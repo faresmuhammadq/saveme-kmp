@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="homec_greeting_morning">Good morning</string>
+    <string name="homec_greeting_afternoon">Good afternoon</string>
+    <string name="homec_greeting_evening">Good evening</string>
+    <string name="homec_greeting_named">%1$s, %2$s</string>
+    <string name="homec_hero_title">All expenses budget</string>
+    <plurals name="homec_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="homec_left_to_spend">Left to spend</string>
+    <string name="homec_over_by">Over by</string>
+    <string name="homec_of_limit">%1$s · of %2$s</string>
+    <string name="homec_spent">Spent</string>
+    <string name="homec_on_pace">On pace for</string>
+    <string name="homec_review">Review</string>
+    <string name="homec_period_cd">Budget period %1$s</string>
+    <string name="homec_over">over</string>
+    <string name="homec_due_line">%1$s · %2$s</string>
+    <string name="homec_categories_sub">Income and expense categories</string>
+</resources>

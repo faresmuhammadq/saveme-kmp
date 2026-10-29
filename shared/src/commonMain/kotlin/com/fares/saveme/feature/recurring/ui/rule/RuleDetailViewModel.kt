@@ -2,6 +2,7 @@ package com.fares.saveme.feature.recurring.ui.rule
 
 import androidx.lifecycle.viewModelScope
 import com.fares.saveme.core.presentation.MviViewModel
+import com.fares.saveme.feature.categories.domain.model.CategoryDisplays
 import com.fares.saveme.feature.recurring.domain.model.CatchUpOutcome
 import com.fares.saveme.feature.recurring.domain.model.OccurrenceLists
 import com.fares.saveme.feature.recurring.domain.model.RecurringSyncState
@@ -13,6 +14,7 @@ import com.fares.saveme.feature.recurring.domain.model.SchedulePreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -37,11 +39,13 @@ class RuleDetailViewModel(
     private val useTheirs: suspend (String) -> Unit,
     private val tryAgain: suspend (String) -> Unit,
     private val discard: suspend (String) -> Unit,
+    private val displays: (String) -> Flow<CategoryDisplays> = { emptyFlow() },
 ) : MviViewModel<RuleDetailState, RuleDetailIntent, RuleDetailEffect>(RuleDetailState(ruleId = ruleId)) {
 
     private var leaving = false
     private var resolvedByPerson = false
     private var occurrencesWallet: String? = null
+    private var shownCategories: CategoryDisplays? = null
 
     init {
         viewModelScope.launch { load() }
@@ -76,12 +80,26 @@ class RuleDetailViewModel(
         }
         val shownPreview = if (view.rule.hasUnknownValues) SchedulePreview.Empty else preview(view.shown)
         setState { reduce(it, RuleDetailChange.Loaded(view, heldTitle, shownPreview)) }
+        applyCategories(view)
         if (occurrencesWallet == null) {
             occurrencesWallet = view.rule.walletId
             observeOccurrences(view.rule.walletId, ruleId)
                 .onEach { lists -> setState { reduce(it, RuleDetailChange.Occurrences(lists)) } }
                 .launchIn(viewModelScope)
+            displays(view.rule.walletId)
+                .onEach { shown ->
+                    shownCategories = shown
+                    currentState.view?.let { applyCategories(it) }
+                }
+                .launchIn(viewModelScope)
         }
+    }
+
+    private fun applyCategories(view: RuleView) {
+        val shown = shownCategories ?: return
+        val category = view.shown.categoryId?.let { shown.resolve(it) }
+        val payout = view.shown.payoutCategoryId?.let { shown.resolve(it) }
+        setState { reduce(it, RuleDetailChange.Categories(category, payout)) }
     }
 
     override fun onIntent(intent: RuleDetailIntent) {

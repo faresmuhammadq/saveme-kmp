@@ -7,6 +7,7 @@ import com.fares.saveme.feature.budgets.domain.model.BudgetField
 import com.fares.saveme.feature.budgets.domain.model.BudgetFieldProblem
 import com.fares.saveme.feature.budgets.domain.model.BudgetView
 import com.fares.saveme.feature.budgets.domain.model.RefusalReason
+import com.fares.saveme.feature.budgets.domain.model.SpendHistory
 import com.fares.saveme.feature.budgets.domain.model.SyncState
 import com.fares.saveme.feature.budgets.ui.BudgetRowUi
 import com.fares.saveme.feature.budgets.ui.asProblems
@@ -74,6 +75,8 @@ data class BudgetEditorState(
     val confirm: EditorConfirm = EditorConfirm.None,
     val saving: Boolean = false,
     val busy: Boolean = false,
+    /** Earlier spending on the chosen category and currency, offered as quick limits. */
+    val history: SpendHistory? = null,
 ) {
     val isCreate: Boolean get() = budgetId == null
 
@@ -134,6 +137,7 @@ sealed interface BudgetEditorChange {
     data class Confirm(val confirm: EditorConfirm) : BudgetEditorChange
     data class Saving(val busy: Boolean) : BudgetEditorChange
     data class Busy(val busy: Boolean) : BudgetEditorChange
+    data class History(val history: SpendHistory?) : BudgetEditorChange
 }
 
 fun reduce(state: BudgetEditorState, change: BudgetEditorChange): BudgetEditorState = when (change) {
@@ -171,6 +175,7 @@ fun reduce(state: BudgetEditorState, change: BudgetEditorChange): BudgetEditorSt
     is BudgetEditorChange.Confirm -> state.copy(confirm = change.confirm)
     is BudgetEditorChange.Saving -> state.copy(saving = change.busy)
     is BudgetEditorChange.Busy -> state.copy(busy = change.busy)
+    is BudgetEditorChange.History -> state.copy(history = change.history)
 }
 
 /**

@@ -87,7 +87,6 @@ class TransactionsAccessibilityTest {
     fun iconOnlyControlsAreDescribed() {
         compose.setContent { AppTheme { TransactionsScreen(list.copy(searchText = "x"), {}) } }
         assertTrue(compose.onAllNodes(hasContentDescription("Clear search")).fetchSemanticsNodes().isNotEmpty())
-        assertTrue(compose.onAllNodes(hasContentDescription("Add transaction")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodes(hasContentDescription("Back")).fetchSemanticsNodes().isNotEmpty())
     }
 

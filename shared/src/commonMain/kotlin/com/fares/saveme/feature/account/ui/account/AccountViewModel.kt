@@ -20,8 +20,12 @@ class AccountViewModel(
     private val syncNow: suspend () -> Unit = {},
     notificationsAvailable: Boolean = false,
     devToolsAvailable: Boolean = false,
+    serverAddress: String? = null,
+    displayName: Flow<String?> = emptyFlow(),
+    plan: Flow<AccountPlan?> = emptyFlow(),
+    deviceCount: Flow<Int> = emptyFlow(),
 ) : MviViewModel<AccountState, AccountIntent, AccountEffect>(
-    AccountState(notificationsAvailable = notificationsAvailable, devToolsAvailable = devToolsAvailable),
+    AccountState(notificationsAvailable = notificationsAvailable, devToolsAvailable = devToolsAvailable, serverAddress = serverAddress),
 ) {
 
     init {
@@ -29,6 +33,9 @@ class AccountViewModel(
             .onEach { signedIn -> setState { reduce(it, AccountChange.Account(signedIn)) } }
             .launchIn(viewModelScope)
         syncStatus.onEach { status -> setState { reduce(it, AccountChange.Sync(status)) } }.launchIn(viewModelScope)
+        displayName.onEach { name -> setState { reduce(it, AccountChange.DisplayName(name)) } }.launchIn(viewModelScope)
+        plan.onEach { value -> setState { reduce(it, AccountChange.Plan(value)) } }.launchIn(viewModelScope)
+        deviceCount.onEach { count -> setState { reduce(it, AccountChange.DeviceCount(count)) } }.launchIn(viewModelScope)
         // The account area is a refresh trigger for profile and account state (spec FR-011, FR-021).
         viewModelScope.launch { refresh() }
     }

@@ -21,6 +21,7 @@ enum class OccurrenceMessage { Gone, NotAllowed, ConfirmedFinal }
 data class OccurrenceDetails(
     val category: CategoryDisplay?,
     val destinationName: String?,
+    val walletName: String? = null,
 )
 
 data class OccurrenceScreenState(
@@ -29,6 +30,7 @@ data class OccurrenceScreenState(
     val view: OccurrenceView? = null,
     val category: CategoryDisplay? = null,
     val destinationName: String? = null,
+    val walletName: String? = null,
     /** The "already confirmed" notice as it was when the screen opened (it is cleared on open, FR-025). */
     val notice: String? = null,
     val form: OccurrenceForm = OccurrenceForm.None,
@@ -145,9 +147,10 @@ fun reduce(state: OccurrenceScreenState, change: OccurrenceChange): OccurrenceSc
         view = change.view,
         category = change.details.category,
         destinationName = change.details.destinationName,
+        walletName = change.details.walletName,
         notice = change.view.notice,
     )
-    is OccurrenceChange.Stored -> state.copy(view = change.view, category = change.details.category, destinationName = change.details.destinationName)
+    is OccurrenceChange.Stored -> state.copy(view = change.view, category = change.details.category, destinationName = change.details.destinationName, walletName = change.details.walletName)
     is OccurrenceChange.FormOpened -> state.fromView(change.form)
     OccurrenceChange.FormClosed -> state.copy(form = OccurrenceForm.None, errors = emptyMap(), datePickerOpen = false, categorySheetOpen = false)
     is OccurrenceChange.Amount -> state.copy(amountText = change.text, errors = state.errors - ConfirmField.Amount)

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wlc_create_wallet">Create wallet</string>
+    <string name="wlc_preview">Preview</string>
+    <string name="wlc_owed">Owed %1$s</string>
+    <string name="wlc_archived_count">Archived · %1$d</string>
+    <string name="wlc_wallet_settings">Wallet settings</string>
+    <string name="wlc_recent">Recent</string>
+    <string name="wlc_all_transactions">All transactions</string>
+    <string name="wlc_recent_empty">No transactions yet</string>
+    <string name="wlc_added_by_you">Added by you</string>
+    <string name="wlc_pending">Pending</string>
+    <string name="wlc_invited_count">%1$d invited</string>
+    <string name="wlc_manage">Manage</string>
+    <string name="wlc_see">View</string>
+    <string name="wlc_add">Add</string>
+</resources>

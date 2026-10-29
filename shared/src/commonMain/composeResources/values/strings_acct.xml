@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="acct_tile_profile_sub">Name, language, currency</string>
+    <string name="acct_tile_notifications_sub">%1$d kinds · quiet hours</string>
+    <string name="acct_tile_devices_sub">Where you’re signed in</string>
+    <string name="acct_tile_export_sub">ZIP with JSON and CSV</string>
+    <string name="acct_tile_password_sub">Signs out other devices</string>
+    <string name="acct_tile_delete_sub">After 30 days</string>
+    <string name="acct_tile_dev_sub">Tools for this build</string>
+    <string name="acct_plan_sub">Your subscription</string>
+    <string name="acct_other_devices">Other devices · %1$d</string>
+    <string name="acct_step_of">Step %1$d of %2$d</string>
+    <string name="acct_pw_rule_length">8 to 128 characters</string>
+    <string name="acct_pw_rule_email">Not your email address</string>
+    <string name="acct_pw_signs_out_others">When you change it, your other devices are signed out.</string>
+    <string name="acct_exports_last_30">Last 30 days</string>
+    <string name="acct_export_open">Open</string>
+    <string name="acct_export_waiting">Waiting</string>
+    <string name="acct_export_preparing">Preparing</string>
+    <string name="acct_export_ready">Ready</string>
+    <string name="acct_export_email_note">We’ll email you when it’s ready.</string>
+    <string name="acct_export_scope_all_sub">All wallets, categories, budgets and rules</string>
+    <string name="acct_export_scope_wallet_sub">Pick it below</string>
+    <string name="acct_tile_devices_count">%1$d signed in</string>
+    <string name="acct_conflict_phone">This phone</string>
+    <string name="acct_conflict_other">Other device</string>
+    <string name="acct_sign_out_device">Sign out %1$s</string>
+    <string name="acct_export_pill_zip">ZIP · JSON + CSV</string>
+    <string name="acct_export_pill_24h">Ready for 24 hours</string>
+    <string name="acct_export_pill_email">Emailed when ready</string>
+    <string name="acct_export_requested_short">Requested %1$s</string>
+    <string name="acct_delete_owners_sub">Each one passes to a member you choose.</string>
+    <string name="acct_delete_owner_becomes">%1$s will become the owner.</string>
+    <string name="acct_currency_locked">Locked after your first transaction</string>
+    <string name="acct_budget_period">Budget period starts</string>
+    <string name="acct_day_value">Day %1$d</string>
+    <string name="acct_delete_owners_title">Who looks after your shared wallets?</string>
+    <string name="acct_devices">Devices</string>
+</resources>

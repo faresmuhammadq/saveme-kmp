@@ -1,5 +1,6 @@
 package com.fares.saveme.core.di
 
+import com.fares.saveme.core.config.ServerAddressSettings
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.database.buildAppDatabase
 import com.fares.saveme.core.database.databaseBuilder
@@ -26,6 +27,16 @@ import com.fares.saveme.feature.notifications.domain.UnavailablePushTokenProvide
 import org.koin.dsl.module
 
 fun iosPlatformModule() = module {
+    // The server address is not editable on iOS (AppConfig.serverAddressEditable stays false).
+    single<ServerAddressSettings> {
+        object : ServerAddressSettings {
+            override val default = ""
+            override fun current() = ""
+            override fun save(hostPort: String) = Unit
+            override fun reset() = Unit
+            override fun restartApp() = Unit
+        }
+    }
     single<ClientInfo> { IosClientInfo() }
     single<SecureStore> { StubSecureStore() }
     single<KeyValueStore> { InMemoryKeyValueStore() }

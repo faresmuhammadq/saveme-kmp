@@ -38,7 +38,12 @@ data class CategoriesState(
     val loaded: Boolean = false,
     val waitingCount: Int = 0,
     val timeZoneId: String = "UTC",
-)
+    /** Active categories of the other kind (own and defaults), for the count on its chip. */
+    val otherKindCount: Int = 0,
+) {
+    /** Active categories of the chosen kind (own and defaults). */
+    val kindCount: Int get() = own.size + defaults.size
+}
 
 sealed interface CategoriesIntent {
     data object Opened : CategoriesIntent
@@ -74,6 +79,7 @@ fun reduce(state: CategoriesState, change: CategoriesChange): CategoriesState = 
             archived = archived,
             updatedAt = change.overview.updatedAt,
             defaultsMissing = change.overview.defaultsMissing,
+            otherKindCount = change.overview.otherKindCount,
             loaded = state.loaded || change.overview.loaded,
             waitingCount = (change.overview.own + change.overview.archived).count { it.syncState is SyncState.Waiting },
         )

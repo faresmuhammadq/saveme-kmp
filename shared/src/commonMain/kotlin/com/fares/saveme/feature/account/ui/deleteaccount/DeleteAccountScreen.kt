@@ -2,7 +2,15 @@ package com.fares.saveme.feature.account.ui.deleteaccount
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,22 +21,37 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.fares.saveme.designsystem.component.AlertTone
 import com.fares.saveme.designsystem.component.AppListItem
-import com.fares.saveme.designsystem.component.AppScreen
+import com.fares.saveme.designsystem.component.CalmActionBar
+import com.fares.saveme.designsystem.component.CalmCard
+import com.fares.saveme.designsystem.component.CalmDivider
+import com.fares.saveme.designsystem.component.CalmScreen
 import com.fares.saveme.designsystem.component.DestructiveButton
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.ListTrailing
-import com.fares.saveme.designsystem.component.PasswordField
+import com.fares.saveme.designsystem.component.CalmPasswordField
 import com.fares.saveme.designsystem.component.PrimaryButton
 import com.fares.saveme.designsystem.component.SecondaryButton
 import com.fares.saveme.designsystem.format.formatDate
+import com.fares.saveme.designsystem.icon.AccGroup
+import com.fares.saveme.designsystem.icon.WalletIcons
+import com.fares.saveme.designsystem.tokens.WalletAccents
+import com.fares.saveme.designsystem.icon.AccRadioOff
+import com.fares.saveme.designsystem.icon.AccRadioOn
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.account.domain.deletion.Candidate
@@ -36,7 +59,6 @@ import com.fares.saveme.feature.account.domain.deletion.OwnedSharedWallet
 import com.fares.saveme.feature.account.domain.deletion.PlanState
 import com.fares.saveme.feature.account.domain.deletion.SuccessorReason
 import com.fares.saveme.feature.account.ui.AccountBanner
-import com.fares.saveme.feature.account.ui.BackBar
 import com.fares.saveme.feature.account.ui.text
 import com.fares.saveme.feature.auth.ui.FieldProblem
 import com.fares.saveme.feature.auth.ui.text
@@ -46,6 +68,10 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.account_export
+import saveme.shared.generated.resources.acct_delete_owners_sub
+import saveme.shared.generated.resources.acct_delete_owners_title
+import saveme.shared.generated.resources.acct_step_of
+import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.action_done
 import saveme.shared.generated.resources.action_retry
 import saveme.shared.generated.resources.delete_after_30_days
@@ -92,10 +118,32 @@ import saveme.shared.generated.resources.role_editor
 import saveme.shared.generated.resources.role_owner
 import saveme.shared.generated.resources.role_viewer
 
+private const val STEP_COUNT = 4
+
+private fun DeleteStep.index(): Int? = when (this) {
+    DeleteStep.Explain -> 0
+    DeleteStep.NewOwners -> 1
+    DeleteStep.Review -> 2
+    DeleteStep.Confirm -> 3
+    else -> null
+}
+
 @Composable
 fun DeleteAccountScreen(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
-    AppScreen(topBar = { BackBar(stringResource(Res.string.delete_title)) { onIntent(DeleteAccountIntent.Back) } }) {
-        when (val step = state.step) {
+    val step = state.step
+    CalmScreen(
+        title = when (step) {
+            DeleteStep.NewOwners -> stringResource(Res.string.acct_delete_owners_title)
+            DeleteStep.Review -> stringResource(Res.string.delete_review_title)
+            else -> stringResource(Res.string.delete_title)
+        },
+        onBack = { onIntent(DeleteAccountIntent.Back) },
+        backDescription = stringResource(Res.string.cd_back),
+        spacing = 12.dp,
+        actions = { step.index()?.let { StepDots(it) } },
+        bottomBar = { ActionBar(state, onIntent) },
+    ) {
+        when (step) {
             DeleteStep.Explain -> Explain(state, onIntent)
             DeleteStep.LoadingPlan -> {
                 Text(
@@ -111,7 +159,7 @@ fun DeleteAccountScreen(state: DeleteAccountState, onIntent: (DeleteAccountInten
                 )
             }
             DeleteStep.NewOwners -> NewOwners(state, onIntent)
-            DeleteStep.Review -> Review(state, onIntent)
+            DeleteStep.Review -> Review(state)
             DeleteStep.Confirm -> Confirm(state, onIntent)
             is DeleteStep.Scheduled -> {
                 InlineAlert(
@@ -131,7 +179,6 @@ fun DeleteAccountScreen(state: DeleteAccountState, onIntent: (DeleteAccountInten
                     }
                 }
                 PlayNotice(Modifier.testTag("delete.scheduled.play"))
-                PrimaryButton(stringResource(Res.string.action_done), { onIntent(DeleteAccountIntent.Done) })
             }
             DeleteStep.Pending -> Pending(state, onIntent)
             is DeleteStep.Cancelled -> {
@@ -139,9 +186,90 @@ fun DeleteAccountScreen(state: DeleteAccountState, onIntent: (DeleteAccountInten
                 if (step.choicesDropped) {
                     Text(stringResource(Res.string.delete_choices_dropped), style = AppTheme.type.body, color = AppTheme.colors.ink2, modifier = Modifier.testTag("delete.cancelled.dropped"))
                 }
-                PrimaryButton(stringResource(Res.string.action_done), { onIntent(DeleteAccountIntent.Done) })
             }
         }
+    }
+}
+
+/** Four bars, filled up to the current step. */
+@Composable
+private fun StepDots(index: Int) {
+    val description = stringResource(Res.string.acct_step_of, index + 1, STEP_COUNT)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = Modifier.semantics { contentDescription = description },
+    ) {
+        repeat(STEP_COUNT) { i ->
+            Box(
+                Modifier
+                    .size(width = 22.dp, height = 5.dp)
+                    .background(if (i <= index) AppTheme.money.over else AppTheme.colors.outlineVariant, RoundedCornerShape(9.dp)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionBar(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
+    when (val step = state.step) {
+        DeleteStep.Explain -> CalmActionBar {
+            SecondaryButton(
+                stringResource(Res.string.delete_export_first),
+                { onIntent(DeleteAccountIntent.ExportClicked) },
+                Modifier.testTag("delete.explain.export"),
+            )
+            DestructiveButton(
+                stringResource(Res.string.delete_continue),
+                { onIntent(DeleteAccountIntent.Continue) },
+                Modifier.testTag("delete.continue"),
+            )
+        }
+        DeleteStep.NewOwners -> if (state.plan != null) CalmActionBar {
+            InkButton(stringResource(Res.string.delete_owners_next), { onIntent(DeleteAccountIntent.OwnersNext) }, Modifier.testTag("delete.owners.next"))
+        }
+        DeleteStep.Review -> if (state.plan != null) CalmActionBar {
+            DestructiveButton(stringResource(Res.string.delete_confirm), { onIntent(DeleteAccountIntent.ReviewConfirm) }, Modifier.testTag("delete.review.submit"))
+        }
+        DeleteStep.Confirm -> CalmActionBar {
+            DestructiveButton(
+                stringResource(Res.string.delete_confirm),
+                { onIntent(DeleteAccountIntent.Confirm) },
+                modifier = Modifier.testTag("deleteAccount.confirm"),
+                enabled = state.waitMinutes == null,
+                loading = state.submitting,
+            )
+        }
+        is DeleteStep.Scheduled, is DeleteStep.Cancelled -> CalmActionBar {
+            PrimaryButton(stringResource(Res.string.action_done), { onIntent(DeleteAccountIntent.Done) })
+        }
+        DeleteStep.Pending -> CalmActionBar {
+            if (state.canChangeOwners) {
+                SecondaryButton(stringResource(Res.string.delete_change_owners), { onIntent(DeleteAccountIntent.ChangeOwners) }, Modifier.testTag("delete.pending.change"))
+            }
+            SecondaryButton(stringResource(Res.string.account_export), { onIntent(DeleteAccountIntent.ExportClicked) }, Modifier.testTag("delete.pending.export"))
+            DestructiveButton(
+                stringResource(Res.string.home_cancel_deletion),
+                { onIntent(DeleteAccountIntent.CancelDeletion) },
+                Modifier.testTag("delete.pending.cancel"),
+                loading = state.cancelling,
+            )
+        }
+        DeleteStep.LoadingPlan -> Unit
+    }
+}
+
+/** The ink-filled main action of a step that is not destructive yet. */
+@Composable
+private fun InkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(AppTheme.sizes.button)
+            .background(AppTheme.colors.ink, RoundedCornerShape(18.dp))
+            .clickable(role = Role.Button, onClick = onClick),
+    ) {
+        Text(text, style = AppTheme.type.body.copy(fontWeight = FontWeight.Bold), color = AppTheme.colors.background)
     }
 }
 
@@ -168,60 +296,63 @@ private fun Banner(banner: DeleteBanner?, tag: String = "delete.message", onRetr
 @Composable
 private fun Explain(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
     // Explained before the password is asked for (spec 002 FR-017); extended by spec 016 FR-030.
-    Text(stringResource(Res.string.delete_explain_body), style = AppTheme.type.body, color = AppTheme.colors.ink)
-    Text(stringResource(Res.string.delete_explain_shared), style = AppTheme.type.body, color = AppTheme.colors.ink)
+    Text(stringResource(Res.string.delete_explain_body), style = AppTheme.type.body, color = AppTheme.colors.ink2)
+    Text(stringResource(Res.string.delete_explain_shared), style = AppTheme.type.body, color = AppTheme.colors.ink2)
     PlayNotice(Modifier.testTag("delete.explain.play"))
     Banner(state.planBanner, onRetry = { onIntent(DeleteAccountIntent.Continue) })
-    SecondaryButton(
-        stringResource(Res.string.delete_export_first),
-        { onIntent(DeleteAccountIntent.ExportClicked) },
-        Modifier.testTag("delete.explain.export"),
-    )
-    DestructiveButton(
-        stringResource(Res.string.delete_continue),
-        { onIntent(DeleteAccountIntent.Continue) },
-        Modifier.testTag("delete.continue"),
-    )
 }
 
 @Composable
 private fun NewOwners(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
     val plan = state.plan ?: return
-    Text(stringResource(Res.string.delete_owners_title), style = AppTheme.type.title, color = AppTheme.colors.ink)
+    Text(stringResource(Res.string.acct_delete_owners_sub), style = AppTheme.type.body.copy(fontSize = 14.sp), color = AppTheme.colors.ink2)
     if (state.successorsChanged) {
         InlineAlert(AlertTone.Warning, stringResource(Res.string.delete_successors_changed), Modifier.testTag("delete.message"))
     }
     Banner(state.banner)
     Column(
-        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.m),
+        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.s),
         modifier = Modifier.testTag("delete.owners"),
     ) {
         plan.wallets.forEach { wallet -> WalletOwners(wallet, state, onIntent) }
     }
-    PrimaryButton(stringResource(Res.string.delete_owners_next), { onIntent(DeleteAccountIntent.OwnersNext) }, Modifier.testTag("delete.owners.next"))
 }
 
 @Composable
 private fun WalletOwners(wallet: OwnedSharedWallet, state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
     val chosen = state.ownerOf(wallet)
-    OwnersCard(Modifier.testTag("delete.owners.wallet.${wallet.walletId}")) {
-        Text(
-            wallet.walletName ?: stringResource(Res.string.delete_wallet_unknown),
-            style = AppTheme.type.itemTitle,
-            color = AppTheme.colors.ink,
-            modifier = Modifier.padding(horizontal = AppTheme.spacing.m, vertical = AppTheme.spacing.xs),
-        )
+    CalmCard(
+        radius = 22.dp,
+        padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier.testTag("delete.owners.wallet.${wallet.walletId}"),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+            Icon(
+                WalletIcons.find(wallet.walletIcon) ?: AppIcons.AccGroup,
+                contentDescription = null,
+                tint = WalletAccents.find(wallet.walletColor)?.tint ?: AvatarPalette[1],
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                wallet.walletName ?: stringResource(Res.string.delete_wallet_unknown),
+                style = AppTheme.type.body.copy(fontWeight = FontWeight.ExtraBold),
+                color = AppTheme.colors.ink,
+            )
+        }
         if (wallet.choiceOffered) {
-            wallet.candidates.forEach { candidate ->
+            wallet.candidates.forEachIndexed { index, candidate ->
+                if (index > 0) CalmDivider()
                 val selected = candidate.userId == chosen
-                AppListItem(
-                    headline = candidateName(candidate),
-                    supporting = candidateSupporting(candidate, suggested = candidate.userId == wallet.successorUserId),
-                    trailing = if (selected) {
-                        ListTrailing.Custom { Icon(AppIcons.Check, contentDescription = null, tint = AppTheme.colors.primary) }
-                    } else {
-                        ListTrailing.None
-                    },
+                val name = candidateName(candidate)
+                CandidateRow(
+                    name = name,
+                    supporting = listOfNotNull(
+                        candidateSupporting(candidate),
+                        reasonText(wallet.reason).takeIf { candidate.userId == wallet.successorUserId },
+                    ).joinToString(" · ").ifEmpty { null },
+                    suggested = candidate.userId == wallet.successorUserId,
+                    selected = selected,
+                    color = AvatarPalette[index % AvatarPalette.size],
                     modifier = Modifier
                         .selectable(selected = selected, role = Role.RadioButton, onClick = {
                             onIntent(DeleteAccountIntent.PickOwner(wallet.walletId, candidate.userId))
@@ -230,19 +361,79 @@ private fun WalletOwners(wallet: OwnedSharedWallet, state: DeleteAccountState, o
                 )
             }
         } else {
-            AppListItem(
-                headline = stringResource(Res.string.delete_owner_fixed, ownerName(wallet, wallet.successorUserId)),
-                supporting = reasonText(wallet.reason),
-            )
+            val name = ownerName(wallet, wallet.successorUserId)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 10.dp)) {
+                Avatar(name, AvatarPalette[0])
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(Res.string.delete_owner_fixed, name),
+                        style = AppTheme.type.body.copy(fontWeight = FontWeight.Bold),
+                        color = AppTheme.colors.ink,
+                    )
+                    reasonText(wallet.reason)?.replaceFirstChar { it.uppercase() }?.let { Text(it, style = AppTheme.type.caption, color = AppTheme.colors.ink2) }
+                }
+            }
+        }
+    }
+}
+
+private val AvatarPalette = listOf(Color(0xFF2F8566), Color(0xFF6B49A8), Color(0xFFB04A6E), Color(0xFF21777C), Color(0xFF3557C0))
+
+@Composable
+private fun Avatar(name: String, color: Color) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(36.dp).background(color, CircleShape)) {
+        Text(
+            name.firstOrNull { it.isLetterOrDigit() }?.uppercase().orEmpty(),
+            style = AppTheme.type.caption.copy(fontWeight = FontWeight.ExtraBold),
+            color = Color.White,
+        )
+    }
+}
+
+@Composable
+private fun CandidateRow(
+    name: String,
+    supporting: String?,
+    suggested: Boolean,
+    selected: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 6.dp),
+    ) {
+        Icon(
+            if (selected) AppIcons.AccRadioOn else AppIcons.AccRadioOff,
+            contentDescription = null,
+            tint = if (selected) AppTheme.colors.primary else AppTheme.colors.caption,
+            modifier = Modifier.size(22.dp),
+        )
+        Avatar(name, color)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(name, style = AppTheme.type.body.copy(fontWeight = FontWeight.Bold), color = AppTheme.colors.ink, modifier = Modifier.weight(1f, fill = false))
+                if (suggested) {
+                    Text(
+                        stringResource(Res.string.delete_owner_suggested),
+                        style = AppTheme.type.overline.copy(fontWeight = FontWeight.Bold, letterSpacing = TextUnit.Unspecified),
+                        color = AppTheme.money.positive,
+                        modifier = Modifier
+                            .background(AppTheme.money.positiveContainer, AppTheme.shapes.pill)
+                            .padding(horizontal = 7.dp, vertical = 2.dp),
+                    )
+                }
+            }
+            supporting?.let { Text(it, style = AppTheme.type.caption, color = AppTheme.colors.ink2) }
         }
     }
 }
 
 @Composable
-private fun Review(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -> Unit) {
+private fun Review(state: DeleteAccountState) {
     val plan = state.plan ?: return
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.m), modifier = Modifier.testTag("delete.review")) {
-        Text(stringResource(Res.string.delete_review_title), style = AppTheme.type.title, color = AppTheme.colors.ink)
         if (plan.wallets.isEmpty()) {
             Text(stringResource(Res.string.delete_review_none), style = AppTheme.type.body, color = AppTheme.colors.ink2)
         } else {
@@ -259,10 +450,9 @@ private fun Review(state: DeleteAccountState, onIntent: (DeleteAccountIntent) ->
             Text(stringResource(Res.string.delete_review_rest), style = AppTheme.type.body, color = AppTheme.colors.ink2)
         }
         Text(stringResource(Res.string.delete_review_solo), style = AppTheme.type.body, color = AppTheme.colors.ink2)
-        Text(stringResource(Res.string.delete_after_30_days), style = AppTheme.type.body, color = AppTheme.colors.ink)
+        Text(stringResource(Res.string.delete_after_30_days), style = AppTheme.type.body.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.colors.ink)
         PlayNotice(Modifier.testTag("delete.review.play"))
     }
-    DestructiveButton(stringResource(Res.string.delete_confirm), { onIntent(DeleteAccountIntent.ReviewConfirm) }, Modifier.testTag("delete.review.submit"))
 }
 
 @Composable
@@ -270,7 +460,7 @@ private fun Confirm(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -
     state.waitMinutes?.let { InlineAlert(AlertTone.Warning, pluralStringResource(Res.plurals.error_account_locked, it, it)) }
     Banner(state.banner)
     Text(stringResource(Res.string.delete_explain_body), style = AppTheme.type.body, color = AppTheme.colors.ink2)
-    PasswordField(
+    CalmPasswordField(
         value = state.password,
         onValueChange = { onIntent(DeleteAccountIntent.PasswordChanged(it)) },
         label = stringResource(Res.string.delete_password),
@@ -285,13 +475,6 @@ private fun Confirm(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -
         enabled = !state.submitting,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onIntent(DeleteAccountIntent.Confirm) }),
-    )
-    DestructiveButton(
-        stringResource(Res.string.delete_confirm),
-        { onIntent(DeleteAccountIntent.Confirm) },
-        modifier = Modifier.testTag("deleteAccount.confirm"),
-        enabled = state.waitMinutes == null,
-        loading = state.submitting,
     )
 }
 
@@ -329,23 +512,13 @@ private fun Pending(state: DeleteAccountState, onIntent: (DeleteAccountIntent) -
                 }
             }
         }
+        PlayNotice(Modifier.testTag("delete.pending.play"))
     }
-    if (state.canChangeOwners) {
-        SecondaryButton(stringResource(Res.string.delete_change_owners), { onIntent(DeleteAccountIntent.ChangeOwners) }, Modifier.testTag("delete.pending.change"))
-    }
-    SecondaryButton(stringResource(Res.string.account_export), { onIntent(DeleteAccountIntent.ExportClicked) }, Modifier.testTag("delete.pending.export"))
-    PlayNotice(Modifier.testTag("delete.pending.play"))
-    DestructiveButton(
-        stringResource(Res.string.home_cancel_deletion),
-        { onIntent(DeleteAccountIntent.CancelDeletion) },
-        Modifier.testTag("delete.pending.cancel"),
-        loading = state.cancelling,
-    )
 }
 
 @Composable
 private fun OwnersCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Column(modifier.fillMaxWidth().background(AppTheme.colors.surface, AppTheme.shapes.card)) { content() }
+    CalmCard(radius = 22.dp, padding = PaddingValues(vertical = 4.dp), modifier = modifier) { content() }
 }
 
 @Composable
@@ -355,7 +528,7 @@ private fun candidateName(candidate: Candidate): String = when {
 }
 
 @Composable
-private fun candidateSupporting(candidate: Candidate, suggested: Boolean): String? {
+private fun candidateSupporting(candidate: Candidate): String? {
     val role = candidate.role?.let {
         stringResource(
             when (it) {
@@ -366,11 +539,10 @@ private fun candidateSupporting(candidate: Candidate, suggested: Boolean): Strin
         )
     }
     val joined = candidate.joinedAt?.let { formatDate(it, TimeZone.currentSystemDefault().id) }
-    val line = when {
+    return when {
         role != null && joined != null -> stringResource(Res.string.delete_owner_joined, role, joined)
         else -> role
     }
-    return listOfNotNull(stringResource(Res.string.delete_owner_suggested).takeIf { suggested }, line).joinToString("\n").ifEmpty { null }
 }
 
 @Composable

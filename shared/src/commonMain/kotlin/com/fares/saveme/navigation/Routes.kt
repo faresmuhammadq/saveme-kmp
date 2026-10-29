@@ -23,6 +23,9 @@ data class UpdateRequiredKey(val minimumVersion: String?) : NavKey
 data object DevToolsKey : NavKey
 
 @Serializable
+data object ServerAddressKey : NavKey
+
+@Serializable
 data object CatalogKey : NavKey
 
 @Serializable

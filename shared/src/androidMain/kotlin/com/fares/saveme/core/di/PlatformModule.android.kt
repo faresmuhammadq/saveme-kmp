@@ -3,6 +3,8 @@ package com.fares.saveme.core.di
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.fares.saveme.core.config.AndroidServerAddressSettings
+import com.fares.saveme.core.config.ServerAddressSettings
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.database.buildAppDatabase
 import com.fares.saveme.core.database.databaseBuilder
@@ -31,7 +33,7 @@ import org.koin.dsl.module
 
 /**
  * File names must match the exclusions in androidApp's backup rules (P-09.1). [notificationIcon] is the host's monochrome
- * small icon; [pushTokenProvider] is chosen per build by the host (spec 017 R-02): the fake in development builds, none
+ * small icon; [serverAddress] is the editable backend host. [pushTokenProvider] is chosen per build by the host (spec 017 R-02): the fake in development builds, none
  * in staging and production until the Firebase phase swaps it in `:androidApp` only.
  */
 fun androidPlatformModule(
@@ -39,7 +41,9 @@ fun androidPlatformModule(
     appVersion: String,
     notificationIcon: Int = android.R.drawable.stat_notify_more,
     pushTokenProvider: Scope.() -> PushTokenProvider = { devOrUnavailablePushProvider() },
+    serverAddress: ServerAddressSettings = AndroidServerAddressSettings(context, "10.0.2.2:8080"),
 ) = module {
+    single<ServerAddressSettings> { serverAddress }
     single<ClientInfo> { AndroidClientInfo(appVersion) }
     single<SecureStore> {
         KeystoreSecureStore(PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("secure_session") })

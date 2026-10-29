@@ -74,6 +74,9 @@ data class MemberView(
     val roleWire: String,
     val version: Long,
     val isYou: Boolean,
+    /** The signed-in person's own address; other members' addresses are not on the phone. */
+    val email: String? = null,
+    val joinedAt: Instant? = null,
 ) {
     val role: WalletRole get() = WalletRole.fromWire(roleWire)
     val isOwner: Boolean get() = roleWire == WalletRole.Owner.wire

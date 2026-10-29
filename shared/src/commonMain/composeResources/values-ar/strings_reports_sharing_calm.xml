@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calm_rep_net_period">صافي هذه الفترة</string>
+    <string name="calm_rep_where">أين ذهبت أموالك</string>
+    <string name="calm_rep_spent">منفق</string>
+    <string name="calm_rep_spending_trend">اتجاه الإنفاق</string>
+    <string name="calm_rep_cats_spent">أُنفق %1$s على %2$d فئات</string>
+    <string name="calm_rep_cats_earned">دخل %1$s من %2$d فئات</string>
+    <string name="calm_shr_edit_places">من يمكنهم التعديل</string>
+    <string name="calm_shr_places_of">%1$d من %2$d</string>
+    <string name="calm_shr_places_cd">%1$d من %2$d أماكن التعديل مستخدمة</string>
+    <string name="calm_shr_shared_wallet">محفظة مشتركة</string>
+    <string name="calm_shr_join_as">انضم بصفة %1$s</string>
+    <string name="calm_shr_join_wallet">انضم إلى %1$s</string>
+    <string name="calm_shr_invited_you">%1$s دعاك</string>
+    <string name="calm_shr_perm_view">رؤية الرصيد والمعاملات</string>
+    <string name="calm_shr_perm_edit">إضافة المعاملات وتعديلها</string>
+    <string name="calm_shr_perm_manage">دعوة الآخرين أو تغيير الأدوار</string>
+    <string name="calm_rep_less">أقل بنسبة %1$s من %2$s</string>
+    <string name="calm_rep_more">أكثر بنسبة %1$s من %2$s</string>
+    <string name="calm_rep_under_one">أقل من 1%</string>
+    <string name="calm_rep_balance">الرصيد</string>
+    <string name="calm_rep_transfers">التحويلات</string>
+    <string name="calm_shr_invite_to">دعوة إلى %1$s</string>
+    <string name="calm_shr_invited_as">مدعو بصفة %1$s</string>
+    <string name="calm_shr_joined">انضم في %1$s</string>
+    <string name="calm_shr_invitation_actions">إجراءات الدعوة</string>
+    <string name="calm_shr_transfer_to_leave">انقل الملكية لتغادر</string>
+    <string name="calm_shr_link_pill">رابط الدعوة</string>
+    <string name="calm_shr_link_ready_title">الرابط جاهز</string>
+    <string name="calm_shr_link_hint_editor">شاركه أو انسخه. يمكن لأي شخص لديه الرابط الانضمام كمحرر.</string>
+    <string name="calm_shr_link_hint_viewer">شاركه أو انسخه. يمكن لأي شخص لديه الرابط الانضمام كمشاهد.</string>
+    <string name="calm_shr_everyone">الجميع</string>
+    <string name="calm_shr_what_can">ماذا يمكنهم أن يفعلوا؟</string>
+    <string name="calm_shr_today">اليوم</string>
+    <string name="calm_shr_yesterday">أمس</string>
+    <string name="calm_shr_role_changed">%1$s غيّر دور %2$s إلى %3$s</string>
+</resources>

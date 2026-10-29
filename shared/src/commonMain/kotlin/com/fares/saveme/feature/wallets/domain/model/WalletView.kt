@@ -55,4 +55,6 @@ data class WalletList(
     val archived: List<WalletView>,
     val totals: List<CurrencyTotal>,
     val updatedAt: Instant?,
+    /** Wallets with more than one member on this phone, for the list's "shared" mark. */
+    val sharedIds: Set<String> = emptySet(),
 )

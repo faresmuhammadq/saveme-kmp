@@ -9,6 +9,8 @@ data class VerifyEmailState(
     val signedIn: Boolean = false,
     val requestId: String? = null,
     val resend: ResendState = ResendState(),
+    /** The signed-in address the fresh link would go to; null when signed out. */
+    val email: String? = null,
 )
 
 sealed interface VerifyEmailIntent {

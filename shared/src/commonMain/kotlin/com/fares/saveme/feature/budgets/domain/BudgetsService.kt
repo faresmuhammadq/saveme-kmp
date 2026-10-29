@@ -58,6 +58,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Duration
+import com.fares.saveme.feature.budgets.domain.model.SpendHistory
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -78,6 +81,9 @@ interface BudgetsService {
 
     /** FR-003, FR-004: expense categories, currencies and the categories already budgeted in [currency]. */
     fun observeChoices(currency: String, currentCategoryId: String?): Flow<BudgetChoices>
+
+    /** What [categoryId] (null = all expenses) was spent in [currency] over the last period and on average over the last three. */
+    fun observeSpendHistory(categoryId: String?, currency: String): Flow<SpendHistory> = flowOf(SpendHistory.None)
 
     suspend fun create(draft: BudgetDraft): CreateResult
 
@@ -268,6 +274,22 @@ class DefaultBudgetsService(
         }
         .map { BudgetValidation.keyOf(it.row.categoryId) }
         .toSet()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeSpendHistory(categoryId: String?, currency: String): Flow<SpendHistory> = clockContext().flatMapLatest { ctx ->
+        val known = (ctx.period as? PeriodState.Known)?.period ?: return@flatMapLatest flowOf(SpendHistory.None)
+        val periods = (1..HISTORY_PERIODS).runningFold(known) { later, _ ->
+            BudgetPeriods.calendar(later.start.minus(DatePeriod(days = 1)), ctx.startDay)
+        }.drop(1)
+        spending.observe(periods.last().start, periods.first().end).map { snapshot ->
+            val sums = periods.map { SpendingTotals.withWaiting(snapshot, categoryId, currency, it).spentMinor }
+            val total = sums.sum()
+            SpendHistory(
+                lastPeriodMinor = sums.first().takeIf { it > 0 },
+                averageMinor = ((total + HISTORY_PERIODS / 2) / HISTORY_PERIODS).takeIf { total > 0 },
+            )
+        }
+    }
 
     // ---- writes -----------------------------------------------------------------------------------------------
 
@@ -489,5 +511,7 @@ class DefaultBudgetsService(
 
         /** Used only when the phone knows neither a profile default nor a wallet (an assumed default, plan.md Implementation notes). */
         const val FALLBACK_CURRENCY = "EGP"
+
+        private const val HISTORY_PERIODS = 3
     }
 }

@@ -10,6 +10,10 @@ data class AppConfig(
     val isDebugTools: Boolean,
     /** Port of mailed links; set only in dev, where the backend is reached on a non-default port. */
     val linkPort: Int? = null,
+    /** Scheme of mailed links: `http` while every environment is the LAN backend, `https` once a hosted one exists. */
+    val linkScheme: String = "https",
+    /** Whether the server address can be changed in the app (Android only; the backend host may move on a LAN). */
+    val serverAddressEditable: Boolean = false,
     /** The installed package's id, for Google Play's subscription centre link (spec 018 R-8); empty where there is none (iOS, tests). */
     val applicationId: String = "",
     /**

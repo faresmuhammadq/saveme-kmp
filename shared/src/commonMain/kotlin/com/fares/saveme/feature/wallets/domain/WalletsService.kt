@@ -108,13 +108,17 @@ class DefaultWalletsService(
         val views = rows.flatMapLatest { list ->
             if (list.isEmpty()) flowOf(emptyList()) else combine(list.map { viewOf(it) }) { it.toList() }
         }
-        return combine(views, defaultCurrency, repository.observeListRefreshedAt()) { all, currency, refreshedAt ->
+        val shared = rows.flatMapLatest { list ->
+            if (list.isEmpty()) flowOf(emptySet()) else combine(list.map { row -> repository.observeMembers(row.id).map { if (it.size > 1) row.id else null } }) { ids -> ids.filterNotNull().toSet() }
+        }
+        return combine(views, defaultCurrency, repository.observeListRefreshedAt(), shared) { all, currency, refreshedAt, sharedIds ->
             val visible = all.filter { !it.hidden }
             WalletList(
                 active = visible.filter { !it.archived },
                 archived = visible.filter { it.archived },
                 totals = totalsOf(visible, currency),
                 updatedAt = refreshedAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
+                sharedIds = sharedIds,
             )
         }
     }

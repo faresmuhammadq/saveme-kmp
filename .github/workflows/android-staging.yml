@@ -1,0 +1,24 @@
+name: android-staging
+
+# Every push to the staging branch builds the signed staging APK (com.fares.saveme.staging).
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-staging
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/_android-build.yml
+    with:
+      flavor: staging
+      host: ${{ vars.STAGING_API_HOST || '192.168.1.14:8091' }}
+    secrets: inherit

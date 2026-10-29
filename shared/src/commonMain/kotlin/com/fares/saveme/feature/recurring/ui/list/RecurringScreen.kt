@@ -1,12 +1,10 @@
 package com.fares.saveme.feature.recurring.ui.list
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -14,14 +12,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.component.AlertTone
-import com.fares.saveme.designsystem.component.AppFab
-import com.fares.saveme.designsystem.component.AppScreen
+import com.fares.saveme.designsystem.component.CalmCircleButton
+import com.fares.saveme.designsystem.component.CalmScreen
 import com.fares.saveme.designsystem.component.EmptyState
 import com.fares.saveme.designsystem.component.InlineAlert
 import com.fares.saveme.designsystem.component.Skeleton
@@ -30,13 +28,22 @@ import com.fares.saveme.designsystem.component.SyncBannerState
 import com.fares.saveme.designsystem.icon.AppIcons
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.recurring.domain.model.RuleView
-import com.fares.saveme.feature.recurring.ui.OccurrenceListRow
-import com.fares.saveme.feature.recurring.ui.RecurringBackBar
-import com.fares.saveme.feature.recurring.ui.RuleListRow
+import com.fares.saveme.feature.recurring.domain.model.OccurrenceState
+import com.fares.saveme.feature.recurring.domain.model.RecurringSyncState
+import com.fares.saveme.feature.recurring.ui.CalmDueCard
+import com.fares.saveme.feature.recurring.ui.CalmOccurrenceCard
+import com.fares.saveme.feature.recurring.ui.CalmRuleTile
+import com.fares.saveme.feature.recurring.ui.CalmTileRow
+import com.fares.saveme.feature.recurring.ui.CalmWeekStrip
+import com.fares.saveme.feature.recurring.ui.RecurringHeading
+import com.fares.saveme.feature.recurring.ui.rememberToday
+import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.recurring_add
 import saveme.shared.generated.resources.recurring_all_wallets
+import saveme.shared.generated.resources.recurring_calm_needs_you
 import saveme.shared.generated.resources.recurring_cd_add
 import saveme.shared.generated.resources.recurring_empty
 import saveme.shared.generated.resources.recurring_empty_hint
@@ -54,40 +61,34 @@ import saveme.shared.generated.resources.recurring_title
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecurringScreen(state: RecurringState, onIntent: (RecurringIntent) -> Unit) {
-    Box(Modifier.fillMaxSize().testTag("recurring.list")) {
-        AppScreen(
-            scrollable = false,
-            topBar = {
-                RecurringBackBar(state.walletName ?: stringResource(Res.string.recurring_title)) { onIntent(RecurringIntent.Back) }
-            },
-        ) {
-            PullToRefreshBox(
-                isRefreshing = state.refreshing,
-                onRefresh = { onIntent(RecurringIntent.PullToRefresh) },
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            ) {
-                RecurringContent(state, onIntent)
+    CalmScreen(
+        title = state.walletName ?: stringResource(Res.string.recurring_title),
+        onBack = { onIntent(RecurringIntent.Back) },
+        backDescription = stringResource(Res.string.cd_back),
+        scrollable = false,
+        actions = {
+            if (state.canAdd) {
+                CalmCircleButton(
+                    icon = AppIcons.Plus,
+                    contentDescription = stringResource(Res.string.recurring_cd_add),
+                    onClick = { onIntent(RecurringIntent.AddClicked) },
+                    modifier = Modifier.testTag("recurring.add"),
+                    tint = AppTheme.colors.onPrimary,
+                    container = AppTheme.colors.primary,
+                    bordered = false,
+                )
             }
-        }
-        if (state.canAdd) {
-            AppFab(
-                icon = AppIcons.Plus,
-                contentDescription = stringResource(Res.string.recurring_cd_add),
-                onClick = { onIntent(RecurringIntent.AddClicked) },
-                text = stringResource(Res.string.recurring_add),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(AppTheme.spacing.m)
-                    .testTag("recurring.add"),
-            )
+        },
+        modifier = Modifier.testTag("recurring.list"),
+    ) {
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = { onIntent(RecurringIntent.PullToRefresh) },
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) {
+            RecurringContent(state, onIntent)
         }
     }
-}
-
-@Composable
-private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = AppTheme.type.title, color = AppTheme.colors.ink, modifier = modifier.padding(top = AppTheme.spacing.xs))
 }
 
 @Composable
@@ -97,11 +98,13 @@ private fun SubTitle(text: String) {
 
 @Composable
 private fun RecurringContent(state: RecurringState, onIntent: (RecurringIntent) -> Unit) {
+    val today = rememberToday()
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 88.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
     ) {
+        item(key = "week") { WeekStrip(state, today) }
         if (state.offline && state.waitingCount > 0) item { SyncBanner(SyncBannerState.Offline(state.waitingCount)) }
         if (state.refreshFailed) {
             item { InlineAlert(AlertTone.Warning, stringResource(Res.string.recurring_refresh_failed), Modifier.testTag("recurring.refreshFailed")) }
@@ -118,7 +121,7 @@ private fun RecurringContent(state: RecurringState, onIntent: (RecurringIntent) 
                 )
             }
             else -> {
-                dueSection(state, onIntent)
+                dueSection(state, today, onIntent)
                 upcomingSection(state, onIntent)
                 rulesSection(state, onIntent)
             }
@@ -126,30 +129,46 @@ private fun RecurringContent(state: RecurringState, onIntent: (RecurringIntent) 
     }
 }
 
-private fun LazyListScope.dueSection(state: RecurringState, onIntent: (RecurringIntent) -> Unit) {
+@Composable
+private fun WeekStrip(state: RecurringState, today: LocalDate) {
+    val pending = AppTheme.money.pending
+    val over = AppTheme.money.over
+    val primary = AppTheme.colors.primary
+    val dots = buildMap<LocalDate, Color> {
+        (state.upcoming).forEach { put(it.shownDate, primary) }
+        (state.due).forEach { put(it.shownDate, if (it.state == OccurrenceState.Missed) over else pending) }
+    }
+    CalmWeekStrip(today, dots)
+}
+
+private fun LazyListScope.dueSection(state: RecurringState, today: LocalDate, onIntent: (RecurringIntent) -> Unit) {
     if (state.due.isEmpty()) return
-    item(key = "due-title") { SectionTitle(stringResource(Res.string.recurring_section_due)) }
+    val walletByRule = state.rules.associate { it.id to it.walletName }
+    item(key = "due-title") { RecurringHeading(stringResource(Res.string.recurring_calm_needs_you, state.due.size), Modifier.padding(top = 4.dp)) }
     state.due.forEachIndexed { index, view ->
         item(key = "due-${view.id}") {
-            OccurrenceListRow(
+            CalmDueCard(
                 view,
+                walletName = walletByRule[view.occurrence.ruleId],
+                today = today,
+                actions = view.canWrite && !view.confirmationWaiting && view.syncState.let { it == RecurringSyncState.None || it == RecurringSyncState.Waiting },
+                busy = view.id in state.busyIds,
+                onOpen = { onIntent(RecurringIntent.OccurrenceClicked(view.id)) },
+                onConfirm = { onIntent(RecurringIntent.ConfirmOccurrence(view.id)) },
+                onSkip = { onIntent(RecurringIntent.SkipOccurrence(view.id)) },
                 modifier = Modifier.testTag("recurring.due.$index"),
-                onClick = { onIntent(RecurringIntent.OccurrenceClicked(view.id)) },
+                tag = { Modifier.testTag("recurring.due.$index.$it") },
             )
         }
     }
 }
 
 private fun LazyListScope.upcomingSection(state: RecurringState, onIntent: (RecurringIntent) -> Unit) {
-    item(key = "upcoming-title") { SectionTitle(stringResource(Res.string.recurring_section_upcoming)) }
-    if (state.upcoming.isEmpty()) {
-        item(key = "upcoming-none") {
-            Text(stringResource(Res.string.recurring_no_upcoming), style = AppTheme.type.body, color = AppTheme.colors.ink2)
-        }
-    }
+    if (state.upcoming.isEmpty()) return
+    item(key = "upcoming-title") { RecurringHeading(stringResource(Res.string.recurring_section_upcoming), Modifier.padding(top = 4.dp)) }
     state.upcoming.forEachIndexed { index, view ->
         item(key = "upcoming-${view.id}") {
-            OccurrenceListRow(
+            CalmOccurrenceCard(
                 view,
                 modifier = Modifier.testTag("recurring.upcoming.$index"),
                 onClick = { onIntent(RecurringIntent.OccurrenceClicked(view.id)) },
@@ -160,7 +179,7 @@ private fun LazyListScope.upcomingSection(state: RecurringState, onIntent: (Recu
 
 private fun LazyListScope.rulesSection(state: RecurringState, onIntent: (RecurringIntent) -> Unit) {
     if (state.rules.isEmpty()) return
-    item(key = "rules-title") { SectionTitle(stringResource(Res.string.recurring_section_rules)) }
+    item(key = "rules-title") { RecurringHeading(stringResource(Res.string.recurring_section_rules), Modifier.padding(top = 4.dp)) }
     var index = 0
     val groups = listOf(
         Res.string.recurring_section_active to state.activeRules,
@@ -169,7 +188,7 @@ private fun LazyListScope.rulesSection(state: RecurringState, onIntent: (Recurri
     )
     groups.forEach { (title, rules) ->
         if (rules.isEmpty()) return@forEach
-        item(key = "rules-${title.key}") { SubTitle(stringResource(title)) }
+        if (groups.count { it.second.isNotEmpty() } > 1) item(key = "rules-${title.key}") { SubTitle(stringResource(title)) }
         // In the all-wallets mode each wallet's rules sit under its name.
         val byWallet: List<Pair<String?, List<RuleView>>> =
             if (state.allWallets) rules.groupBy { it.walletName }.toList().sortedBy { it.first.orEmpty() } else listOf(null to rules)
@@ -179,13 +198,31 @@ private fun LazyListScope.rulesSection(state: RecurringState, onIntent: (Recurri
                     Text(wallet, style = AppTheme.type.caption, color = AppTheme.colors.caption)
                 }
             }
-            list.forEach { view ->
-                val rowIndex = index++
-                item(key = "rule-${view.id}") {
-                    RuleListRow(
-                        view,
-                        modifier = Modifier.testTag("recurring.rule.$rowIndex"),
-                        onClick = { onIntent(RecurringIntent.RuleClicked(view.id)) },
+            list.chunked(2).forEach { pair ->
+                val firstIndex = index
+                index += pair.size
+                item(key = "rules-${pair.first().id}") {
+                    CalmTileRow(
+                        first = { tile ->
+                            val view = pair[0]
+                            CalmRuleTile(
+                                view, state.paidCount(view.id),
+                                tile.testTag("recurring.rule.$firstIndex"),
+                                onClick = { onIntent(RecurringIntent.RuleClicked(view.id)) },
+                            )
+                        },
+                        second = if (pair.size > 1) {
+                            { tile ->
+                                val view = pair[1]
+                                CalmRuleTile(
+                                    view, state.paidCount(view.id),
+                                    tile.testTag("recurring.rule.${firstIndex + 1}"),
+                                    onClick = { onIntent(RecurringIntent.RuleClicked(view.id)) },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             }

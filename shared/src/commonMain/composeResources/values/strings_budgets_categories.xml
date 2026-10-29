@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="budgets_calm_cover_title">What should it cover?</string>
+    <string name="budgets_calm_limit_title">Monthly limit</string>
+    <string name="categories_calm_add">Add</string>
+    <string name="budgets_calm_left_of">%1$s left of %2$s</string>
+    <string name="budgets_calm_over_of">%1$s over the %2$s limit</string>
+    <string name="budgets_calm_on_pace">On pace · %1$s</string>
+    <string name="budgets_calm_tile_left">%1$s left · %2$s</string>
+    <string name="budgets_calm_tile_over">%1$s over · %2$s</string>
+    <string name="budgets_calm_archived_link">Archived budgets · %1$d</string>
+    <string name="budgets_calm_set">Set budget</string>
+    <string name="budgets_calm_last_period">Last period · %1$s</string>
+    <string name="budgets_calm_average">3-period average · %1$s</string>
+    <string name="budgets_calm_more">More</string>
+    <string name="categories_calm_create">Create category</string>
+    <string name="categories_calm_yours">Yours</string>
+    <string name="categories_calm_defaults">Defaults</string>
+</resources>

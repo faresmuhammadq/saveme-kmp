@@ -31,6 +31,7 @@ class HomeViewModel(
     invitationHeld: Flow<Boolean> = emptyFlow(),
     invitationDeclined: Flow<Unit> = emptyFlow(),
     minuteTicks: Flow<Instant> = emptyFlow(),
+    displayName: Flow<String?> = emptyFlow(),
 ) : MviViewModel<HomeState, HomeIntent, HomeEffect>(HomeState()) {
 
     init {
@@ -44,6 +45,7 @@ class HomeViewModel(
         budgets.onEach { list -> setState { reduce(it, HomeChange.Budgets(list)) } }.launchIn(viewModelScope)
         invitationDeclined.onEach { sendEffect(HomeEffect.ShowMessage(HomeMessage.InvitationDeclined)) }.launchIn(viewModelScope)
         minuteTicks.onEach { now -> setState { reduce(it, HomeChange.Tick(now)) } }.launchIn(viewModelScope)
+        displayName.onEach { name -> setState { reduce(it, HomeChange.Name(name)) } }.launchIn(viewModelScope)
         invitationHeld.onEach { held -> setState { reduce(it, HomeChange.InvitationHeld(held)) } }.launchIn(viewModelScope)
     }
 

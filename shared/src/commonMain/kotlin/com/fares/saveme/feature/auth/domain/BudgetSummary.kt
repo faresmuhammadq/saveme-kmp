@@ -2,6 +2,7 @@ package com.fares.saveme.feature.auth.domain
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.datetime.LocalDate
 
 /**
  * Up to a few active budgets of the current period for Home's "Budgets" card (spec 012 FR-017, research R-11). Auth owns
@@ -24,6 +25,14 @@ data class BudgetGlimpse(
     val limitMinor: Long,
     val currency: String,
     val includesWaiting: Boolean,
+    val iconKey: String? = null,
+    val colorHex: String? = null,
+    /** The current period's first and last day; null while the period is unknown. */
+    val periodStart: LocalDate? = null,
+    val periodEnd: LocalDate? = null,
+    val daysLeft: Int? = null,
+    /** Where spending is heading by the period's end; null when it cannot be derived. */
+    val projectedMinor: Long? = null,
 ) {
     override fun toString() = "BudgetGlimpse($id)"
 }

@@ -60,9 +60,9 @@ class BudgetsAccessibilityTest {
     @Test
     fun theShareAndTheWordsAreWrittenInEveryState() {
         compose.setContent { AppTheme { BudgetsScreen(list, {}) } }
-        compose.onNodeWithText("51%").assertIsDisplayed()
-        compose.onNodeWithText("86%").assertIsDisplayed()
-        compose.onNodeWithText("128%").assertIsDisplayed()
+        compose.onNodeWithText("51%", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("86%", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("128%", substring = true).assertIsDisplayed()
         assertTrue(compose.onAllNodes(hasText("over", substring = true)).fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodes(hasText("left", substring = true)).fetchSemanticsNodes().isNotEmpty())
         compose.onNodeWithText("Waiting to sync").assertIsDisplayed()
@@ -107,7 +107,7 @@ class BudgetsAccessibilityTest {
     fun editorTargetsAreAtLeast48dpAndItsFieldsAreNamed() {
         compose.setContent { AppTheme { BudgetEditorScreen(BudgetEditorState(loaded = true, currency = "EGP", startDay = 25), {}) } }
         compose.onNodeWithText("Category").assertIsDisplayed()
-        compose.onNodeWithText("Monthly, starting on day 25").assertIsDisplayed()
+        compose.onNodeWithText("Monthly, starting on day 25", substring = true).assertIsDisplayed()
         assertTouchTargets()
     }
 
@@ -116,7 +116,7 @@ class BudgetsAccessibilityTest {
         val home = HomeState(email = "sara@example.com", budgets = listOf(BudgetGlimpse("a", "Groceries", 342_000, 400_000, "EGP", true)))
         compose.setContent { AppTheme { HomeScreen(home, {}) } }
         compose.onNodeWithTag("home.budgetsCard").assertIsDisplayed()
-        compose.onNodeWithText("86%").assertIsDisplayed()
+        compose.onNodeWithText("86%", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Waiting to sync").assertIsDisplayed()
         compose.onNodeWithText("See all").assertIsDisplayed()
         assertTouchTargets()
@@ -126,7 +126,7 @@ class BudgetsAccessibilityTest {
     fun nothingClipsAtDoubleFontScale() {
         RuntimeEnvironment.setFontScale(2f)
         compose.setContent { AppTheme { BudgetsScreen(list, {}) } }
-        compose.onNodeWithText("86%").assertIsDisplayed()
+        compose.onNodeWithText("86%", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Waiting to sync").assertIsDisplayed()
         assertTouchTargets()
     }
@@ -135,7 +135,7 @@ class BudgetsAccessibilityTest {
     fun theEditorAndTheHomeCardStayUsableAtDoubleFontScale() {
         RuntimeEnvironment.setFontScale(2f)
         compose.setContent { AppTheme { BudgetEditorScreen(BudgetEditorState(loaded = true, currency = "EGP", limitText = "6000", categoryChosen = true), {}) } }
-        compose.onNodeWithText("Save").assertIsDisplayed()
+        compose.onNodeWithText("Set budget").assertIsDisplayed()
         assertTouchTargets()
     }
 

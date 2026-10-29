@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="authb_sign_in_welcome">أهلاً بعودتك</string>
+    <string name="authb_register_title">أنشئ حسابك</string>
+    <string name="authb_register_subtitle">يعمل بدون إنترنت ويتزامن عند عودة الاتصال.</string>
+    <string name="authb_forgot_heading">نسيت كلمة المرور؟</string>
+    <string name="authb_back_to_sign_in">العودة إلى تسجيل الدخول</string>
+    <string name="authb_update_need">تحتاج إلى</string>
+    <string name="authb_update_or_later">%1$s أو أحدث</string>
+    <string name="authb_state_on">مفعّل</string>
+    <string name="authb_state_off">متوقف</string>
+    <string name="authb_new_here">جديد هنا؟</string>
+    <string name="authb_have_account">لديك حساب بالفعل؟</string>
+    <string name="authb_reset_done_title">تم تغيير كلمة المرور</string>
+    <string name="authb_reset_done_body">سجّل الدخول بكلمة المرور الجديدة.</string>
+    <string name="authb_inbox_step1">أرسلنا رابطًا إلى بريدك الإلكتروني.</string>
+    <string name="authb_inbox_step2">افتحه %1$s لتأكيد عنوانك.</string>
+    <string name="authb_inbox_this_phone">على هذا الهاتف</string>
+    <string name="authb_inbox_step3">يؤكد التطبيق بريدك الإلكتروني ثم تتابع.</string>
+    <string name="authb_inbox_reset_step2">افتحه %1$s لاختيار كلمة مرور جديدة.</string>
+    <string name="authb_inbox_reset_step3">ثم سجّل الدخول بكلمة المرور الجديدة.</string>
+    <string name="authb_verify_resend_body">يمكننا إرسال رابط جديد إلى %1$s. افتح أحدث رسالة على هذا الهاتف.</string>
+    <string name="authb_update_have">لديك</string>
+    <string name="authb_update_newer">إصدار أحدث</string>
+    <string name="authb_update_body">هذا الإصدار لم يعد مدعومًا. حدّث للمتابعة.</string>
+    <string name="authb_notif_intro">اضغط لتشغيل أو إيقاف كل نوع. لا تعرض الإشعارات المبالغ أبدًا.</string>
+    <string name="authb_notif_quiet_note">تُحجز وتُرسل عند انتهاء ساعات الهدوء · %1$s</string>
+    <string name="authb_notif_quiet_note_plain">تُحجز وتُرسل عند انتهاء ساعات الهدوء</string>
+    <string name="authb_plan_compare">قارن الخطط</string>
+    <string name="authb_plan_price">السعر</string>
+    <string name="authb_plan_wallets">المحافظ</string>
+    <string name="authb_plan_sharing">المشاركة</string>
+    <string name="authb_plan_export">التصدير</string>
+    <string name="authb_plan_reports">التقارير المتقدمة</string>
+    <string name="authb_plan_free">مجانًا</string>
+    <string name="authb_plan_unlimited">غير محدود</string>
+    <string name="authb_plan_up_to">حتى %1$d</string>
+    <string name="authb_plan_people">حتى %1$d أشخاص</string>
+    <string name="authb_plan_included">مشمول</string>
+    <string name="authb_plan_not_included">غير مشمول</string>
+    <string name="authb_redeem_heading">أدخل رمزك</string>
+    <string name="authb_redeem_intro">ستجده في بريدك الإلكتروني. يعمل فقط على الحساب الذي أُرسل إلى عنوان بريده.</string>
+    <string name="authb_redeem_count">%1$d من 16 حرفًا ورقمًا</string>
+    <string name="authb_redeem_paste">لصق من البريد</string>
+</resources>

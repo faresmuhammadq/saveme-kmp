@@ -17,12 +17,14 @@ class ActivityViewModel(
     private val walletId: String,
     private val page: suspend (cursor: String?) -> ActivityPage,
     timeZoneId: Flow<String> = emptyFlow(),
+    walletName: Flow<String?> = emptyFlow(),
 ) : MviViewModel<ActivityState, ActivityIntent, ActivityEffect>(ActivityState(walletId = walletId)) {
 
     private var started = false
 
     init {
         timeZoneId.onEach { id -> setState { reduce(it, ActivityChange.TimeZone(id)) } }.launchIn(viewModelScope)
+        walletName.onEach { name -> setState { reduce(it, ActivityChange.WalletName(name.orEmpty())) } }.launchIn(viewModelScope)
     }
 
     override fun onIntent(intent: ActivityIntent) {

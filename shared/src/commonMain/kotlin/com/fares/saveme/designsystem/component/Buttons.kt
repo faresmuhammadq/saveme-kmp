@@ -40,7 +40,7 @@ private fun AppButton(
         onClick = onClick,
         enabled = active,
         interactionSource = interaction,
-        shape = AppTheme.shapes.control,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
         contentPadding = PaddingValues(horizontal = AppTheme.spacing.l),
         colors = ButtonDefaults.buttonColors(
             containerColor = if (pressed) palette.pressed else palette.container,

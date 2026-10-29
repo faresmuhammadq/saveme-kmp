@@ -1,6 +1,51 @@
 package com.fares.saveme.feature.transactions.ui.editor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +64,9 @@ import com.fares.saveme.designsystem.component.AmountField
 import com.fares.saveme.designsystem.component.AppAlertDialog
 import com.fares.saveme.designsystem.component.AppDatePickerDialog
 import com.fares.saveme.designsystem.component.AppListItem
-import com.fares.saveme.designsystem.component.AppScreen
+import com.fares.saveme.designsystem.component.AppSnackbarHost
+import com.fares.saveme.designsystem.component.CalmGutter
+import com.fares.saveme.designsystem.component.CalmCircleButton
 import com.fares.saveme.designsystem.component.AppSelectField
 import com.fares.saveme.designsystem.component.AppTextField
 import com.fares.saveme.designsystem.component.AppTextButton
@@ -40,6 +87,9 @@ import com.fares.saveme.designsystem.component.SettingsSwitchRow
 import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.component.formatMoney
 import com.fares.saveme.designsystem.format.formatDate
+import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.designsystem.icon.CategoryIcons
+import com.fares.saveme.designsystem.icon.TxNote
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
@@ -47,11 +97,13 @@ import com.fares.saveme.feature.transactions.domain.model.AddedBy
 import com.fares.saveme.feature.transactions.domain.model.TransactionField
 import com.fares.saveme.feature.transactions.domain.model.TransactionKind
 import com.fares.saveme.feature.transactions.domain.model.WalletChoice
-import com.fares.saveme.feature.transactions.ui.TransactionsBackBar
 import com.fares.saveme.feature.transactions.ui.label
 import com.fares.saveme.feature.transactions.ui.labelRes
 import com.fares.saveme.feature.transactions.ui.text
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
 import saveme.shared.generated.resources.action_accept_deletion
@@ -61,6 +113,12 @@ import saveme.shared.generated.resources.action_discard
 import saveme.shared.generated.resources.action_keep_transaction
 import saveme.shared.generated.resources.action_restore_with_mine
 import saveme.shared.generated.resources.action_retry
+import saveme.shared.generated.resources.cd_back
+import saveme.shared.generated.resources.transactions_today
+import saveme.shared.generated.resources.txle_save_expense
+import saveme.shared.generated.resources.txle_save_income
+import saveme.shared.generated.resources.txle_save_transfer
+import saveme.shared.generated.resources.txle_all_categories
 import saveme.shared.generated.resources.category_choice_current
 import saveme.shared.generated.resources.category_choice_defaults
 import saveme.shared.generated.resources.category_choice_empty
@@ -122,89 +180,296 @@ fun TransactionEditorScreen(
     onIntent: (TransactionEditorIntent) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    AppScreen(
-        snackbarHostState = snackbar,
-        topBar = {
-            TransactionsBackBar(stringResource(if (state.isCreate) Res.string.tx_title_new else Res.string.tx_title_edit)) {
-                onIntent(TransactionEditorIntent.Back)
+    val ready = state.loaded && !state.noWallet
+    val saveLabel = stringResource(
+        if (!state.isCreate) {
+            Res.string.tx_save
+        } else {
+            when (state.kind) {
+                TransactionKind.Income -> Res.string.txle_save_income
+                TransactionKind.Transfer -> Res.string.txle_save_transfer
+                else -> Res.string.txle_save_expense
             }
         },
-    ) {
-        if (!state.loaded) {
-            repeat(4) { Skeleton(Modifier.fillMaxWidth().height(52.dp)) }
-            return@AppScreen
-        }
-        if (state.noWallet) {
-            EmptyState(
-                title = stringResource(Res.string.tx_no_wallet),
-                body = "",
-                actionLabel = stringResource(Res.string.tx_create_wallet),
-                onAction = { onIntent(TransactionEditorIntent.CreateWalletClicked) },
-                modifier = Modifier.testTag("txEditor.noWallet"),
-                actionModifier = Modifier.testTag("txEditor.createWallet"),
-            )
-            return@AppScreen
-        }
-        StatusArea(state, onIntent)
-        Notes(state)
-        WalletSection(state, onIntent)
-        KindSection(state, onIntent)
-        AmountField(
-            value = state.amountText,
-            onValueChange = { onIntent(TransactionEditorIntent.AmountChanged(it)) },
-            currency = state.currency,
-            label = stringResource(Res.string.tx_field_amount),
-            modifier = Modifier.testTag("txEditor.amount"),
-            errorText = state.errors[TransactionField.Amount]?.text(TransactionField.Amount),
-            autoFocus = state.isCreate,
-            enabled = state.canEdit,
-        )
-        CategoryOrDestination(state, onIntent)
-        DateField(
-            label = stringResource(Res.string.tx_field_date),
-            value = state.date?.let { formatDate(it) }.orEmpty(),
-            onClick = { onIntent(TransactionEditorIntent.DateClicked) },
-            modifier = Modifier.testTag("txEditor.date"),
-            errorText = state.errors[TransactionField.Date]?.text(TransactionField.Date),
-            enabled = state.canEdit,
-        )
-        AppTextField(
-            value = state.note,
-            onValueChange = { onIntent(TransactionEditorIntent.NoteChanged(it)) },
-            label = stringResource(Res.string.tx_field_note),
-            modifier = Modifier.testTag("txEditor.note"),
-            errorText = state.errors[TransactionField.Note]?.text(TransactionField.Note),
-            enabled = state.canEdit,
-        )
-        MoreDetails(state, onIntent)
-        MatchOffers(state, onIntent)
-        Captions(state, onIntent)
-        if (state.canMakeRecurring) {
-            SecondaryButton(
-                stringResource(Res.string.recurring_make_recurring),
-                { onIntent(TransactionEditorIntent.MakeRecurringClicked) },
-                modifier = Modifier.testTag("txEditor.makeRecurring"),
-                enabled = !state.saving && !state.busy,
-            )
-        }
-        if (state.canEdit) {
-            PrimaryButton(
-                stringResource(Res.string.tx_save),
-                { onIntent(TransactionEditorIntent.SaveClicked) },
-                modifier = Modifier.testTag("txEditor.save"),
-                enabled = state.canSave,
-                loading = state.saving,
-            )
-        }
-        if (state.canDelete) {
-            DestructiveButton(
-                stringResource(Res.string.tx_delete),
-                { onIntent(TransactionEditorIntent.DeleteClicked) },
-                modifier = Modifier.testTag("txEditor.delete"),
-            )
+    )
+    Scaffold(
+        snackbarHost = { AppSnackbarHost(snackbar) },
+        containerColor = SheetScrim,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            Spacer(Modifier.height(72.dp))
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(AppTheme.colors.surface)
+                    .imePadding(),
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(start = CalmGutter, end = CalmGutter, top = 10.dp, bottom = 12.dp),
+                ) {
+                    SheetHeader(state, onIntent)
+                    EditorBody(state, onIntent)
+                }
+                if (ready && (state.canEdit || state.canDelete)) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(start = CalmGutter, end = CalmGutter, top = 4.dp, bottom = 22.dp),
+                    ) {
+                        if (state.canEdit) {
+                            PrimaryButton(
+                                saveLabel,
+                                { onIntent(TransactionEditorIntent.SaveClicked) },
+                                modifier = Modifier.testTag("txEditor.save"),
+                                enabled = state.canSave,
+                                loading = state.saving,
+                            )
+                        }
+                        if (state.canDelete) {
+                            DestructiveButton(
+                                stringResource(Res.string.tx_delete),
+                                { onIntent(TransactionEditorIntent.DeleteClicked) },
+                                modifier = Modifier.testTag("txEditor.delete"),
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
     Dialogs(state, onIntent)
+}
+
+private val SheetScrim = Color(0xFF5E6574)
+
+@Composable
+private fun ColumnScope.EditorBody(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    if (!state.loaded) {
+        repeat(4) { Skeleton(Modifier.fillMaxWidth().height(52.dp)) }
+        return
+    }
+    if (state.noWallet) {
+        EmptyState(
+            title = stringResource(Res.string.tx_no_wallet),
+            body = "",
+            actionLabel = stringResource(Res.string.tx_create_wallet),
+            onAction = { onIntent(TransactionEditorIntent.CreateWalletClicked) },
+            modifier = Modifier.testTag("txEditor.noWallet"),
+            actionModifier = Modifier.testTag("txEditor.createWallet"),
+        )
+        return
+    }
+    StatusArea(state, onIntent)
+    Notes(state)
+    KindSection(state, onIntent)
+    AmountSection(state, onIntent)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+        WalletSection(state, onIntent)
+        DateChip(state, onIntent)
+    }
+    state.errors[TransactionField.Date]?.let {
+        Text(it.text(TransactionField.Date), style = AppTheme.type.caption, color = AppTheme.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
+    }
+    CategoryOrDestination(state, onIntent)
+    NoteField(state, onIntent)
+    MoreAndRecurring(state, onIntent)
+    MoreDetails(state, onIntent)
+    MatchOffers(state, onIntent)
+    Captions(state, onIntent)
+}
+
+/** Sheet look: grab handle, title and a round close button. */
+@Composable
+private fun SheetHeader(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        Box(
+            Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(width = 40.dp, height = 5.dp)
+                .background(AppTheme.colors.outlineVariant, AppTheme.shapes.pill),
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(if (state.isCreate) Res.string.tx_title_new else Res.string.tx_title_edit),
+                style = AppTheme.type.headline.copy(fontSize = 20.sp),
+                color = AppTheme.colors.ink,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            CalmCircleButton(
+                AppIcons.Close,
+                stringResource(Res.string.cd_back),
+                { onIntent(TransactionEditorIntent.Back) },
+                container = AppTheme.colors.sunken,
+                bordered = false,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AmountSection(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    val focus = remember { FocusRequester() }
+    if (state.isCreate) {
+        LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    }
+    val error = state.errors[TransactionField.Amount]?.text(TransactionField.Amount)
+    val amountStyle = AppTheme.type.numeralL.copy(
+        fontSize = 56.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = AppTheme.colors.ink,
+        textAlign = TextAlign.Center,
+        textDirection = TextDirection.Ltr,
+    )
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val fieldWidth = with(density) { measurer.measure(state.amountText.ifEmpty { "0" }, amountStyle).size.width.toDp() + 6.dp }
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Text(stringResource(Res.string.tx_field_amount), style = AppTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.colors.ink2)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                state.currency,
+                style = AppTheme.type.title.copy(fontSize = 22.sp, textDirection = TextDirection.Ltr),
+                color = AppTheme.colors.ink2,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            BasicTextField(
+                value = state.amountText,
+                onValueChange = { onIntent(TransactionEditorIntent.AmountChanged(it)) },
+                enabled = state.canEdit,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                textStyle = amountStyle,
+                cursorBrush = SolidColor(AppTheme.colors.primary),
+                decorationBox = { inner ->
+                    Box(contentAlignment = Alignment.Center) {
+                        if (state.amountText.isEmpty()) {
+                            Text("0", style = AppTheme.type.numeralL.copy(fontSize = 56.sp, fontWeight = FontWeight.ExtraBold), color = AppTheme.colors.outline)
+                        }
+                        inner()
+                    }
+                },
+                modifier = Modifier
+                    .width(maxOf(fieldWidth, 150.dp).coerceAtMost(260.dp))
+                    .focusRequester(focus)
+                    .testTag("txEditor.amount"),
+            )
+        }
+        if (error != null) Text(error, style = AppTheme.type.caption, color = AppTheme.colors.error)
+    }
+}
+
+@Composable
+private fun InfoChip(icon: ImageVector, text: String, onClick: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.heightIn(min = 48.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .height(36.dp)
+                .border(1.dp, AppTheme.colors.outlineVariant, RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = AppTheme.colors.ink2, modifier = Modifier.size(18.dp))
+            Text(text, style = AppTheme.type.caption.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.colors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun DateChip(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    InfoChip(
+        AppIcons.Calendar,
+        state.date?.let { if (it == today) stringResource(Res.string.transactions_today) else formatDate(it) }.orEmpty(),
+        { onIntent(TransactionEditorIntent.DateClicked) },
+        enabled = state.canEdit,
+        modifier = Modifier.testTag("txEditor.date"),
+    )
+}
+
+@Composable
+private fun NoteField(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    val label = stringResource(Res.string.tx_field_note)
+    val error = state.errors[TransactionField.Note]?.text(TransactionField.Note)
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp)
+                .background(AppTheme.colors.sunken, RoundedCornerShape(14.dp))
+                .padding(horizontal = 14.dp),
+        ) {
+            Icon(AppIcons.TxNote, contentDescription = null, tint = AppTheme.colors.ink2, modifier = Modifier.size(22.dp))
+            BasicTextField(
+                value = state.note,
+                onValueChange = { onIntent(TransactionEditorIntent.NoteChanged(it)) },
+                enabled = state.canEdit,
+                textStyle = AppTheme.type.body.copy(color = AppTheme.colors.ink),
+                cursorBrush = SolidColor(AppTheme.colors.primary),
+                decorationBox = { inner ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (state.note.isEmpty()) Text(label, style = AppTheme.type.body, color = AppTheme.colors.caption)
+                        inner()
+                    }
+                },
+                modifier = Modifier.weight(1f).testTag("txEditor.note"),
+            )
+        }
+        if (error != null) Text(error, style = AppTheme.type.caption, color = AppTheme.colors.error, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@Composable
+private fun MoreAndRecurring(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxWidth()) {
+        LinkButton(
+            stringResource(Res.string.tx_more),
+            { onIntent(TransactionEditorIntent.MoreToggled) },
+            Modifier.testTag("txEditor.more"),
+        )
+        if (state.canMakeRecurring) {
+            LinkButton(
+                stringResource(Res.string.recurring_make_recurring),
+                { onIntent(TransactionEditorIntent.MakeRecurringClicked) },
+                Modifier.testTag("txEditor.makeRecurring"),
+                enabled = !state.saving && !state.busy,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LinkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    Box(
+        contentAlignment = Alignment.CenterStart,
+        modifier = modifier.heightIn(min = 48.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+    ) {
+        Text(
+            text,
+            style = AppTheme.type.caption.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold),
+            color = if (enabled) AppTheme.colors.primary else AppTheme.colors.outline,
+        )
+    }
 }
 
 @Composable
@@ -224,25 +489,53 @@ private fun Note(text: String) {
 @Composable
 private fun WalletSection(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
     if (!state.walletEditable) return
-    AppSelectField(
-        label = stringResource(Res.string.tx_field_wallet),
-        value = state.walletChoices.firstOrNull { it.id == state.walletId }?.name.orEmpty(),
-        onClick = { onIntent(TransactionEditorIntent.WalletClicked) },
-        modifier = Modifier.testTag("txEditor.wallet"),
+    InfoChip(
+        AppIcons.Wallet,
+        state.walletChoices.firstOrNull { it.id == state.walletId }?.name.orEmpty(),
+        { onIntent(TransactionEditorIntent.WalletClicked) },
         enabled = state.walletChoices.size > 1,
+        modifier = Modifier.testTag("txEditor.wallet"),
     )
 }
 
 @Composable
 private fun KindSection(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
     if (state.kindEditable) {
-        SegmentedControl(
-            options = TransactionKind.selectable,
-            label = { stringResource(it.labelRes()) },
-            selected = state.kind,
-            onSelect = { onIntent(TransactionEditorIntent.KindChosen(it)) },
-            optionModifier = { Modifier.testTag("txEditor.kind.${it.wire}") },
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+        ) {
+            TransactionKind.selectable.forEach { kind ->
+                val on = kind == state.kind
+                val (container, tint) = when (kind) {
+                    TransactionKind.Expense -> AppTheme.money.overContainer to AppTheme.money.over
+                    TransactionKind.Income -> AppTheme.money.positiveContainer to AppTheme.money.positive
+                    else -> AppTheme.colors.primaryContainer to AppTheme.colors.primary
+                }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = on, role = Role.RadioButton) { onIntent(TransactionEditorIntent.KindChosen(kind)) }
+                        .testTag("txEditor.kind.${kind.wire}"),
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .height(36.dp)
+                            .background(if (on) container else AppTheme.colors.sunken, AppTheme.shapes.pill)
+                            .padding(horizontal = 16.dp),
+                    ) {
+                        Text(
+                            stringResource(kind.labelRes()),
+                            style = AppTheme.type.caption.copy(fontSize = 13.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold),
+                            color = if (on) tint else AppTheme.colors.ink2,
+                            maxLines = 1,
+                        )
+                    }
+                }
+            }
+        }
         return
     }
     AppTextField(
@@ -279,46 +572,83 @@ private fun CategoryOrDestination(state: TransactionEditorState, onIntent: (Tran
         return
     }
     if (state.kind == TransactionKind.Unknown) return
-    val category = state.category
-    if (state.categoryId == null) {
-        AppSelectField(
-            label = stringResource(Res.string.tx_field_category),
-            value = "",
-            onClick = { onIntent(TransactionEditorIntent.CategoryClicked) },
-            modifier = Modifier.testTag("txEditor.category"),
-            errorText = state.errors[TransactionField.Category]?.text(TransactionField.Category),
+    Text(stringResource(Res.string.tx_field_category), style = AppTheme.type.label, color = AppTheme.colors.ink2, modifier = Modifier.padding(top = 8.dp))
+    val choices = state.categoryChoices
+    val options = (listOfNotNull(state.category) + listOfNotNull(choices?.current) + (choices?.own.orEmpty()) + (choices?.defaults.orEmpty()))
+        .distinctBy { it.id }
+        .let { all -> all.sortedByDescending { it.id == state.categoryId } }
+        .take(7)
+    val tiles = options.map<CategoryDisplay, @Composable (Modifier) -> Unit> { option ->
+        { modifier ->
+            CategoryTileButton(
+                label = option.label(),
+                icon = CategoryIcons.of(option.iconKey),
+                selected = option.id == state.categoryId,
+                enabled = state.canEdit,
+                onClick = { onIntent(TransactionEditorIntent.CategoryChosen(option.id)) },
+                modifier = modifier.testTag("txEditor.categoryOption.${option.id}"),
+            )
+        }
+    } + listOf<@Composable (Modifier) -> Unit>({ modifier ->
+        CategoryTileButton(
+            label = stringResource(Res.string.txle_all_categories),
+            icon = AppIcons.More,
+            selected = false,
             enabled = state.canEdit,
+            onClick = { onIntent(TransactionEditorIntent.CategoryClicked) },
+            modifier = modifier.testTag("txEditor.category"),
         )
-        if (state.categoriesEmpty) {
-            Text(stringResource(Res.string.category_choice_empty), style = AppTheme.type.body, color = AppTheme.colors.ink2)
+    })
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().selectableGroup()) {
+        tiles.chunked(4).forEach { rowTiles ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
+                rowTiles.forEach { tile -> tile(Modifier.weight(1f).fillMaxHeight()) }
+                repeat(4 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
+            }
         }
-        return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xxs)) {
-        Text(stringResource(Res.string.tx_field_category), style = AppTheme.type.label, color = AppTheme.colors.ink2)
-        CategoryRow(
-            name = category?.label() ?: stringResource(Res.string.category_unavailable),
-            iconKey = category?.iconKey,
-            colorHex = category?.colorHex,
-            modifier = Modifier
-                .background(AppTheme.colors.surface, AppTheme.shapes.control)
-                .testTag("txEditor.category"),
-            onClick = if (state.canEdit) ({ onIntent(TransactionEditorIntent.CategoryClicked) }) else null,
+    if (state.categoriesEmpty) {
+        Text(stringResource(Res.string.category_choice_empty), style = AppTheme.type.body, color = AppTheme.colors.ink2)
+    }
+    state.errors[TransactionField.Category]?.let {
+        Text(it.text(TransactionField.Category), style = AppTheme.type.caption, color = AppTheme.colors.error)
+    }
+}
+
+@Composable
+private fun CategoryTileButton(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(shape)
+            .background(if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.sunken, shape)
+            .border(2.dp, if (selected) AppTheme.colors.primary else Color.Transparent, shape)
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 12.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) AppTheme.colors.primary else AppTheme.colors.ink2, modifier = Modifier.size(24.dp))
+        Text(
+            label,
+            style = AppTheme.type.caption.copy(fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold),
+            color = if (selected) AppTheme.colors.primary else AppTheme.colors.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        state.errors[TransactionField.Category]?.let {
-            Text(it.text(TransactionField.Category), style = AppTheme.type.caption, color = AppTheme.colors.error)
-        }
     }
 }
 
 @Composable
 private fun MoreDetails(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
-    AppListItem(
-        stringResource(Res.string.tx_more),
-        modifier = Modifier.testTag("txEditor.more"),
-        trailing = ListTrailing.Chevron,
-        onClick = { onIntent(TransactionEditorIntent.MoreToggled) },
-    )
     if (!state.moreOpen) return
     AppTextField(
         value = state.details,

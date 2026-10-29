@@ -17,9 +17,26 @@ data class AccountState(
     val notificationsAvailable: Boolean = false,
     /** Development builds only (spec 017 FR-036). */
     val devToolsAvailable: Boolean = false,
+    /** The server address can be edited and is shown here (Android builds). */
+    val serverAddress: String? = null,
+    /** The profile's display name; null until the profile is known or when it has none. */
+    val displayName: String? = null,
+    val plan: AccountPlan? = null,
+    /** Devices signed in, from the stored session list; null until it has been read. */
+    val deviceCount: Int? = null,
 )
 
-enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Exports, Notifications, DevTools }
+/** The plan row of the account screen: the plan's name and, for a paid one, the status line. */
+data class AccountPlan(val name: String, val status: AccountPlanStatus? = null)
+
+sealed interface AccountPlanStatus {
+    data class Renews(val on: Instant) : AccountPlanStatus
+    data class Ends(val on: Instant) : AccountPlanStatus
+    data object NoEnd : AccountPlanStatus
+    data class Grace(val until: Instant) : AccountPlanStatus
+}
+
+enum class AccountDestination { Profile, Devices, ChangePassword, DeleteAccount, Plan, Exports, Notifications, Categories, DevTools, Server }
 
 sealed interface AccountIntent {
     data class Open(val destination: AccountDestination) : AccountIntent
@@ -40,6 +57,9 @@ sealed interface AccountChange {
     data class SignOutConfirmVisible(val visible: Boolean) : AccountChange
     data object SigningOut : AccountChange
     data class Sync(val status: SyncStatus) : AccountChange
+    data class DisplayName(val name: String?) : AccountChange
+    data class Plan(val plan: AccountPlan?) : AccountChange
+    data class DeviceCount(val count: Int) : AccountChange
 }
 
 fun reduce(state: AccountState, change: AccountChange): AccountState = when (change) {
@@ -52,4 +72,7 @@ fun reduce(state: AccountState, change: AccountChange): AccountState = when (cha
     is AccountChange.SignOutConfirmVisible -> state.copy(confirmSignOutVisible = change.visible)
     AccountChange.SigningOut -> state.copy(signingOut = true)
     is AccountChange.Sync -> state.copy(sync = change.status)
+    is AccountChange.DisplayName -> state.copy(displayName = change.name?.takeIf { it.isNotBlank() })
+    is AccountChange.Plan -> state.copy(plan = change.plan)
+    is AccountChange.DeviceCount -> state.copy(deviceCount = change.count)
 }

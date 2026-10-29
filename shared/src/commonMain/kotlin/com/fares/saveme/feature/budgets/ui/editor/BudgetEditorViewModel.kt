@@ -10,11 +10,15 @@ import com.fares.saveme.feature.budgets.domain.model.BudgetFieldProblem
 import com.fares.saveme.feature.budgets.domain.model.BudgetView
 import com.fares.saveme.feature.budgets.domain.model.CreateResult
 import com.fares.saveme.feature.budgets.domain.model.SaveResult
+import com.fares.saveme.feature.budgets.domain.model.SpendHistory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -41,6 +45,8 @@ class BudgetEditorViewModel(
     private val discard: suspend (String) -> Unit,
     /** Reads the budget's progress when the server holds it (FR-018); the phone's own figures stand meanwhile. */
     private val refreshOne: suspend (String) -> Unit = {},
+    /** Spending of the chosen category in earlier periods (category id or null for all expenses, currency). */
+    private val observeHistory: (String?, String) -> Flow<SpendHistory> = { _, _ -> emptyFlow() },
 ) : MviViewModel<BudgetEditorState, BudgetEditorIntent, BudgetEditorEffect>(BudgetEditorState(budgetId = budgetId)) {
 
     /** True from a confirmed delete or archive on, so the budget vanishing is not reported as "gone". */
@@ -53,6 +59,14 @@ class BudgetEditorViewModel(
 
     init {
         viewModelScope.launch { load() }
+        state
+            .map { if (it.categoryChosen && it.currency.isNotEmpty()) it.categoryId to it.currency else null }
+            .distinctUntilChanged()
+            .flatMapLatest { key ->
+                if (key == null) flowOf<SpendHistory?>(null) else observeHistory(key.first, key.second)
+            }
+            .onEach { history -> setState { reduce(it, BudgetEditorChange.History(history)) } }
+            .launchIn(viewModelScope)
     }
 
     private suspend fun load() {

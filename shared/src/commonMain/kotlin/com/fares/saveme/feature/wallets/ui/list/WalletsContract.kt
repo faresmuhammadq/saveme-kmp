@@ -23,6 +23,9 @@ data class WalletCardUi(
     val archived: Boolean,
     /** Shown only when the person is not the owner. */
     val role: WalletRole?,
+    /** More than one person is in the wallet. */
+    val shared: Boolean = false,
+    val myRole: WalletRole = WalletRole.Owner,
 )
 
 data class WalletsState(
@@ -72,7 +75,7 @@ sealed interface WalletsChange {
 
 fun reduce(state: WalletsState, change: WalletsChange): WalletsState = when (change) {
     is WalletsChange.Stored -> {
-        val cards = change.list.active.map { it.toCard() } to change.list.archived.map { it.toCard() }
+        val cards = change.list.active.map { it.toCard(it.id in change.list.sharedIds) } to change.list.archived.map { it.toCard(it.id in change.list.sharedIds) }
         state.copy(
             active = cards.first,
             archived = cards.second,
@@ -89,7 +92,7 @@ fun reduce(state: WalletsState, change: WalletsChange): WalletsState = when (cha
     is WalletsChange.LeftNotice -> state.copy(leftNotice = change.walletName)
 }
 
-internal fun WalletView.toCard() = WalletCardUi(
+internal fun WalletView.toCard(shared: Boolean = false) = WalletCardUi(
     id = id,
     name = shown.name,
     type = shown.walletType,
@@ -105,4 +108,6 @@ internal fun WalletView.toCard() = WalletCardUi(
     },
     archived = archived,
     role = server.myRole.takeIf { it != WalletRole.Owner },
+    shared = shared,
+    myRole = server.myRole,
 )

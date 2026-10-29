@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurring_calm_preset_custom_hint">Rent, salary, bills</string>
+    <string name="recurring_calm_preset_gameya_hint">Pay each round, get one payout</string>
+    <string name="recurring_calm_preset_installment_hint">Split a total into rounds</string>
+    <string name="recurring_calm_close">Close</string>
+    <string name="recurring_calm_this_week">This week</string>
+    <string name="recurring_calm_needs_you">Needs you · %1$d</string>
+    <string name="recurring_calm_change_it">Change it</string>
+    <string name="recurring_calm_due_today">Due today</string>
+    <string name="recurring_calm_due_tomorrow">Due tomorrow</string>
+    <string name="recurring_calm_round_of">Round %1$d of %2$d</string>
+    <string name="recurring_calm_paid_of">%1$d of %2$d paid</string>
+    <string name="recurring_calm_rounds">Rounds</string>
+    <string name="recurring_calm_rounds_cd">Rounds: %1$d of %2$d paid</string>
+    <string name="recurring_calm_next_round">Next: Round %1$d · %2$s</string>
+    <string name="recurring_calm_payout_on">Payout %1$s · %2$s</string>
+    <string name="recurring_calm_more">More</string>
+    <string name="recurring_calm_on">On</string>
+    <string name="recurring_calm_off">Off</string>
+    <string name="recurring_calm_added_by">Added by</string>
+    <string name="recurring_calm_you">You</string>
+    <string name="recurring_calm_amount_this_time">Amount this time</string>
+    <string name="recurring_calm_tap_part">Tap any part to change it</string>
+    <string name="recurring_calm_next_dates">Next dates</string>
+    <string name="recurring_calm_starts">Starts %1$s</string>
+    <string name="recurring_calm_round_short">R%1$d</string>
+    <string name="recurring_calm_optional">Optional</string>
+    <string name="recurring_calm_auto_sub">Record each round on its date</string>
+    <string name="recurring_calm_more_details">More details</string>
+    <string name="recurring_calm_p_pay">Pay {amount} from {wallet}</string>
+    <string name="recurring_calm_p_pay_total">Pay {amount} in total from {wallet}</string>
+    <string name="recurring_calm_p_receive">Receive {amount} into {wallet}</string>
+    <string name="recurring_calm_p_move">Move {amount} from {wallet} to {destination}</string>
+    <string name="recurring_calm_p_for_category">for {category}</string>
+    <string name="recurring_calm_p_as_category">as {category}</string>
+    <string name="recurring_calm_p_every">every {frequency}</string>
+    <string name="recurring_calm_p_on_day">on {day}</string>
+    <string name="recurring_calm_p_until">until {endDate}</string>
+    <string name="recurring_calm_p_for_rounds">for {rounds}</string>
+    <string name="recurring_calm_p_over_rounds">over {rounds}</string>
+    <string name="recurring_calm_p_for_times">for {count}</string>
+    <string name="recurring_calm_p_payout">My payout is {payoutRound} into {payoutCategory}.</string>
+    <string name="recurring_calm_t_day">day %1$d</string>
+    <string name="recurring_calm_t_round">round %1$d</string>
+    <string name="recurring_calm_t_freq_daily">day</string>
+    <string name="recurring_calm_t_freq_weekly">week</string>
+    <string name="recurring_calm_t_freq_monthly">month</string>
+    <string name="recurring_calm_t_freq_yearly">year</string>
+    <plurals name="recurring_calm_t_rounds">
+        <item quantity="one">%1$d round</item>
+        <item quantity="other">%1$d rounds</item>
+    </plurals>
+    <plurals name="recurring_calm_t_times">
+        <item quantity="one">%1$d time</item>
+        <item quantity="other">%1$d times</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_daily">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_weekly">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_monthly">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_yearly">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <string-array name="recurring_calm_weekdays_short">
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+        <item>Sun</item>
+    </string-array>
+</resources>

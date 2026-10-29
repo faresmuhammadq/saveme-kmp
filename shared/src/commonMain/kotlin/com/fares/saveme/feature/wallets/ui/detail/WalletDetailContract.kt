@@ -1,6 +1,7 @@
 package com.fares.saveme.feature.wallets.ui.detail
 
 import com.fares.saveme.feature.wallets.domain.model.Member
+import com.fares.saveme.feature.wallets.domain.model.RecentTransaction
 import com.fares.saveme.feature.wallets.domain.model.WalletRole
 import com.fares.saveme.feature.wallets.domain.model.WalletView
 import kotlin.time.Instant
@@ -36,6 +37,8 @@ data class WalletDetailState(
     val joining: Boolean = false,
     /** That first read failed or was offline: "Try again" is offered. */
     val joiningFailed: Boolean = false,
+    /** The wallet's latest transactions, newest first, for the "Recent" card. */
+    val recent: List<RecentTransaction> = emptyList(),
 ) {
     val loaded: Boolean get() = wallet != null
 
@@ -111,6 +114,7 @@ sealed interface WalletDetailChange {
     data class PlanLimited(val limited: Boolean) : WalletDetailChange
     data class Joining(val joining: Boolean) : WalletDetailChange
     data class JoiningFailed(val failed: Boolean) : WalletDetailChange
+    data class Recent(val items: List<RecentTransaction>) : WalletDetailChange
 }
 
 fun reduce(state: WalletDetailState, change: WalletDetailChange): WalletDetailState = when (change) {
@@ -124,6 +128,7 @@ fun reduce(state: WalletDetailState, change: WalletDetailChange): WalletDetailSt
     is WalletDetailChange.PlanLimited -> state.copy(planLimited = change.limited)
     is WalletDetailChange.Joining -> state.copy(joining = change.joining, joiningFailed = if (change.joining) state.joiningFailed else false)
     is WalletDetailChange.JoiningFailed -> state.copy(joiningFailed = change.failed)
+    is WalletDetailChange.Recent -> state.copy(recent = change.items)
 }
 
 enum class ClashField { Name, OpeningBalance, Currency, Icon, Color, Archived }

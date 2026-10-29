@@ -2,6 +2,7 @@ package com.fares.saveme.feature.account.domain.deletion
 
 import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.feature.wallets.domain.model.WalletRole
+import com.fares.saveme.feature.wallets.domain.model.WalletType
 import kotlin.time.Instant
 
 sealed interface PlanState {
@@ -53,6 +54,10 @@ data class OwnedSharedWallet(
     val choiceExpected: Boolean,
     val choiceOffered: Boolean,
     val candidates: List<Candidate>,
+    /** How the phone draws the wallet (its own icon key, accent key and type); null when it does not hold the wallet. */
+    val walletIcon: String? = null,
+    val walletColor: String? = null,
+    val walletType: WalletType? = null,
 ) {
     /** The member who becomes owner when nothing is picked: the server's own answer. */
     val suggested: Candidate? get() = candidates.firstOrNull { it.userId == successorUserId }

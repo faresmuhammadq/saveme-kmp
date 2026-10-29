@@ -11,6 +11,7 @@ import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.wallets.domain.WalletMemberships
 import com.fares.saveme.feature.wallets.domain.WalletsService
 import com.fares.saveme.feature.wallets.domain.model.WalletRole
+import com.fares.saveme.feature.wallets.domain.model.WalletView
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlin.time.Instant
@@ -43,7 +44,7 @@ class DefaultDeletionPlanService(
     private suspend fun join(dto: DeletionPlanDto): DeletionPlan {
         val me = (sessions.state.value as? AuthState.SignedIn)?.account?.userId
         val list = wallets.observeList().first()
-        val names = (list.active + list.archived).associate { it.id to it.shown.name }
+        val views = (list.active + list.archived).associateBy { it.id }
         val state = when (dto.state) {
             "active" -> PlanState.Active
             "pending_deletion" -> PlanState.PendingDeletion
@@ -59,11 +60,12 @@ class DefaultDeletionPlanService(
             state = state,
             requestedAt = dto.deletionRequestedAt.toInstantOrNull(),
             scheduledFor = scheduledFor,
-            wallets = dto.successors.map { owned(it, names[it.walletId], me) },
+            wallets = dto.successors.map { owned(it, views[it.walletId], me) },
         )
     }
 
-    private suspend fun owned(dto: DeletionSuccessorDto, walletName: String?, me: String?): OwnedSharedWallet {
+    private suspend fun owned(dto: DeletionSuccessorDto, wallet: WalletView?, me: String?): OwnedSharedWallet {
+        val walletName = wallet?.shown?.name
         val others = memberships.observe(dto.walletId).first()
             .filter { !it.deleted && it.userId != me }
             .map { Candidate(it.userId, it.displayName?.takeIf { name -> name.isNotBlank() }, WalletRole.fromWire(it.role), it.createdAt.toInstantOrNull()) }
@@ -79,6 +81,9 @@ class DefaultDeletionPlanService(
             choiceExpected = dto.choiceExpected,
             choiceOffered = dto.choiceExpected && walletName != null && others.isNotEmpty(),
             candidates = candidates,
+            walletIcon = wallet?.shown?.icon,
+            walletColor = wallet?.shown?.color,
+            walletType = wallet?.shown?.walletType,
         )
     }
 

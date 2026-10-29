@@ -2,6 +2,7 @@ package com.fares.saveme.feature.account.di
 
 import com.fares.saveme.core.database.AppDatabase
 import com.fares.saveme.core.config.AppConfig
+import com.fares.saveme.core.config.ServerAddressSettings
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.feature.notifications.domain.PushTokenProvider
 import com.fares.saveme.feature.account.data.AccountApi
@@ -17,6 +18,11 @@ import com.fares.saveme.feature.account.data.ProfileSyncHandler
 import com.fares.saveme.feature.account.domain.AccountRefresher
 import com.fares.saveme.feature.account.domain.AccountSyncCoordinator
 import com.fares.saveme.feature.account.domain.ProfileSyncer
+import com.fares.saveme.feature.account.ui.account.AccountPlan
+import com.fares.saveme.feature.account.ui.account.AccountPlanStatus
+import com.fares.saveme.feature.billing.domain.PlanSummary
+import com.fares.saveme.feature.billing.domain.PlanSummaryStatus
+import com.fares.saveme.feature.billing.domain.PlanOverview
 import com.fares.saveme.feature.account.domain.SessionRefresher
 import com.fares.saveme.feature.account.domain.deletion.DefaultDeletionPlanService
 import com.fares.saveme.feature.account.domain.deletion.DeletionPlanService
@@ -56,6 +62,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
@@ -65,7 +72,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /** The budgets Home lists on its card (spec 012 FR-017). */
-private const val HOME_BUDGETS = 3
+private const val HOME_BUDGETS = 8
 
 val accountModule = module {
     single { AccountApi(get()) }
@@ -125,6 +132,7 @@ val accountModule = module {
             invitationHeld = held.observeHeld(),
             invitationDeclined = held.observeDeclined(),
             minuteTicks = minuteTicks(),
+            displayName = get<ProfileSyncer>().view.map { it?.effective?.displayName },
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's
@@ -140,11 +148,15 @@ val accountModule = module {
             verify = { verify(it) },
             resend = { resend() },
             refreshAccount = { refresher.refresh() },
+            email = { (sessions.state.value as? AuthState.SignedIn)?.account?.email },
         )
     }
     viewModel {
         val signOut = get<SignOutUseCase>()
         val engine = get<SyncEngine>()
+        val syncer = get<ProfileSyncer>()
+        val overview = get<PlanOverview>()
+        val sessionList = get<SessionRefresher>()
         AccountViewModel(
             get<SessionManager>().state,
             signOut = { signOut() },
@@ -152,6 +164,13 @@ val accountModule = module {
             syncNow = { engine.syncNow() },
             notificationsAvailable = get<PushTokenProvider>().isAvailable,
             devToolsAvailable = get<AppConfig>().isDebugTools,
+            serverAddress = if (get<AppConfig>().serverAddressEditable) get<ServerAddressSettings>().current() else null,
+            displayName = syncer.view.map { it?.effective?.displayName },
+            plan = flow {
+                overview.loadStored()
+                emitAll(overview.summary.map { it?.toAccountPlan() })
+            },
+            deviceCount = sessionList.sessions.map { it.items.size },
         )
     }
     viewModel {
@@ -205,7 +224,7 @@ val accountModule = module {
             request = { scope, walletId -> exports.request(scope, walletId) },
             // A wallet made on this phone has version 0 and is not on the server yet: it cannot be exported (research R-06).
             wallets = wallets.observeList().map { list ->
-                (list.active + list.archived).filter { it.server.version > 0 }.map { WalletChoice(it.id, it.shown.name, it.archived) }
+                (list.active + list.archived).filter { it.server.version > 0 }.map { WalletChoice(it.id, it.shown.name, it.archived, it.shown.icon, it.shown.color, it.shown.walletType) }
             },
             unsentChanges = engine.status.map { it.pending > 0 },
             signedIn = signedInFlow(get()),
@@ -260,3 +279,15 @@ private fun signedInFlow(sessions: SessionManager) = sessions.state.map { it is 
 /** Times are shown in the profile timezone (P-05); the device's until the profile is known. */
 private fun profileTimeZone(syncer: ProfileSyncer, clientInfo: ClientInfo) =
     syncer.view.map { it?.server?.timezoneId ?: clientInfo.timezoneId() }
+
+/** The plan row's data, from the billing summary. */
+private fun PlanSummary.toAccountPlan() = AccountPlan(
+    name,
+    when (val status = status) {
+        is PlanSummaryStatus.Renews -> AccountPlanStatus.Renews(status.on)
+        is PlanSummaryStatus.Ends -> AccountPlanStatus.Ends(status.on)
+        PlanSummaryStatus.NoEnd -> AccountPlanStatus.NoEnd
+        is PlanSummaryStatus.Grace -> AccountPlanStatus.Grace(status.until)
+        null -> null
+    },
+)

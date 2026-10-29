@@ -2,6 +2,8 @@ package com.fares.saveme.feature.notifications.ui.open
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fares.saveme.feature.notifications.domain.PushRoute
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -17,5 +19,6 @@ fun NotificationOpenRoute(
         viewModel.onIntent(NotificationOpenIntent.Started)
         viewModel.effects.collect(onEffect)
     }
-    NotificationOpenScreen(viewModel::onIntent)
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    NotificationOpenScreen(state.category, viewModel::onIntent)
 }

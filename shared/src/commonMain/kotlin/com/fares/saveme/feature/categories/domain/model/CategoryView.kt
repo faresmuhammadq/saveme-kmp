@@ -99,4 +99,6 @@ data class CategoriesOverview(
     val updatedAt: Instant?,
     val loaded: Boolean,
     val defaultsMissing: Boolean,
+    /** Active own plus active default categories of the other kind, for the kind switch's count. */
+    val otherKindCount: Int = 0,
 )

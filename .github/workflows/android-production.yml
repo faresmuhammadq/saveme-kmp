@@ -1,0 +1,24 @@
+name: android-production
+
+# Every push to main builds the signed production APK (com.fares.saveme).
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-production
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/_android-build.yml
+    with:
+      flavor: prod
+      host: ${{ vars.PROD_API_HOST || '192.168.1.14:8092' }}
+    secrets: inherit

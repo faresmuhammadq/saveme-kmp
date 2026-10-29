@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurring_calm_preset_custom_hint">إيجار، راتب، فواتير</string>
+    <string name="recurring_calm_preset_gameya_hint">ادفع كل دورة واستلم دفعة واحدة</string>
+    <string name="recurring_calm_preset_installment_hint">قسّم مبلغًا على دورات</string>
+    <string name="recurring_calm_close">إغلاق</string>
+    <string name="recurring_calm_this_week">هذا الأسبوع</string>
+    <string name="recurring_calm_needs_you">يحتاج منك · %1$d</string>
+    <string name="recurring_calm_change_it">غيّرها</string>
+    <string name="recurring_calm_due_today">مستحقة اليوم</string>
+    <string name="recurring_calm_due_tomorrow">مستحقة غدًا</string>
+    <string name="recurring_calm_round_of">الدورة %1$d من %2$d</string>
+    <string name="recurring_calm_paid_of">تم دفع %1$d من %2$d</string>
+    <string name="recurring_calm_rounds">الدورات</string>
+    <string name="recurring_calm_rounds_cd">الدورات: تم دفع %1$d من %2$d</string>
+    <string name="recurring_calm_next_round">التالية: الدورة %1$d · %2$s</string>
+    <string name="recurring_calm_payout_on">الاستلام %1$s · %2$s</string>
+    <string name="recurring_calm_more">المزيد</string>
+    <string name="recurring_calm_on">مفعّل</string>
+    <string name="recurring_calm_off">متوقف</string>
+    <string name="recurring_calm_added_by">أضافها</string>
+    <string name="recurring_calm_you">أنت</string>
+    <string name="recurring_calm_amount_this_time">المبلغ هذه المرة</string>
+    <string name="recurring_calm_tap_part">اضغط على أي جزء لتعديله</string>
+    <string name="recurring_calm_next_dates">التواريخ القادمة</string>
+    <string name="recurring_calm_starts">تبدأ %1$s</string>
+    <string name="recurring_calm_round_short">د%1$d</string>
+    <string name="recurring_calm_optional">اختياري</string>
+    <string name="recurring_calm_auto_sub">سجّل كل دورة في موعدها</string>
+    <string name="recurring_calm_more_details">المزيد من التفاصيل</string>
+    <string name="recurring_calm_p_pay">ادفع {amount} من {wallet}</string>
+    <string name="recurring_calm_p_pay_total">ادفع {amount} إجمالًا من {wallet}</string>
+    <string name="recurring_calm_p_receive">استلم {amount} في {wallet}</string>
+    <string name="recurring_calm_p_move">حوّل {amount} من {wallet} إلى {destination}</string>
+    <string name="recurring_calm_p_for_category">لفئة {category}</string>
+    <string name="recurring_calm_p_as_category">ضمن فئة {category}</string>
+    <string name="recurring_calm_p_every">كل {frequency}</string>
+    <string name="recurring_calm_p_on_day">في {day}</string>
+    <string name="recurring_calm_p_until">حتى {endDate}</string>
+    <string name="recurring_calm_p_for_rounds">لمدة {rounds}</string>
+    <string name="recurring_calm_p_over_rounds">على {rounds}</string>
+    <string name="recurring_calm_p_for_times">لمدة {count}</string>
+    <string name="recurring_calm_p_payout">استلامي في {payoutRound} داخل {payoutCategory}.</string>
+    <string name="recurring_calm_t_day">يوم %1$d</string>
+    <string name="recurring_calm_t_round">الدورة %1$d</string>
+    <string name="recurring_calm_t_freq_daily">يوم</string>
+    <string name="recurring_calm_t_freq_weekly">أسبوع</string>
+    <string name="recurring_calm_t_freq_monthly">شهر</string>
+    <string name="recurring_calm_t_freq_yearly">سنة</string>
+    <plurals name="recurring_calm_t_rounds">
+        <item quantity="zero">%1$d دورة</item>
+        <item quantity="one">دورة واحدة</item>
+        <item quantity="two">دورتان</item>
+        <item quantity="few">%1$d دورات</item>
+        <item quantity="many">%1$d دورة</item>
+        <item quantity="other">%1$d دورة</item>
+    </plurals>
+    <plurals name="recurring_calm_t_times">
+        <item quantity="zero">%1$d مرة</item>
+        <item quantity="one">مرة واحدة</item>
+        <item quantity="two">مرتان</item>
+        <item quantity="few">%1$d مرات</item>
+        <item quantity="many">%1$d مرة</item>
+        <item quantity="other">%1$d مرة</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_daily">
+        <item quantity="zero">%1$d يوم</item>
+        <item quantity="one">يوم</item>
+        <item quantity="two">يومين</item>
+        <item quantity="few">%1$d أيام</item>
+        <item quantity="many">%1$d يومًا</item>
+        <item quantity="other">%1$d يوم</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_weekly">
+        <item quantity="zero">%1$d أسبوع</item>
+        <item quantity="one">أسبوع</item>
+        <item quantity="two">أسبوعين</item>
+        <item quantity="few">%1$d أسابيع</item>
+        <item quantity="many">%1$d أسبوعًا</item>
+        <item quantity="other">%1$d أسبوع</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_monthly">
+        <item quantity="zero">%1$d شهر</item>
+        <item quantity="one">شهر</item>
+        <item quantity="two">شهرين</item>
+        <item quantity="few">%1$d أشهر</item>
+        <item quantity="many">%1$d شهرًا</item>
+        <item quantity="other">%1$d شهر</item>
+    </plurals>
+    <plurals name="recurring_calm_t_every_yearly">
+        <item quantity="zero">%1$d سنة</item>
+        <item quantity="one">سنة</item>
+        <item quantity="two">سنتين</item>
+        <item quantity="few">%1$d سنوات</item>
+        <item quantity="many">%1$d سنة</item>
+        <item quantity="other">%1$d سنة</item>
+    </plurals>
+    <string-array name="recurring_calm_weekdays_short">
+        <item>اثنين</item>
+        <item>ثلاثاء</item>
+        <item>أربعاء</item>
+        <item>خميس</item>
+        <item>جمعة</item>
+        <item>سبت</item>
+        <item>أحد</item>
+    </string-array>
+</resources>

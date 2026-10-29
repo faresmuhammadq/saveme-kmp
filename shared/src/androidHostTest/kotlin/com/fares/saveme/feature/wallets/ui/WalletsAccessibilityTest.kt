@@ -6,6 +6,8 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.wallets.domain.model.CurrencyTotal
@@ -71,6 +73,7 @@ class WalletsAccessibilityTest {
         compose.onNodeWithText("Changed on another device.").assertIsDisplayed()
         compose.onNodeWithText("Not saved.").assertIsDisplayed()
         compose.onNodeWithText("Viewer").assertIsDisplayed()
+        compose.onNodeWithTag("wallets.archivedTile").performClick()
         compose.onNodeWithText("Archived").assertIsDisplayed()
     }
 
@@ -80,6 +83,7 @@ class WalletsAccessibilityTest {
         compose.onNodeWithText("Owner").assertIsDisplayed()
         compose.onNodeWithText("Editor").assertIsDisplayed()
         compose.onNodeWithText("Archived").assertIsDisplayed()
+        compose.onNodeWithTag("walletDetail.more").performClick()
         compose.onNodeWithText("Transfer ownership").assertIsDisplayed()
     }
 

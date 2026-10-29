@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wlc_create_wallet">إنشاء المحفظة</string>
+    <string name="wlc_preview">معاينة</string>
+    <string name="wlc_owed">المستحق %1$s</string>
+    <string name="wlc_archived_count">المؤرشفة · %1$d</string>
+    <string name="wlc_wallet_settings">إعدادات المحفظة</string>
+    <string name="wlc_recent">الأحدث</string>
+    <string name="wlc_all_transactions">كل المعاملات</string>
+    <string name="wlc_recent_empty">لا توجد معاملات بعد</string>
+    <string name="wlc_added_by_you">أضفتها أنت</string>
+    <string name="wlc_pending">قيد الانتظار</string>
+    <string name="wlc_invited_count">%1$d مدعوّ</string>
+    <string name="wlc_manage">إدارة</string>
+    <string name="wlc_see">عرض</string>
+    <string name="wlc_add">إضافة</string>
+</resources>

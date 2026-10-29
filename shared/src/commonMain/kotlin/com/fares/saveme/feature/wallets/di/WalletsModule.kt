@@ -16,6 +16,8 @@ import com.fares.saveme.feature.wallets.data.WalletFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletMemberFeedApplier
 import com.fares.saveme.feature.wallets.data.WalletRepository
 import com.fares.saveme.feature.wallets.data.WalletSyncHandler
+import com.fares.saveme.feature.wallets.domain.NoRecentTransactions
+import com.fares.saveme.feature.wallets.domain.RecentTransactionsSource
 import com.fares.saveme.feature.wallets.domain.DefaultWalletMemberships
 import com.fares.saveme.feature.wallets.domain.DefaultWalletScopes
 import com.fares.saveme.feature.wallets.domain.LeftWallets
@@ -77,6 +79,7 @@ val walletsModule = module {
     }
     // Default until the sharing module rebinds it (spec 013 R-15).
     single<SharingGlance> { NoSharingGlance }
+    single<RecentTransactionsSource> { NoRecentTransactions }
     single<WalletsService> {
         val sessions = get<SessionManager>()
         DefaultWalletsService(
@@ -138,6 +141,7 @@ val walletsModule = module {
             planLimited = sharing.observePlanLimited(id),
             joining = wallets.observeJoining(id),
             leftByPerson = left.observe(id),
+            recent = get<RecentTransactionsSource>().observe(id),
         )
     }
     viewModel { params ->

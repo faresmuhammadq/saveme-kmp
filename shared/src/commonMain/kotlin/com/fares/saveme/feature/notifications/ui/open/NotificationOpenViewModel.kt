@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class NotificationOpenViewModel(
     private val route: PushRoute,
     private val open: suspend (PushRoute) -> PushTarget,
-) : MviViewModel<NotificationOpenState, NotificationOpenIntent, NotificationOpenEffect>(NotificationOpenState()) {
+) : MviViewModel<NotificationOpenState, NotificationOpenIntent, NotificationOpenEffect>(NotificationOpenState(category = route.target.category())) {
 
     private var job: Job? = null
 

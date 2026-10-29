@@ -2,6 +2,19 @@ package com.fares.saveme.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import com.fares.saveme.designsystem.component.AppTabBar
+import com.fares.saveme.designsystem.component.MainTab
+import org.jetbrains.compose.resources.stringResource
+import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.budgets_home_row
+import saveme.shared.generated.resources.home_add_transaction
+import saveme.shared.generated.resources.home_title
+import saveme.shared.generated.resources.home_wallets
+import saveme.shared.generated.resources.reports_home_row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +36,8 @@ import com.fares.saveme.core.network.ApiEvents
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.devtools.DevToolsEffect
 import com.fares.saveme.devtools.DevToolsRoute
+import com.fares.saveme.feature.server.ServerAddressEffect
+import com.fares.saveme.feature.server.ServerAddressRoute
 import com.fares.saveme.devtools.catalog.ComponentCatalogEffect
 import com.fares.saveme.devtools.catalog.ComponentCatalogRoute
 import com.fares.saveme.devtools.pastelink.PasteLinkEffect
@@ -261,580 +276,631 @@ fun AppNavHost(
         return
     }
 
-    NavDisplay(
-        backStack = activeStack,
-        onBack = { if (activeStack.lastOrNull() !is UpdateRequiredKey) activeStack.pop() },
-        entryDecorators = listOf(
-            rememberSaveableStateHolderNavEntryDecorator(),
-            rememberViewModelStoreNavEntryDecorator(),
-        ),
-        modifier = Modifier.fillMaxSize().background(AppTheme.colors.background),
-        entryProvider = entryProvider {
-            entry<EntryKey> {
-                EntryRoute(onEffect = { effect ->
-                    when (effect) {
-                        EntryEffect.NavigateSignIn -> authStack.add(SignInKey())
-                        EntryEffect.NavigateRegister -> authStack.add(RegisterKey())
-                        EntryEffect.NavigateDevTools -> authStack.add(DevToolsKey)
-                    }
-                })
-            }
-            entry<SignInKey> { key ->
-                SignInRoute(args = SignInArgs(key.prefillEmail, key.reason), onEffect = { effect ->
-                    when (effect) {
-                        is SignInEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email.ifBlank { null }))
-                        SignInEffect.NavigateRegister -> authStack.add(RegisterKey())
-                        SignInEffect.NavigateBack -> authStack.pop()
-                    }
-                })
-            }
-            entry<RegisterKey> { key ->
-                RegisterRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
-                    when (effect) {
-                        is RegisterEffect.NavigateCheckInbox -> authStack.add(CheckInboxKey(effect.email, CheckInboxKind.Verification))
-                        is RegisterEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
-                        is RegisterEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email))
-                        RegisterEffect.NavigateBack -> authStack.pop()
-                    }
-                })
-            }
-            entry<CheckInboxKey> { key ->
-                CheckInboxRoute(email = key.email, kind = key.kind, onEffect = { effect ->
-                    when (effect) {
-                        is CheckInboxEffect.NavigateSignIn ->
-                            if (sessionManager.state.value is AuthState.SignedIn) {
-                                appStack.resetTo(HomeKey)
-                            } else {
-                                authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
+    // The tab bar sits under the screens that are tabs of the signed-in app, outside the stack's own scaffolds.
+    val topKey = if (signedIn) activeStack.lastOrNull() else null
+    val tab = topKey?.let(::tabOf)
+    Column(Modifier.fillMaxSize().background(AppTheme.colors.background)) {
+        Box(
+            Modifier
+                .weight(1f)
+                .then(if (tab != null) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier),
+        ) {
+            NavDisplay(
+                backStack = activeStack,
+                onBack = { if (activeStack.lastOrNull() !is UpdateRequiredKey) activeStack.pop() },
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                ),
+                modifier = Modifier.fillMaxSize().background(AppTheme.colors.background),
+                entryProvider = entryProvider {
+                    entry<EntryKey> {
+                        EntryRoute(onEffect = { effect ->
+                            when (effect) {
+                                EntryEffect.NavigateSignIn -> authStack.add(SignInKey())
+                                EntryEffect.NavigateRegister -> authStack.add(RegisterKey())
+                                EntryEffect.NavigateDevTools -> authStack.add(DevToolsKey)
+                                EntryEffect.NavigateServer -> authStack.add(ServerAddressKey)
                             }
+                        })
                     }
-                })
-            }
-            entry<HomeKey> {
-                HomeRoute(onEffect = { effect ->
-                    when (effect) {
-                        HomeEffect.NavigateAccount -> appStack.add(AccountKey)
-                        HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
-                        HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
-                        HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
-                        HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
-                        HomeEffect.NavigateBudgets -> appStack.add(BudgetsKey)
-                        HomeEffect.NavigateReports -> appStack.add(ReportsKey())
-                        HomeEffect.OpenInvitation -> heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
-                        is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
-                        is HomeEffect.ShowMessage -> Unit // shown by the route
+                    entry<SignInKey> { key ->
+                        SignInRoute(args = SignInArgs(key.prefillEmail, key.reason), onEffect = { effect ->
+                            when (effect) {
+                                is SignInEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email.ifBlank { null }))
+                                SignInEffect.NavigateRegister -> authStack.add(RegisterKey())
+                                SignInEffect.NavigateBack -> authStack.pop()
+                            }
+                        })
                     }
-                })
-            }
-            entry<AccountKey> {
-                AccountRoute(onEffect = { effect ->
-                    when (effect) {
-                        is AccountEffect.Navigate -> appStack.add(
-                            when (effect.destination) {
-                                AccountDestination.Profile -> ProfileKey
-                                AccountDestination.Devices -> DeviceSessionsKey
-                                AccountDestination.ChangePassword -> ChangePasswordKey
-                                AccountDestination.DeleteAccount -> DeleteAccountKey
-                                AccountDestination.Plan -> PlanKey
-                                AccountDestination.Notifications -> NotificationSettingsKey
-                                AccountDestination.DevTools -> DevToolsKey
-                                AccountDestination.Exports -> ExportsKey
+                    entry<RegisterKey> { key ->
+                        RegisterRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
+                            when (effect) {
+                                is RegisterEffect.NavigateCheckInbox -> authStack.add(CheckInboxKey(effect.email, CheckInboxKind.Verification))
+                                is RegisterEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
+                                is RegisterEffect.NavigateForgotPassword -> authStack.add(ForgotPasswordKey(effect.email))
+                                RegisterEffect.NavigateBack -> authStack.pop()
+                            }
+                        })
+                    }
+                    entry<CheckInboxKey> { key ->
+                        CheckInboxRoute(email = key.email, kind = key.kind, onEffect = { effect ->
+                            when (effect) {
+                                is CheckInboxEffect.NavigateSignIn ->
+                                    if (sessionManager.state.value is AuthState.SignedIn) {
+                                        appStack.resetTo(HomeKey)
+                                    } else {
+                                        authStack.resetTo(EntryKey, SignInKey(prefillEmail = effect.email))
+                                    }
+                            }
+                        })
+                    }
+                    entry<HomeKey> {
+                        HomeRoute(onEffect = { effect ->
+                            when (effect) {
+                                HomeEffect.NavigateAccount -> appStack.add(AccountKey)
+                                HomeEffect.NavigateWallets -> appStack.add(WalletsKey)
+                                HomeEffect.NavigateCategories -> appStack.add(CategoriesKey)
+                                HomeEffect.NavigateAddTransaction -> appStack.add(TransactionEditorKey())
+                                HomeEffect.OpenDue -> appStack.add(RecurringKey(null))
+                                HomeEffect.NavigateBudgets -> appStack.add(BudgetsKey)
+                                HomeEffect.NavigateReports -> appStack.add(ReportsKey())
+                                HomeEffect.OpenInvitation -> heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
+                                is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
+                                is HomeEffect.ShowMessage -> Unit // shown by the route
+                            }
+                        })
+                    }
+                    entry<AccountKey> {
+                        AccountRoute(onEffect = { effect ->
+                            when (effect) {
+                                is AccountEffect.Navigate -> appStack.add(
+                                    when (effect.destination) {
+                                        AccountDestination.Profile -> ProfileKey
+                                        AccountDestination.Devices -> DeviceSessionsKey
+                                        AccountDestination.ChangePassword -> ChangePasswordKey
+                                        AccountDestination.DeleteAccount -> DeleteAccountKey
+                                        AccountDestination.Plan -> PlanKey
+                                        AccountDestination.Notifications -> NotificationSettingsKey
+                                        AccountDestination.Categories -> CategoriesKey
+                                        AccountDestination.DevTools -> DevToolsKey
+                                        AccountDestination.Server -> ServerAddressKey
+                                        AccountDestination.Exports -> ExportsKey
+                                    },
+                                )
+                                AccountEffect.NavigateBack -> appStack.pop()
+                            }
+                        })
+                    }
+                    entry<ProfileKey> {
+                        ProfileRoute(onEffect = { effect ->
+                            when (effect) {
+                                ProfileEffect.NavigateBack -> appStack.pop()
+                                ProfileEffect.Saved -> Unit // shown by the route
+                            }
+                        })
+                    }
+                    entry<DeleteAccountKey> {
+                        DeleteAccountRoute(onEffect = { effect ->
+                            when (effect) {
+                                DeleteAccountEffect.NavigateBack -> appStack.pop()
+                                DeleteAccountEffect.OpenExports -> appStack.add(ExportsKey)
+                                // Home carries the pending-deletion notice from here on (FR-019).
+                                DeleteAccountEffect.Finished -> appStack.resetTo(HomeKey)
+                            }
+                        })
+                    }
+                    entry<ExportsKey> {
+                        ExportsRoute(onEffect = { effect ->
+                            when (effect) {
+                                is ExportsEffect.OpenDetail -> appStack.add(ExportDetailKey(effect.id))
+                                ExportsEffect.OpenRequest -> appStack.add(ExportRequestKey())
+                                ExportsEffect.NavigateBack -> appStack.pop()
+                            }
+                        })
+                    }
+                    entry<ExportRequestKey> { key ->
+                        ExportRequestRoute(walletId = key.walletId, onEffect = { effect ->
+                            when (effect) {
+                                // The request screen gives way to the export it made (spec 016 FR-007).
+                                is ExportRequestEffect.OpenDetail -> {
+                                    appStack.removeAt(appStack.lastIndex)
+                                    appStack.add(ExportDetailKey(effect.id))
+                                }
+                                ExportRequestEffect.OpenExports -> {
+                                    appStack.removeAt(appStack.lastIndex)
+                                    if (appStack.lastOrNull() !is ExportsKey) appStack.add(ExportsKey)
+                                }
+                                ExportRequestEffect.NavigateBack -> appStack.pop()
+                            }
+                        })
+                    }
+                    entry<ExportDetailKey> { key ->
+                        ExportDetailRoute(exportId = key.exportId, onEffect = { effect ->
+                            when (effect) {
+                                is ExportDetailEffect.OpenRequest -> appStack.add(ExportRequestKey(effect.walletId))
+                                ExportDetailEffect.NavigateBack -> appStack.pop()
+                                is ExportDetailEffect.OpenDownload -> Unit // handed to the browser by the route
+                            }
+                        })
+                    }
+                    entry<ChangePasswordKey> {
+                        ChangePasswordRoute(onEffect = { effect ->
+                            when (effect) {
+                                ChangePasswordEffect.NavigateBack -> appStack.pop()
+                            }
+                        })
+                    }
+                    entry<DeviceSessionsKey> {
+                        DeviceSessionsRoute(onEffect = { effect ->
+                            when (effect) {
+                                DeviceSessionsEffect.NavigateBack -> appStack.pop()
+                                is DeviceSessionsEffect.Ended -> Unit // shown by the route
+                            }
+                        })
+                    }
+                    entry<PlanKey> {
+                        PlanRoute(onEffect = { effect ->
+                            when (effect) {
+                                PlanEffect.NavigateBack -> appStack.pop()
+                                PlanEffect.OpenRedeem -> appStack.add(RedeemCodeKey)
+                                is PlanEffect.OpenUrl, is PlanEffect.ShowActivated -> Unit // handled by the route
+                            }
+                        })
+                    }
+                    entry<RedeemCodeKey> {
+                        RedeemRoute(onEffect = { effect ->
+                            when (effect) {
+                                RedeemEffect.NavigateBack -> appStack.pop()
+                                RedeemEffect.RequireVerification -> emailNotVerifiedVisible = true
+                            }
+                        })
+                    }
+                    entry<WalletsKey> {
+                        WalletsRoute(
+                            onEffect = { effect ->
+                                when (effect) {
+                                    WalletsEffect.OpenEditor -> appStack.add(WalletEditorKey())
+                                    is WalletsEffect.OpenDetail -> appStack.add(WalletDetailKey(effect.id))
+                                    WalletsEffect.NavigateBack -> appStack.pop()
+                                    WalletsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<WalletDetailKey> { key ->
+                        WalletDetailRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
+                                    is WalletDetailEffect.OpenTransactions -> appStack.add(TransactionsKey(effect.walletId))
+                                    is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
+                                    is WalletDetailEffect.NavigateMembers -> appStack.add(WalletMembersKey(effect.walletId))
+                                    is WalletDetailEffect.NavigateActivity -> appStack.add(WalletActivityKey(effect.walletId))
+                                    is WalletDetailEffect.OpenExport -> appStack.add(ExportRequestKey(effect.walletId))
+                                    is WalletDetailEffect.OpenReport -> appStack.add(ReportsKey(effect.walletId))
+                                    is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
+                                    WalletDetailEffect.NavigateBack -> appStack.pop()
+                                    is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<WalletEditorKey> { key ->
+                        WalletEditorRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is WalletEditorEffect.Saved, WalletEditorEffect.NavigateBack, WalletEditorEffect.NotEntitled -> appStack.pop()
+                                    WalletEditorEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<CategoriesKey> {
+                        CategoriesRoute(
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is CategoriesEffect.OpenEditor -> appStack.add(CategoryEditorKey(effect.id, effect.kind.wire))
+                                    CategoriesEffect.NavigateBack -> appStack.pop()
+                                    CategoriesEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<CategoryEditorKey> { key ->
+                        CategoryEditorRoute(
+                            categoryId = key.categoryId,
+                            kind = key.kind,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    CategoryEditorEffect.Saved, CategoryEditorEffect.NavigateBack -> appStack.pop()
+                                    is CategoryEditorEffect.ShowMessage, CategoryEditorEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<TransactionsKey> { key ->
+                        TransactionsRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is TransactionsEffect.OpenEditor -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                                    is TransactionsEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                                    is TransactionsEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
+                                    TransactionsEffect.Back -> appStack.pop()
+                                    TransactionsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<TransactionEditorKey> { key ->
+                        TransactionEditorRoute(
+                            transactionId = key.transactionId,
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    TransactionEditorEffect.Close -> appStack.pop()
+                                    TransactionEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
+                                    is TransactionEditorEffect.MakeRecurring -> {
+                                        val draft = effect.draft
+                                        appStack.pop()
+                                        appStack.add(
+                                            RuleEditorKey(
+                                                walletId = draft.walletId,
+                                                prefill = RulePrefill(
+                                                    walletId = draft.walletId, kind = draft.kind, amountMinor = draft.amountMinor,
+                                                    categoryId = draft.categoryId, counterWalletId = draft.counterWalletId,
+                                                    description = draft.description, memo = draft.memo, counterparty = draft.counterparty,
+                                                    startDate = draft.date,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    is TransactionEditorEffect.OpenOccurrence -> {
+                                        appStack.pop()
+                                        appStack.add(OccurrenceKey(effect.id))
+                                    }
+                                    is TransactionEditorEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
+                                    is TransactionEditorEffect.ShowMessage, TransactionEditorEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<BudgetsKey> {
+                        BudgetsRoute(
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is BudgetsEffect.OpenEditor -> appStack.add(BudgetEditorKey(effect.id))
+                                    BudgetsEffect.NavigateBack -> appStack.pop()
+                                    BudgetsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<ReportsKey> { key ->
+                        ReportsRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is ReportsEffect.OpenCategories -> appStack.add(
+                                        ReportCategoriesKey(
+                                            walletId = effect.args.walletId,
+                                            from = effect.args.from.toString(),
+                                            to = effect.args.to.toString(),
+                                            currency = effect.args.currency,
+                                            includeScheduled = effect.args.includeScheduled,
+                                            kind = effect.args.kind.wire,
+                                        ),
+                                    )
+                                    ReportsEffect.OpenWallets -> appStack.add(WalletsKey)
+                                    ReportsEffect.Close -> appStack.pop()
+                                }
                             },
                         )
-                        AccountEffect.NavigateBack -> appStack.pop()
                     }
-                })
-            }
-            entry<ProfileKey> {
-                ProfileRoute(onEffect = { effect ->
-                    when (effect) {
-                        ProfileEffect.NavigateBack -> appStack.pop()
-                        ProfileEffect.Saved -> Unit // shown by the route
+                    entry<ReportCategoriesKey> { key ->
+                        ReportCategoriesRoute(
+                            walletId = key.walletId,
+                            kind = key.kind,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    ReportCategoriesEffect.Close -> appStack.pop()
+                                }
+                            },
+                        )
                     }
-                })
-            }
-            entry<DeleteAccountKey> {
-                DeleteAccountRoute(onEffect = { effect ->
-                    when (effect) {
-                        DeleteAccountEffect.NavigateBack -> appStack.pop()
-                        DeleteAccountEffect.OpenExports -> appStack.add(ExportsKey)
-                        // Home carries the pending-deletion notice from here on (FR-019).
-                        DeleteAccountEffect.Finished -> appStack.resetTo(HomeKey)
+                    entry<BudgetEditorKey> { key ->
+                        BudgetEditorRoute(
+                            budgetId = key.budgetId,
+                            onEffect = { effect ->
+                                if (isPromptMoment(key, effect)) offerPrompt()
+                                when (effect) {
+                                    BudgetEditorEffect.Saved, BudgetEditorEffect.NavigateBack -> appStack.pop()
+                                    is BudgetEditorEffect.ShowMessage, BudgetEditorEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<ExportsKey> {
-                ExportsRoute(onEffect = { effect ->
-                    when (effect) {
-                        is ExportsEffect.OpenDetail -> appStack.add(ExportDetailKey(effect.id))
-                        ExportsEffect.OpenRequest -> appStack.add(ExportRequestKey())
-                        ExportsEffect.NavigateBack -> appStack.pop()
+                    entry<RecurringKey> { key ->
+                        RecurringRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is RecurringEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
+                                    is RecurringEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                                    is RecurringEffect.OpenEditor -> appStack.add(RuleEditorKey(walletId = effect.walletId))
+                                    RecurringEffect.Back -> appStack.pop()
+                                    RecurringEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<ExportRequestKey> { key ->
-                ExportRequestRoute(walletId = key.walletId, onEffect = { effect ->
-                    when (effect) {
-                        // The request screen gives way to the export it made (spec 016 FR-007).
-                        is ExportRequestEffect.OpenDetail -> {
-                            appStack.removeAt(appStack.lastIndex)
-                            appStack.add(ExportDetailKey(effect.id))
-                        }
-                        ExportRequestEffect.OpenExports -> {
-                            appStack.removeAt(appStack.lastIndex)
-                            if (appStack.lastOrNull() !is ExportsKey) appStack.add(ExportsKey)
-                        }
-                        ExportRequestEffect.NavigateBack -> appStack.pop()
+                    entry<RuleDetailKey> { key ->
+                        RuleDetailRoute(
+                            ruleId = key.ruleId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    RuleDetailEffect.Close -> appStack.pop()
+                                    is RuleDetailEffect.OpenEditor ->
+                                        appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = effect.fromDate))
+                                    is RuleDetailEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
+                                    is RuleDetailEffect.ShowMessage, RuleDetailEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<ExportDetailKey> { key ->
-                ExportDetailRoute(exportId = key.exportId, onEffect = { effect ->
-                    when (effect) {
-                        is ExportDetailEffect.OpenRequest -> appStack.add(ExportRequestKey(effect.walletId))
-                        ExportDetailEffect.NavigateBack -> appStack.pop()
-                        is ExportDetailEffect.OpenDownload -> Unit // handed to the browser by the route
+                    entry<RuleEditorKey> { key ->
+                        RuleEditorRoute(
+                            walletId = key.walletId,
+                            ruleId = key.ruleId,
+                            fromDate = key.fromDate,
+                            prefill = key.prefill,
+                            onEffect = { effect ->
+                                if (isPromptMoment(key, effect)) offerPrompt()
+                                when (effect) {
+                                    RuleEditorEffect.Close -> appStack.pop()
+                                    RuleEditorEffect.Created -> Unit // only marks the moment above
+                                    is RuleEditorEffect.OpenFromDate -> {
+                                        appStack.pop()
+                                        appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = true))
+                                    }
+                                    RuleEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
+                                    is RuleEditorEffect.ShowMessage, RuleEditorEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<ChangePasswordKey> {
-                ChangePasswordRoute(onEffect = { effect ->
-                    when (effect) {
-                        ChangePasswordEffect.NavigateBack -> appStack.pop()
+                    entry<OccurrenceKey> { key ->
+                        OccurrenceRoute(
+                            occurrenceId = key.occurrenceId,
+                            confirm = key.confirm,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    OccurrenceEffect.Close -> appStack.pop()
+                                    is OccurrenceEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                                    is OccurrenceEffect.OpenRule -> appStack.add(RuleDetailKey(effect.ruleId))
+                                    is OccurrenceEffect.ShowMessage, OccurrenceEffect.RequireVerification -> Unit // shown by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<DeviceSessionsKey> {
-                DeviceSessionsRoute(onEffect = { effect ->
-                    when (effect) {
-                        DeviceSessionsEffect.NavigateBack -> appStack.pop()
-                        is DeviceSessionsEffect.Ended -> Unit // shown by the route
+                    entry<WalletMembersKey> { key ->
+                        MembersRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is MembersEffect.OpenInvite -> appStack.add(InviteKey(effect.walletId, effect.replacing))
+                                    MembersEffect.OpenPlan -> appStack.add(PlanKey)
+                                    // The wallet is gone from the phone: back to the wallet list, which says "You left <wallet>" (FR-019).
+                                    is MembersEffect.Left -> appStack.backToWallets()
+                                    MembersEffect.NavigateBack -> appStack.pop()
+                                    is MembersEffect.Share, is MembersEffect.Copy, is MembersEffect.ShowMessage, MembersEffect.ShowVerifyPrompt -> Unit // handled by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<PlanKey> {
-                PlanRoute(onEffect = { effect ->
-                    when (effect) {
-                        PlanEffect.NavigateBack -> appStack.pop()
-                        PlanEffect.OpenRedeem -> appStack.add(RedeemCodeKey)
-                        is PlanEffect.OpenUrl, is PlanEffect.ShowActivated -> Unit // handled by the route
+                    entry<InviteKey> { key ->
+                        InviteRoute(
+                            walletId = key.walletId,
+                            replacing = key.replacing,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is InviteEffect.Close -> appStack.pop()
+                                    InviteEffect.OpenPlan -> appStack.add(PlanKey)
+                                    is InviteEffect.Share, is InviteEffect.Copy, InviteEffect.Copied, InviteEffect.ShowVerifyPrompt -> Unit // handled by the route
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
                     }
-                })
-            }
-            entry<RedeemCodeKey> {
-                RedeemRoute(onEffect = { effect ->
-                    when (effect) {
-                        RedeemEffect.NavigateBack -> appStack.pop()
-                        RedeemEffect.RequireVerification -> emailNotVerifiedVisible = true
+                    entry<InvitationKey> { key ->
+                        InvitationRoute(
+                            token = key.token,
+                            onEffect = { effect ->
+                                if (isPromptMoment(key, effect)) offerPrompt()
+                                when (effect) {
+                                    is InvitationEffect.OpenWallet -> {
+                                        if (appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
+                                        appStack.add(WalletDetailKey(effect.walletId))
+                                    }
+                                    InvitationEffect.NavigateSignIn -> authStack.add(SignInKey())
+                                    InvitationEffect.NavigateRegister -> authStack.add(RegisterKey())
+                                    is InvitationEffect.Close -> activeStack.pop()
+                                }
+                            },
+                        )
                     }
-                })
-            }
-            entry<WalletsKey> {
-                WalletsRoute(
-                    onEffect = { effect ->
-                        when (effect) {
-                            WalletsEffect.OpenEditor -> appStack.add(WalletEditorKey())
-                            is WalletsEffect.OpenDetail -> appStack.add(WalletDetailKey(effect.id))
-                            WalletsEffect.NavigateBack -> appStack.pop()
-                            WalletsEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<WalletDetailKey> { key ->
-                WalletDetailRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is WalletDetailEffect.OpenEditor -> appStack.add(WalletEditorKey(effect.id))
-                            is WalletDetailEffect.OpenTransactions -> appStack.add(TransactionsKey(effect.walletId))
-                            is WalletDetailEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
-                            is WalletDetailEffect.NavigateMembers -> appStack.add(WalletMembersKey(effect.walletId))
-                            is WalletDetailEffect.NavigateActivity -> appStack.add(WalletActivityKey(effect.walletId))
-                            is WalletDetailEffect.OpenExport -> appStack.add(ExportRequestKey(effect.walletId))
-                            is WalletDetailEffect.OpenReport -> appStack.add(ReportsKey(effect.walletId))
-                            is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
-                            WalletDetailEffect.NavigateBack -> appStack.pop()
-                            is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<WalletEditorKey> { key ->
-                WalletEditorRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is WalletEditorEffect.Saved, WalletEditorEffect.NavigateBack, WalletEditorEffect.NotEntitled -> appStack.pop()
-                            WalletEditorEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<CategoriesKey> {
-                CategoriesRoute(
-                    onEffect = { effect ->
-                        when (effect) {
-                            is CategoriesEffect.OpenEditor -> appStack.add(CategoryEditorKey(effect.id, effect.kind.wire))
-                            CategoriesEffect.NavigateBack -> appStack.pop()
-                            CategoriesEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<CategoryEditorKey> { key ->
-                CategoryEditorRoute(
-                    categoryId = key.categoryId,
-                    kind = key.kind,
-                    onEffect = { effect ->
-                        when (effect) {
-                            CategoryEditorEffect.Saved, CategoryEditorEffect.NavigateBack -> appStack.pop()
-                            is CategoryEditorEffect.ShowMessage, CategoryEditorEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<TransactionsKey> { key ->
-                TransactionsRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is TransactionsEffect.OpenEditor -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
-                            is TransactionsEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
-                            is TransactionsEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
-                            TransactionsEffect.Back -> appStack.pop()
-                            TransactionsEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<TransactionEditorKey> { key ->
-                TransactionEditorRoute(
-                    transactionId = key.transactionId,
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            TransactionEditorEffect.Close -> appStack.pop()
-                            TransactionEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
-                            is TransactionEditorEffect.MakeRecurring -> {
-                                val draft = effect.draft
-                                appStack.pop()
-                                appStack.add(
-                                    RuleEditorKey(
-                                        walletId = draft.walletId,
-                                        prefill = RulePrefill(
-                                            walletId = draft.walletId, kind = draft.kind, amountMinor = draft.amountMinor,
-                                            categoryId = draft.categoryId, counterWalletId = draft.counterWalletId,
-                                            description = draft.description, memo = draft.memo, counterparty = draft.counterparty,
-                                            startDate = draft.date,
-                                        ),
-                                    ),
-                                )
+                    entry<WalletActivityKey> { key ->
+                        ActivityRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is ActivityEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
+                                    ActivityEffect.NavigateBack -> appStack.pop()
+                                }
+                            },
+                        )
+                    }
+                    entry<NotificationSettingsKey> {
+                        NotificationSettingsRoute(onEffect = { effect ->
+                            when (effect) {
+                                NotificationSettingsEffect.NavigateBack -> appStack.pop()
+                                else -> Unit // handled by the route
                             }
-                            is TransactionEditorEffect.OpenOccurrence -> {
-                                appStack.pop()
-                                appStack.add(OccurrenceKey(effect.id))
+                        })
+                    }
+                    entry<NotificationOpenKey> { key ->
+                        NotificationOpenRoute(route = key.route, nonce = key.nonce, onEffect = { effect ->
+                            when (effect) {
+                                NotificationOpenEffect.Close -> appStack.pop()
+                                // The target takes this screen's place, so Back returns to where the person was (FR-032).
+                                is NotificationOpenEffect.Replace -> {
+                                    val at = appStack.indexOf(key)
+                                    if (at >= 0) {
+                                        appStack.removeAt(at)
+                                        appStack.openPushTarget(effect.target)
+                                    }
+                                }
                             }
-                            is TransactionEditorEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
-                            is TransactionEditorEffect.ShowMessage, TransactionEditorEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<BudgetsKey> {
-                BudgetsRoute(
-                    onEffect = { effect ->
-                        when (effect) {
-                            is BudgetsEffect.OpenEditor -> appStack.add(BudgetEditorKey(effect.id))
-                            BudgetsEffect.NavigateBack -> appStack.pop()
-                            BudgetsEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<ReportsKey> { key ->
-                ReportsRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is ReportsEffect.OpenCategories -> appStack.add(
-                                ReportCategoriesKey(
-                                    walletId = effect.args.walletId,
-                                    from = effect.args.from.toString(),
-                                    to = effect.args.to.toString(),
-                                    currency = effect.args.currency,
-                                    includeScheduled = effect.args.includeScheduled,
-                                    kind = effect.args.kind.wire,
-                                ),
-                            )
-                            ReportsEffect.OpenWallets -> appStack.add(WalletsKey)
-                            ReportsEffect.Close -> appStack.pop()
-                        }
-                    },
-                )
-            }
-            entry<ReportCategoriesKey> { key ->
-                ReportCategoriesRoute(
-                    walletId = key.walletId,
-                    kind = key.kind,
-                    onEffect = { effect ->
-                        when (effect) {
-                            ReportCategoriesEffect.Close -> appStack.pop()
-                        }
-                    },
-                )
-            }
-            entry<BudgetEditorKey> { key ->
-                BudgetEditorRoute(
-                    budgetId = key.budgetId,
-                    onEffect = { effect ->
-                        if (isPromptMoment(key, effect)) offerPrompt()
-                        when (effect) {
-                            BudgetEditorEffect.Saved, BudgetEditorEffect.NavigateBack -> appStack.pop()
-                            is BudgetEditorEffect.ShowMessage, BudgetEditorEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<RecurringKey> { key ->
-                RecurringRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is RecurringEffect.OpenRule -> appStack.add(RuleDetailKey(effect.id))
-                            is RecurringEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
-                            is RecurringEffect.OpenEditor -> appStack.add(RuleEditorKey(walletId = effect.walletId))
-                            RecurringEffect.Back -> appStack.pop()
-                            RecurringEffect.RequireVerification -> Unit // routed to onRequireVerification
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<RuleDetailKey> { key ->
-                RuleDetailRoute(
-                    ruleId = key.ruleId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            RuleDetailEffect.Close -> appStack.pop()
-                            is RuleDetailEffect.OpenEditor ->
-                                appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = effect.fromDate))
-                            is RuleDetailEffect.OpenOccurrence -> appStack.add(OccurrenceKey(effect.id))
-                            is RuleDetailEffect.ShowMessage, RuleDetailEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<RuleEditorKey> { key ->
-                RuleEditorRoute(
-                    walletId = key.walletId,
-                    ruleId = key.ruleId,
-                    fromDate = key.fromDate,
-                    prefill = key.prefill,
-                    onEffect = { effect ->
-                        if (isPromptMoment(key, effect)) offerPrompt()
-                        when (effect) {
-                            RuleEditorEffect.Close -> appStack.pop()
-                            RuleEditorEffect.Created -> Unit // only marks the moment above
-                            is RuleEditorEffect.OpenFromDate -> {
-                                appStack.pop()
-                                appStack.add(RuleEditorKey(walletId = effect.walletId, ruleId = effect.ruleId, fromDate = true))
+                        })
+                    }
+                    entry<InvitationNoticeKey> {
+                        InvitationNoticeRoute(onEffect = { effect ->
+                            when (effect) {
+                                InvitationNoticeEffect.Close -> appStack.pop()
                             }
-                            RuleEditorEffect.OpenWalletEditor -> appStack.add(WalletEditorKey())
-                            is RuleEditorEffect.ShowMessage, RuleEditorEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<OccurrenceKey> { key ->
-                OccurrenceRoute(
-                    occurrenceId = key.occurrenceId,
-                    confirm = key.confirm,
-                    onEffect = { effect ->
-                        when (effect) {
-                            OccurrenceEffect.Close -> appStack.pop()
-                            is OccurrenceEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
-                            is OccurrenceEffect.OpenRule -> appStack.add(RuleDetailKey(effect.ruleId))
-                            is OccurrenceEffect.ShowMessage, OccurrenceEffect.RequireVerification -> Unit // shown by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<WalletMembersKey> { key ->
-                MembersRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is MembersEffect.OpenInvite -> appStack.add(InviteKey(effect.walletId, effect.replacing))
-                            MembersEffect.OpenPlan -> appStack.add(PlanKey)
-                            // The wallet is gone from the phone: back to the wallet list, which says "You left <wallet>" (FR-019).
-                            is MembersEffect.Left -> appStack.backToWallets()
-                            MembersEffect.NavigateBack -> appStack.pop()
-                            is MembersEffect.Share, is MembersEffect.Copy, is MembersEffect.ShowMessage, MembersEffect.ShowVerifyPrompt -> Unit // handled by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<InviteKey> { key ->
-                InviteRoute(
-                    walletId = key.walletId,
-                    replacing = key.replacing,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is InviteEffect.Close -> appStack.pop()
-                            InviteEffect.OpenPlan -> appStack.add(PlanKey)
-                            is InviteEffect.Share, is InviteEffect.Copy, InviteEffect.Copied, InviteEffect.ShowVerifyPrompt -> Unit // handled by the route
-                        }
-                    },
-                    onRequireVerification = { emailNotVerifiedVisible = true },
-                )
-            }
-            entry<InvitationKey> { key ->
-                InvitationRoute(
-                    token = key.token,
-                    onEffect = { effect ->
-                        if (isPromptMoment(key, effect)) offerPrompt()
-                        when (effect) {
-                            is InvitationEffect.OpenWallet -> {
-                                if (appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
-                                appStack.add(WalletDetailKey(effect.walletId))
+                        })
+                    }
+                    entry<SimulatePushKey> {
+                        SimulatePushRoute(onEffect = { effect ->
+                            when (effect) {
+                                SimulatePushEffect.NavigateBack -> activeStack.pop()
                             }
-                            InvitationEffect.NavigateSignIn -> authStack.add(SignInKey())
-                            InvitationEffect.NavigateRegister -> authStack.add(RegisterKey())
-                            is InvitationEffect.Close -> activeStack.pop()
-                        }
-                    },
-                )
-            }
-            entry<WalletActivityKey> { key ->
-                ActivityRoute(
-                    walletId = key.walletId,
-                    onEffect = { effect ->
-                        when (effect) {
-                            is ActivityEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.transactionId, effect.walletId))
-                            ActivityEffect.NavigateBack -> appStack.pop()
-                        }
-                    },
-                )
-            }
-            entry<NotificationSettingsKey> {
-                NotificationSettingsRoute(onEffect = { effect ->
-                    when (effect) {
-                        NotificationSettingsEffect.NavigateBack -> appStack.pop()
-                        else -> Unit // handled by the route
+                        })
                     }
-                })
-            }
-            entry<NotificationOpenKey> { key ->
-                NotificationOpenRoute(route = key.route, nonce = key.nonce, onEffect = { effect ->
-                    when (effect) {
-                        NotificationOpenEffect.Close -> appStack.pop()
-                        // The target takes this screen's place, so Back returns to where the person was (FR-032).
-                        is NotificationOpenEffect.Replace -> {
-                            val at = appStack.indexOf(key)
-                            if (at >= 0) {
-                                appStack.removeAt(at)
-                                appStack.openPushTarget(effect.target)
+                    entry<PlayBillingDevKey> {
+                        PlayBillingDevRoute(onEffect = { effect ->
+                            when (effect) {
+                                PlayBillingDevEffect.NavigateBack -> activeStack.pop()
                             }
+                        })
+                    }
+                    entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
+                    entry<DevToolsKey> {
+                        DevToolsRoute(onEffect = { effect ->
+                            when (effect) {
+                                DevToolsEffect.NavigateCatalog -> activeStack.add(CatalogKey)
+                                DevToolsEffect.NavigatePasteLink -> activeStack.add(PasteLinkKey)
+                                DevToolsEffect.NavigateSimulatePush -> activeStack.add(SimulatePushKey)
+                                DevToolsEffect.NavigatePlayBilling -> activeStack.add(PlayBillingDevKey)
+                                DevToolsEffect.NavigateBack -> activeStack.pop()
+                            }
+                        })
+                    }
+                    entry<ServerAddressKey> {
+                        ServerAddressRoute(onEffect = { effect ->
+                            when (effect) {
+                                ServerAddressEffect.NavigateBack -> activeStack.pop()
+                            }
+                        })
+                    }
+                    entry<PasteLinkKey> {
+                        PasteLinkRoute(onEffect = { effect ->
+                            when (effect) {
+                                PasteLinkEffect.NavigateBack -> activeStack.pop()
+                                is PasteLinkEffect.SubmitLink -> Unit // handed to DeepLinkBus by the route
+                            }
+                        })
+                    }
+                    entry<VerifyEmailKey> { key ->
+                        VerifyEmailRoute(token = key.token, onEffect = { effect ->
+                            when (effect) {
+                                VerifyEmailEffect.NavigateHome -> appStack.resetTo(HomeKey)
+                                VerifyEmailEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey())
+                            }
+                        })
+                    }
+                    entry<ForgotPasswordKey> { key ->
+                        ForgotPasswordRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
+                            when (effect) {
+                                is ForgotPasswordEffect.NavigateCheckInbox -> activeStack.add(CheckInboxKey(effect.email, CheckInboxKind.Reset))
+                                ForgotPasswordEffect.NavigateBack -> activeStack.pop()
+                            }
+                        })
+                    }
+                    entry<ResetPasswordKey> { key ->
+                        ResetPasswordRoute(token = key.token, onEffect = { effect ->
+                            when (effect) {
+                                // Signed-in phones stay signed in until the server's session end reaches
+                                // them as a 401 (FR-019); signed-out ones go straight to sign-in.
+                                ResetPasswordEffect.NavigateSignIn ->
+                                    if (sessionManager.state.value is AuthState.SignedIn) {
+                                        appStack.resetTo(HomeKey)
+                                    } else {
+                                        authStack.resetTo(EntryKey, SignInKey(reason = SignOutReason.PasswordReset))
+                                    }
+                                ResetPasswordEffect.NavigateForgotPassword -> activeStack.add(ForgotPasswordKey())
+                                ResetPasswordEffect.NavigateBack -> activeStack.pop()
+                            }
+                        })
+                    }
+                    entry<CatalogKey> {
+                        ComponentCatalogRoute(onEffect = { effect ->
+                            when (effect) {
+                                ComponentCatalogEffect.NavigateBack -> activeStack.pop()
+                            }
+                        })
+                    }
+                },
+            )
+        }
+        if (tab != null) {
+            AppTabBar(
+                selected = tab,
+                onSelect = { target ->
+                    if (target != tab) {
+                        when (target) {
+                            MainTab.Home -> appStack.resetTo(HomeKey)
+                            MainTab.Wallets -> appStack.resetTo(HomeKey, WalletsKey)
+                            MainTab.Budgets -> appStack.resetTo(HomeKey, BudgetsKey)
+                            MainTab.Reports -> appStack.resetTo(HomeKey, ReportsKey())
                         }
                     }
-                })
-            }
-            entry<InvitationNoticeKey> {
-                InvitationNoticeRoute(onEffect = { effect ->
-                    when (effect) {
-                        InvitationNoticeEffect.Close -> appStack.pop()
+                },
+                onAdd = {
+                    val walletId = when (val key = appStack.lastOrNull()) {
+                        is TransactionsKey -> key.walletId
+                        is WalletDetailKey -> key.walletId
+                        else -> null
                     }
-                })
-            }
-            entry<SimulatePushKey> {
-                SimulatePushRoute(onEffect = { effect ->
-                    when (effect) {
-                        SimulatePushEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-            entry<PlayBillingDevKey> {
-                PlayBillingDevRoute(onEffect = { effect ->
-                    when (effect) {
-                        PlayBillingDevEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-            entry<UpdateRequiredKey> { key -> UpdateRequiredRoute(key.minimumVersion) }
-            entry<DevToolsKey> {
-                DevToolsRoute(onEffect = { effect ->
-                    when (effect) {
-                        DevToolsEffect.NavigateCatalog -> activeStack.add(CatalogKey)
-                        DevToolsEffect.NavigatePasteLink -> activeStack.add(PasteLinkKey)
-                        DevToolsEffect.NavigateSimulatePush -> activeStack.add(SimulatePushKey)
-                        DevToolsEffect.NavigatePlayBilling -> activeStack.add(PlayBillingDevKey)
-                        DevToolsEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-            entry<PasteLinkKey> {
-                PasteLinkRoute(onEffect = { effect ->
-                    when (effect) {
-                        PasteLinkEffect.NavigateBack -> activeStack.pop()
-                        is PasteLinkEffect.SubmitLink -> Unit // handed to DeepLinkBus by the route
-                    }
-                })
-            }
-            entry<VerifyEmailKey> { key ->
-                VerifyEmailRoute(token = key.token, onEffect = { effect ->
-                    when (effect) {
-                        VerifyEmailEffect.NavigateHome -> appStack.resetTo(HomeKey)
-                        VerifyEmailEffect.NavigateSignIn -> authStack.resetTo(EntryKey, SignInKey())
-                    }
-                })
-            }
-            entry<ForgotPasswordKey> { key ->
-                ForgotPasswordRoute(prefillEmail = key.prefillEmail, onEffect = { effect ->
-                    when (effect) {
-                        is ForgotPasswordEffect.NavigateCheckInbox -> activeStack.add(CheckInboxKey(effect.email, CheckInboxKind.Reset))
-                        ForgotPasswordEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-            entry<ResetPasswordKey> { key ->
-                ResetPasswordRoute(token = key.token, onEffect = { effect ->
-                    when (effect) {
-                        // Signed-in phones stay signed in until the server's session end reaches
-                        // them as a 401 (FR-019); signed-out ones go straight to sign-in.
-                        ResetPasswordEffect.NavigateSignIn ->
-                            if (sessionManager.state.value is AuthState.SignedIn) {
-                                appStack.resetTo(HomeKey)
-                            } else {
-                                authStack.resetTo(EntryKey, SignInKey(reason = SignOutReason.PasswordReset))
-                            }
-                        ResetPasswordEffect.NavigateForgotPassword -> activeStack.add(ForgotPasswordKey())
-                        ResetPasswordEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-            entry<CatalogKey> {
-                ComponentCatalogRoute(onEffect = { effect ->
-                    when (effect) {
-                        ComponentCatalogEffect.NavigateBack -> activeStack.pop()
-                    }
-                })
-            }
-        },
-    )
+                    appStack.add(TransactionEditorKey(walletId = walletId))
+                },
+                labels = mapOf(
+                    MainTab.Home to stringResource(Res.string.home_title),
+                    MainTab.Wallets to stringResource(Res.string.home_wallets),
+                    MainTab.Budgets to stringResource(Res.string.budgets_home_row),
+                    MainTab.Reports to stringResource(Res.string.reports_home_row),
+                ),
+                addDescription = stringResource(Res.string.home_add_transaction),
+            )
+        }
+    }
 }
 
 private fun SnapshotStateList<NavKey>.pop() {
@@ -856,4 +922,13 @@ private fun SnapshotStateList<NavKey>.resetTo(vararg keys: NavKey) {
     if (toList() == keys.toList()) return
     clear()
     addAll(keys)
+}
+
+/** The tab a top-level screen belongs to; null for a screen without the tab bar. */
+private fun tabOf(key: NavKey): MainTab? = when (key) {
+    is HomeKey -> MainTab.Home
+    is WalletsKey, is WalletDetailKey, is TransactionsKey -> MainTab.Wallets
+    is BudgetsKey -> MainTab.Budgets
+    is ReportsKey, is ReportCategoriesKey -> MainTab.Reports
+    else -> null
 }

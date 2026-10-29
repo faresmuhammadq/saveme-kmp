@@ -33,12 +33,14 @@ class InviteViewModel(
     private val shareText: suspend (invitationId: String) -> String?,
     /** Leaves the confirmation for the screen that comes back (Members says "sent" or "saved"). */
     private val announce: (InviteNotice) -> Unit = {},
+    walletName: Flow<String?> = kotlinx.coroutines.flow.emptyFlow(),
 ) : MviViewModel<InviteState, InviteIntent, InviteEffect>(
     InviteState(walletId = walletId, channel = if (replacing != null) InviteChannel.Link else InviteChannel.Email),
 ) {
 
     init {
         inviteCheck.onEach { check -> setState { reduce(it, InviteChange.Check(check)) } }.launchIn(viewModelScope)
+        walletName.onEach { name -> setState { reduce(it, InviteChange.WalletName(name.orEmpty())) } }.launchIn(viewModelScope)
         if (replacing != null) {
             setState { reduce(it, InviteChange.Sending(true)) }
             viewModelScope.launch { handle(replaceLink(replacing), draft = null) }

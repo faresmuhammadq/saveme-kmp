@@ -2,10 +2,19 @@ package com.fares.saveme.feature.account.ui.export.request
 
 import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.feature.account.domain.export.ExportScope
+import com.fares.saveme.feature.wallets.domain.model.WalletType
 import kotlin.time.Instant
 
 /** A wallet the person may export: the server already has it and they are a member (FR-006). */
-data class WalletChoice(val id: String, val name: String, val archived: Boolean)
+data class WalletChoice(
+    val id: String,
+    val name: String,
+    val archived: Boolean,
+    /** How the phone draws the wallet: its icon key, accent key and type. */
+    val icon: String? = null,
+    val color: String? = null,
+    val type: WalletType = WalletType.Unknown,
+)
 
 /** The refusal shown; each has its own copy chosen by code (FR-017 to FR-023). */
 sealed interface ExportRequestMessage {

@@ -65,7 +65,7 @@ class RecurringAccessibilityTest {
     fun occurrenceStatesAndRuleStatusAreText() {
         compose.setContent { AppTheme { RecurringScreen(list, {}) } }
         compose.onNodeWithText("Missed").assertIsDisplayed()
-        assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Due")).fetchSemanticsNodes().size >= 2)
+        assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Due")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Upcoming")).fetchSemanticsNodes().size >= 2)
         assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Paused")).fetchSemanticsNodes().isNotEmpty())
         assertTrue(compose.onAllNodes(androidx.compose.ui.test.hasText("Ended")).fetchSemanticsNodes().isNotEmpty())

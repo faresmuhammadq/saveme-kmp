@@ -32,6 +32,8 @@ data class HomeState(
     val budgets: List<BudgetGlimpse> = emptyList(),
     /** An invitation link is held in memory for this app session: the card reopens it (spec 013 FR-013). */
     val invitationHeld: Boolean = false,
+    /** The profile's display name for the greeting; null when none is set. */
+    val displayName: String? = null,
 )
 
 /** Whether the scheduled deletion date has passed while the account is still pending (spec 016 FR-032). */
@@ -86,6 +88,7 @@ sealed interface HomeChange {
     data class Budgets(val budgets: List<BudgetGlimpse>) : HomeChange
     data class InvitationHeld(val held: Boolean) : HomeChange
     data class Tick(val now: Instant) : HomeChange
+    data class Name(val displayName: String?) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -106,4 +109,5 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.Budgets -> state.copy(budgets = change.budgets)
     is HomeChange.InvitationHeld -> state.copy(invitationHeld = change.held)
     is HomeChange.Tick -> state.copy(now = change.now)
+    is HomeChange.Name -> state.copy(displayName = change.displayName?.takeIf { it.isNotBlank() })
 }

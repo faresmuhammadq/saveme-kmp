@@ -32,6 +32,8 @@ data class BudgetRowUi(
     /** A period type this version does not know: the limit only, never edited (research R-15). */
     val readOnly: Boolean,
     val status: BudgetStatusUi?,
+    /** The category's icon key for the tile's ring; null for all expenses and unresolved categories. */
+    val iconKey: String? = null,
 ) {
     override fun toString() = "BudgetRowUi($id)"
 }
@@ -39,6 +41,7 @@ data class BudgetRowUi(
 internal fun BudgetView.toRow() = BudgetRowUi(
     id = id,
     categoryName = category?.name,
+    iconKey = category?.iconKey,
     currency = currency,
     limitMinor = limitMinor,
     figures = figures?.let {

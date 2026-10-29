@@ -21,22 +21,33 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
-// Dev backend = host:port only, set outside git in local.properties or ~/.gradle/gradle.properties:
-// - phone over USB: devApiHost=localhost:43871, then `adb reverse tcp:43871 tcp:43871`
-// - emulator: devApiHost=10.0.2.2:43871
-// - phone over Wi-Fi: devApiHost=192.168.1.20:8080 (backend port must be published beyond 127.0.0.1)
-val devApiHost: String = providers.gradleProperty("devApiHost").orNull
-    ?: rootProject.file("local.properties").takeIf { it.exists() }
-        ?.readLines()
-        ?.firstOrNull { it.startsWith("devApiHost=") }
-        ?.substringAfter("=")
-        ?.trim()
-    ?: "10.0.2.2:8080"
-require(!devApiHost.contains("/")) {
-    "devApiHost must be host:port only (got '$devApiHost'); the client adds http:// and /api/v1/ itself."
+// Backend = host:port only (the client adds http:// and /api/v1/ itself), read from a Gradle property, then
+// local.properties (outside git), then the default:
+// - devApiHost: phone over USB `localhost:43871` + `adb reverse tcp:43871 tcp:43871`; emulator `10.0.2.2:43871`
+// - stagingApiHost / prodApiHost: the LAN stacks on the host machine; CI passes the STAGING_API_HOST / PROD_API_HOST repo variables.
+// The app can override the host at runtime (Server address screen), so a moved backend needs no rebuild.
+val localProperties: List<String> = rootProject.file("local.properties").takeIf { it.exists() }?.readLines().orEmpty()
+
+fun hostProperty(name: String, default: String): String {
+    val host = providers.gradleProperty(name).orNull?.takeIf { it.isNotBlank() }
+        ?: localProperties.firstOrNull { it.startsWith("$name=") }?.substringAfter("=")?.trim()
+        ?: default
+    require(!host.contains("/")) {
+        "$name must be host:port only (got '$host'); the client adds http:// and /api/v1/ itself."
+    }
+    return host
 }
-val devLinkHost = devApiHost.substringBefore(":")
-val devLinkPort = devApiHost.substringAfter(":", "")
+
+val apiHosts = mapOf(
+    "dev" to hostProperty("devApiHost", "10.0.2.2:8080"),
+    "staging" to hostProperty("stagingApiHost", "192.168.1.14:8091"),
+    "prod" to hostProperty("prodApiHost", "192.168.1.14:8092"),
+)
+
+// Release signing comes from the environment only (CI decodes the keystore from secrets); without it the release APK stays unsigned.
+val releaseSigning: Map<String, String>? = listOf("SAVEME_KEYSTORE_FILE", "SAVEME_KEYSTORE_PASSWORD", "SAVEME_KEY_ALIAS", "SAVEME_KEY_PASSWORD")
+    .associateWith { providers.environmentVariable(it).orNull.orEmpty() }
+    .takeIf { values -> values.values.all { it.isNotBlank() } }
 
 android {
     namespace = "com.fares.saveme"
@@ -46,9 +57,10 @@ android {
         applicationId = "com.fares.saveme"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
+        // CI passes a rising versionCode so each APK installs over the previous one.
+        versionCode = providers.gradleProperty("versionCode").orNull?.toInt() ?: 1
         // Must be semver: the API refuses any X-Client-Version not matching ^\d+\.\d+\.\d+$.
-        versionName = "1.0.0"
+        versionName = providers.gradleProperty("versionName").orNull ?: "1.0.0"
     }
     buildFeatures {
         compose = true
@@ -56,37 +68,43 @@ android {
     }
     flavorDimensions += "env"
     productFlavors {
-        create("dev") {
+        // Every environment is the LAN backend over plain HTTP, mailed links included.
+        fun com.android.build.api.dsl.ApplicationProductFlavor.backend(host: String, environment: String, debugTools: Boolean) {
             dimension = "env"
-            buildConfigField("String", "API_BASE_URL", "\"http://$devApiHost\"")
-            buildConfigField("String", "LINK_HOST", "\"$devLinkHost\"")
-            buildConfigField("String", "LINK_PORT", "\"$devLinkPort\"")
-            buildConfigField("String", "ENVIRONMENT", "\"Dev\"")
-            buildConfigField("boolean", "DEBUG_TOOLS", "true")
-            manifestPlaceholders["linkHost"] = devLinkHost
-            manifestPlaceholders["linkPort"] = devLinkPort
+            val linkHost = host.substringBefore(":")
+            val linkPort = host.substringAfter(":", "")
+            buildConfigField("String", "API_BASE_URL", "\"http://$host\"")
+            buildConfigField("String", "DEFAULT_API_HOST", "\"$host\"")
+            buildConfigField("String", "LINK_SCHEME", "\"http\"")
+            buildConfigField("String", "LINK_HOST", "\"$linkHost\"")
+            buildConfigField("String", "LINK_PORT", "\"$linkPort\"")
+            buildConfigField("String", "ENVIRONMENT", "\"$environment\"")
+            buildConfigField("boolean", "DEBUG_TOOLS", "$debugTools")
+            manifestPlaceholders["linkScheme"] = "http"
+            manifestPlaceholders["linkHost"] = linkHost
+            manifestPlaceholders["linkPort"] = linkPort
+        }
+        // Distinct ids so dev, staging and production install side by side, each with its own data.
+        create("dev") {
+            backend(apiHosts.getValue("dev"), "Dev", debugTools = true)
+            applicationIdSuffix = ".dev"
         }
         create("staging") {
-            dimension = "env"
-            // TODO(base-url): staging host not defined yet.
-            buildConfigField("String", "API_BASE_URL", "\"https://staging.api.example\"")
-            buildConfigField("String", "LINK_HOST", "\"staging.api.example\"")
-            buildConfigField("String", "LINK_PORT", "\"\"")
-            buildConfigField("String", "ENVIRONMENT", "\"Staging\"")
-            buildConfigField("boolean", "DEBUG_TOOLS", "false")
-            manifestPlaceholders["linkHost"] = "staging.api.example"
-            manifestPlaceholders["linkPort"] = ""
+            backend(apiHosts.getValue("staging"), "Staging", debugTools = false)
+            applicationIdSuffix = ".staging"
         }
         create("prod") {
-            dimension = "env"
-            // TODO(base-url): production host not defined yet.
-            buildConfigField("String", "API_BASE_URL", "\"https://api.example\"")
-            buildConfigField("String", "LINK_HOST", "\"api.example\"")
-            buildConfigField("String", "LINK_PORT", "\"\"")
-            buildConfigField("String", "ENVIRONMENT", "\"Prod\"")
-            buildConfigField("boolean", "DEBUG_TOOLS", "false")
-            manifestPlaceholders["linkHost"] = "api.example"
-            manifestPlaceholders["linkPort"] = ""
+            backend(apiHosts.getValue("prod"), "Prod", debugTools = false)
+        }
+    }
+    signingConfigs {
+        if (releaseSigning != null) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("SAVEME_KEYSTORE_FILE"))
+                storePassword = releaseSigning.getValue("SAVEME_KEYSTORE_PASSWORD")
+                keyAlias = releaseSigning.getValue("SAVEME_KEY_ALIAS")
+                keyPassword = releaseSigning.getValue("SAVEME_KEY_PASSWORD")
+            }
         }
     }
     packaging {
@@ -96,6 +114,7 @@ android {
     }
     buildTypes {
         release {
+            if (releaseSigning != null) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

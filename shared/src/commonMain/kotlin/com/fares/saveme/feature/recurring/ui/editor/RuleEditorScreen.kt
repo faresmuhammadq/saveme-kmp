@@ -1,6 +1,22 @@
 package com.fares.saveme.feature.recurring.ui.editor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -9,7 +25,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
@@ -17,14 +41,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.fares.saveme.designsystem.component.AppDatePickerDialog
 import com.fares.saveme.designsystem.component.AmountField
-import com.fares.saveme.designsystem.component.AppScreen
+import com.fares.saveme.designsystem.component.CalmActionBar
+import com.fares.saveme.designsystem.component.CalmCard
+import com.fares.saveme.designsystem.component.CalmCircleButton
+import com.fares.saveme.designsystem.component.CalmScreen
 import com.fares.saveme.designsystem.component.AppSelectField
 import com.fares.saveme.designsystem.component.AppTextField
 import com.fares.saveme.designsystem.component.DateField
 import com.fares.saveme.designsystem.component.EmptyState
 import com.fares.saveme.designsystem.component.MoneyKind
 import com.fares.saveme.designsystem.component.PreviewDateItem
-import com.fares.saveme.designsystem.component.PreviewDateList
 import com.fares.saveme.designsystem.component.PrimaryButton
 import com.fares.saveme.designsystem.component.SecondaryButton
 import com.fares.saveme.designsystem.component.SegmentedControl
@@ -32,6 +58,10 @@ import com.fares.saveme.designsystem.component.SelectionSheet
 import com.fares.saveme.designsystem.component.SettingsSwitchRow
 import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.format.formatDate
+import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.designsystem.icon.RecurringGroups
+import com.fares.saveme.designsystem.icon.RecurringSplit
+import com.fares.saveme.designsystem.icon.RecurringTune
 import com.fares.saveme.designsystem.theme.AppTheme
 import com.fares.saveme.feature.recurring.domain.model.AmountBasis
 import com.fares.saveme.feature.recurring.domain.model.Frequency
@@ -39,7 +69,6 @@ import com.fares.saveme.feature.recurring.domain.model.Preset
 import com.fares.saveme.feature.recurring.domain.model.RuleField
 import com.fares.saveme.feature.recurring.ui.CategoryPickField
 import com.fares.saveme.feature.recurring.ui.ChoiceChips
-import com.fares.saveme.feature.recurring.ui.RecurringBackBar
 import com.fares.saveme.feature.recurring.ui.RecurringCategorySheet
 import com.fares.saveme.feature.recurring.ui.kindLabelRes
 import com.fares.saveme.feature.recurring.ui.labelRes
@@ -49,7 +78,11 @@ import com.fares.saveme.feature.transactions.domain.model.TransactionKind
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.filter_kind
+import saveme.shared.generated.resources.recurring_calm_preset_custom_hint
+import saveme.shared.generated.resources.recurring_calm_preset_gameya_hint
+import saveme.shared.generated.resources.recurring_calm_preset_installment_hint
 import saveme.shared.generated.resources.recurring_auto_confirm
 import saveme.shared.generated.resources.recurring_auto_help
 import saveme.shared.generated.resources.recurring_basis_each
@@ -116,20 +149,45 @@ fun RuleEditorScreen(
     onIntent: (RuleEditorIntent) -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    AppScreen(
+    val title = when (state.mode) {
+        RuleEditorMode.Create -> Res.string.recurring_new_title
+        RuleEditorMode.FromDate -> Res.string.recurring_change_from_title
+        else -> Res.string.recurring_edit_title
+    }
+    val showSave = state.loaded && !state.noWallet && state.canEdit
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<SentenceEdit?>(null) }
+    CalmScreen(
+        title = null,
         snackbarHostState = snackbar,
-        topBar = {
-            val title = when (state.mode) {
-                RuleEditorMode.Create -> Res.string.recurring_new_title
-                RuleEditorMode.FromDate -> Res.string.recurring_change_from_title
-                else -> Res.string.recurring_edit_title
+        titleSlot = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                CalmCircleButton(AppIcons.Close, stringResource(Res.string.cd_back), { onIntent(RuleEditorIntent.Back) })
+                Text(
+                    stringResource(title),
+                    style = AppTheme.type.headline.copy(fontSize = 22.sp),
+                    color = AppTheme.colors.ink,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
             }
-            RecurringBackBar(stringResource(title)) { onIntent(RuleEditorIntent.Back) }
+        },
+        bottomBar = {
+            if (showSave) {
+                CalmActionBar {
+                    PrimaryButton(
+                        stringResource(Res.string.recurring_save_rule),
+                        { onIntent(RuleEditorIntent.SaveClicked) },
+                        modifier = Modifier.testTag("ruleEditor.save"),
+                        enabled = state.canSave,
+                        loading = state.saving,
+                    )
+                }
+            }
         },
     ) {
         if (!state.loaded) {
             repeat(4) { Skeleton(Modifier.fillMaxWidth().height(52.dp)) }
-            return@AppScreen
+            return@CalmScreen
         }
         if (state.noWallet) {
             EmptyState(
@@ -140,38 +198,37 @@ fun RuleEditorScreen(
                 modifier = Modifier.testTag("ruleEditor.noWallet"),
                 actionModifier = Modifier.testTag("ruleEditor.createWallet"),
             )
-            return@AppScreen
+            return@CalmScreen
         }
         ReadOnlyNote(state)
         FromSection(state, onIntent)
         PresetSection(state, onIntent)
-        WalletSection(state, onIntent)
-        KindSection(state, onIntent)
-        AmountSection(state, onIntent)
-        CategoryOrDestination(state, onIntent)
-        GameyaSection(state, onIntent)
-        RoundsSection(state, onIntent)
-        ScheduleSection(state, onIntent)
-        TextsSection(state, onIntent)
-        SettingsSwitchRow(
-            title = stringResource(Res.string.recurring_auto_confirm),
-            checked = state.autoConfirm,
-            onCheckedChange = { onIntent(RuleEditorIntent.AutoConfirmToggled(it)) },
-            modifier = Modifier.testTag("ruleEditor.autoConfirm"),
-            supportingText = stringResource(Res.string.recurring_auto_help),
-        )
-        PreviewSection(state)
-        if (state.canEdit) {
-            PrimaryButton(
-                stringResource(Res.string.recurring_save_rule),
-                { onIntent(RuleEditorIntent.SaveClicked) },
-                modifier = Modifier.testTag("ruleEditor.save"),
-                enabled = state.canSave,
-                loading = state.saving,
-            )
+        SentenceCard(state, onIntent) { editing = it }
+        NextDatesCard(state, previewCaption(state), stringResource(Res.string.recurring_preview_none), Modifier.testTag("ruleEditor.preview"))
+        NoteAutoCard(state, onIntent, expanded, onToggle = { expanded = !expanded })
+        if (expanded) {
+            Note(stringResource(Res.string.recurring_auto_help))
+            FieldCard {
+                WalletSection(state, onIntent)
+                KindSection(state, onIntent)
+                AmountSection(state, onIntent)
+                CategoryOrDestination(state, onIntent)
+                GameyaSection(state, onIntent)
+                RoundsSection(state, onIntent)
+            }
+            FieldCard { ScheduleSection(state, onIntent) }
+            FieldCard { TextsSection(state, onIntent) }
         }
     }
+    editing?.let { edit -> SentenceEditDialog(edit, state, onIntent) { editing = null } }
     Dialogs(state, onIntent)
+}
+
+@Composable
+private fun FieldCard(content: @Composable ColumnScope.() -> Unit) {
+    CalmCard(padding = PaddingValues(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.s), content = content)
+    }
 }
 
 private fun RuleEditorState.problem(field: RuleField) = errors[field]
@@ -216,13 +273,24 @@ private fun FromSection(state: RuleEditorState, onIntent: (RuleEditorIntent) -> 
 @Composable
 private fun PresetSection(state: RuleEditorState, onIntent: (RuleEditorIntent) -> Unit) {
     if (state.presetEditable) {
-        ChoiceChips(
-            options = listOf(Preset.Custom, Preset.Gameya, Preset.Installment),
-            label = { stringResource(it.labelRes() ?: Res.string.recurring_preset_custom) },
-            selected = state.preset,
-            onSelect = { onIntent(RuleEditorIntent.PresetChosen(it)) },
-            optionModifier = { Modifier.testTag("ruleEditor.preset.${it.tag()}") },
-        )
+        val options = listOf(Preset.Custom, Preset.Gameya, Preset.Installment)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max).selectableGroup()) {
+            options.forEach { preset ->
+                val (icon, hint) = when (preset) {
+                    Preset.Gameya -> AppIcons.RecurringGroups to Res.string.recurring_calm_preset_gameya_hint
+                    Preset.Installment -> AppIcons.RecurringSplit to Res.string.recurring_calm_preset_installment_hint
+                    else -> AppIcons.RecurringTune to Res.string.recurring_calm_preset_custom_hint
+                }
+                PresetTile(
+                    icon = icon,
+                    title = stringResource(preset.labelRes() ?: Res.string.recurring_preset_custom),
+                    hint = stringResource(hint),
+                    selected = preset == state.preset,
+                    onClick = { onIntent(RuleEditorIntent.PresetChosen(preset)) },
+                    modifier = Modifier.weight(1f).fillMaxHeight().testTag("ruleEditor.preset.${preset.tag()}"),
+                )
+            }
+        }
         return
     }
     AppTextField(
@@ -233,6 +301,25 @@ private fun PresetSection(state: RuleEditorState, onIntent: (RuleEditorIntent) -
         enabled = false,
         supportingText = stringResource(Res.string.recurring_locked_note),
     )
+}
+
+@Composable
+private fun PresetTile(icon: ImageVector, title: String, hint: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .clip(shape)
+            .background(if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.surface, shape)
+            .border(1.5.dp, if (selected) AppTheme.colors.primary else AppTheme.colors.outlineVariant, shape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .heightIn(min = 48.dp)
+            .padding(14.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) AppTheme.colors.primary else AppTheme.colors.ink2, modifier = Modifier.size(22.dp))
+        Text(title, style = AppTheme.type.itemTitle, color = AppTheme.colors.ink)
+        Text(hint, style = AppTheme.type.caption, color = AppTheme.colors.ink2)
+    }
 }
 
 @Composable
@@ -472,14 +559,6 @@ private fun EndSection(state: RuleEditorState, onIntent: (RuleEditorIntent) -> U
 @Composable
 private fun TextsSection(state: RuleEditorState, onIntent: (RuleEditorIntent) -> Unit) {
     AppTextField(
-        value = state.note,
-        onValueChange = { onIntent(RuleEditorIntent.NoteChanged(it)) },
-        label = stringResource(Res.string.tx_field_note),
-        modifier = Modifier.testTag("ruleEditor.note"),
-        errorText = state.errorText(RuleField.Note),
-        enabled = state.canEdit,
-    )
-    AppTextField(
         value = state.details,
         onValueChange = { onIntent(RuleEditorIntent.DetailsChanged(it)) },
         label = stringResource(Res.string.tx_field_details),
@@ -500,29 +579,13 @@ private fun TextsSection(state: RuleEditorState, onIntent: (RuleEditorIntent) ->
 }
 
 @Composable
-private fun PreviewSection(state: RuleEditorState) {
-    val payoutLabel = stringResource(Res.string.recurring_payout)
-    val items = state.preview.rounds.map { round ->
-        PreviewDateItem(
-            dateText = formatDate(round.date),
-            amountMinor = round.amountMinor,
-            kind = if (round.isPayout) MoneyKind.Income else state.kind.moneyKind(),
-            tag = if (round.isPayout) payoutLabel else null,
-        )
-    }
+private fun previewCaption(state: RuleEditorState): String {
     val syncNote = when {
         state.isCreate -> stringResource(Res.string.recurring_unsynced_hint)
         state.unsentRule -> stringResource(Res.string.recurring_dates_after_sync)
         else -> stringResource(Res.string.recurring_update_after_sync)
     }
-    PreviewDateList(
-        items = items,
-        currency = state.currency,
-        label = stringResource(Res.string.recurring_preview_label),
-        modifier = Modifier.testTag("ruleEditor.preview"),
-        caption = state.preview.payoutMinor?.let { stringResource(Res.string.recurring_payout_amount, com.fares.saveme.designsystem.component.formatMoney(it, state.currency)) } ?: syncNote,
-        emptyText = stringResource(Res.string.recurring_preview_none),
-    )
+    return state.preview.payoutMinor?.let { stringResource(Res.string.recurring_payout_amount, com.fares.saveme.feature.recurring.ui.calmMoney(it, state.currency)) } ?: syncNote
 }
 
 @Composable

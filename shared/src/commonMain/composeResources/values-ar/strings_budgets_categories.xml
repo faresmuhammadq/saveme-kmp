@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="budgets_calm_cover_title">ماذا تريد أن تغطي الميزانية؟</string>
+    <string name="budgets_calm_limit_title">الحد الشهري</string>
+    <string name="categories_calm_add">إضافة</string>
+    <string name="budgets_calm_left_of">%1$s متبقٍ من %2$s</string>
+    <string name="budgets_calm_over_of">%1$s فوق حد %2$s</string>
+    <string name="budgets_calm_on_pace">على المسار · %1$s</string>
+    <string name="budgets_calm_tile_left">%1$s متبقٍ · %2$s</string>
+    <string name="budgets_calm_tile_over">%1$s فوق الحد · %2$s</string>
+    <string name="budgets_calm_archived_link">الميزانيات المؤرشفة · %1$d</string>
+    <string name="budgets_calm_set">تعيين الميزانية</string>
+    <string name="budgets_calm_last_period">الفترة السابقة · %1$s</string>
+    <string name="budgets_calm_average">متوسط 3 فترات · %1$s</string>
+    <string name="budgets_calm_more">المزيد</string>
+    <string name="categories_calm_create">إنشاء فئة</string>
+    <string name="categories_calm_yours">فئاتي</string>
+    <string name="categories_calm_defaults">افتراضية</string>
+</resources>

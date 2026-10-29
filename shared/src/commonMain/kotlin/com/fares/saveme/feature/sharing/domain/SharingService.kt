@@ -224,8 +224,15 @@ class DefaultSharingService(
 
     override fun observeMembers(walletId: String): Flow<List<MemberView>> =
         combine(memberships.observe(walletId), authState) { records, auth ->
-            val me = (auth as? AuthState.SignedIn)?.account?.userId
-            records.map { MemberView(it.userId, it.displayName, it.role, it.version, isYou = it.userId == me) }
+            val account = (auth as? AuthState.SignedIn)?.account
+            val me = account?.userId
+            records.map {
+                MemberView(
+                    it.userId, it.displayName, it.role, it.version, isYou = it.userId == me,
+                    email = account?.email.takeIf { _ -> it.userId == me },
+                    joinedAt = runCatching { Instant.parse(it.createdAt) }.getOrNull(),
+                )
+            }
         }
 
     override fun observeInviteCheck(walletId: String): Flow<InviteCheck> =

@@ -9,7 +9,7 @@ import com.fares.saveme.core.di.iosPlatformModule
 private val koinStarted by lazy {
     // iOS compiles and renders only; live API calls are out of scope (P-15).
     initKoin(
-        config = AppConfig("http://localhost:8080", "localhost", Environment.Dev, isDebugTools = true),
+        config = AppConfig("http://localhost:8080", "localhost", Environment.Dev, isDebugTools = true, linkScheme = "http"),
         platformModule = iosPlatformModule(),
         featureModules = appFeatureModules,
     )

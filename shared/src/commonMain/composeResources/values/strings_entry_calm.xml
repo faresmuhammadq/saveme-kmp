@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="entryc_have_account">I already have an account</string>
+    <string name="entryc_left_to_spend">Left to spend</string>
+    <string name="entryc_emergency_fund">Emergency fund</string>
+    <string name="entryc_shared_wallet">Home expenses · shared</string>
+</resources>

@@ -58,8 +58,9 @@ class OccurrenceViewModel(
             combine(
                 displays(view.occurrence.walletId),
                 view.occurrence.counterWalletId?.let { walletName(it) } ?: flowOf(null),
-            ) { shown, destination ->
-                view to OccurrenceDetails(view.shownCategoryId?.let { shown.resolve(it) }, destination)
+                walletName(view.occurrence.walletId),
+            ) { shown, destination, wallet ->
+                view to OccurrenceDetails(view.shownCategoryId?.let { shown.resolve(it) }, destination, wallet)
             }
         }
     }

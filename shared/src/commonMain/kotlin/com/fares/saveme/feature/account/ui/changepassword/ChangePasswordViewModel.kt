@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 class ChangePasswordViewModel(
     private val email: () -> String,
     private val changePassword: suspend (current: String, new: String) -> ChangePasswordOutcome,
-) : MviViewModel<ChangePasswordState, ChangePasswordIntent, ChangePasswordEffect>(ChangePasswordState()) {
+) : MviViewModel<ChangePasswordState, ChangePasswordIntent, ChangePasswordEffect>(ChangePasswordState(email = email())) {
 
     override fun onIntent(intent: ChangePasswordIntent) {
         when (intent) {

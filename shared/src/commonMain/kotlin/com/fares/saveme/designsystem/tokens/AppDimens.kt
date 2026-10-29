@@ -48,7 +48,7 @@ data class Elevation(
 @Immutable
 data class Sizes(
     val touchTarget: Dp = 48.dp,
-    val button: Dp = 52.dp,
+    val button: Dp = 56.dp,
     val field: Dp = 52.dp,
     val fab: Dp = 56.dp,
     val topBar: Dp = 64.dp,

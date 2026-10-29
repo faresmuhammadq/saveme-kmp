@@ -21,6 +21,8 @@ data class ChangePasswordState(
     val banner: ChangePasswordBanner? = null,
     /** Changed: this device stays signed in, every other one was signed out (FR-009). */
     val done: Boolean = false,
+    /** The account's address: the rules card tells when the new password equals it. */
+    val email: String = "",
 )
 
 enum class WaitReason { Locked, RateLimited }
