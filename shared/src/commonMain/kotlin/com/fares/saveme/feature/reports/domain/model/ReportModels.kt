@@ -190,3 +190,28 @@ sealed interface ReportState {
     data object WalletGone : ReportState
     data class Ready(val report: Report) : ReportState
 }
+
+/**
+ * The current Budget Period over every wallet in the profile's currency, for Home. Independent of the Reports screen's
+ * choices (range, currency, switch), so stepping back there never changes Home.
+ */
+data class HomePeriod(
+    val noWallets: Boolean,
+    val currency: String,
+    val today: LocalDate,
+    /** Null while the period is one the phone cannot name. */
+    val range: ReportRange?,
+    val excluded: List<ExcludedWallet>,
+    val summary: SummaryFigures?,
+    val breakdown: CategoryBreakdown?,
+    /** Expenses per day from the range's first day; empty when [range] is null. */
+    val dailyExpenses: List<Long>,
+    val todayIndex: Int,
+    /** Whole percent against the same days of the period before; null when that period is unknown or spent nothing. */
+    val changePercent: Int?,
+    val includesWaiting: Boolean,
+    val tooLarge: Boolean,
+    val labels: com.fares.saveme.feature.categories.domain.model.ReportLabels,
+) {
+    override fun toString() = "HomePeriod"
+}

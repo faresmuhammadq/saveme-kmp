@@ -53,6 +53,8 @@ internal fun recentOf(transactions: TransactionsService, categories: CategoriesS
                 date = view.shown.date,
                 amountMinor = view.shown.amountMinor,
                 currency = view.walletCurrency,
+                note = view.shown.description?.takeIf { it.isNotBlank() },
+                walletId = walletId,
             )
         }
     }

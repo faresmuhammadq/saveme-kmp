@@ -5,6 +5,7 @@ import com.fares.saveme.core.config.Environment
 import com.fares.saveme.core.platform.ClientInfo
 import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.feature.account.domain.ProfileSyncer
+import com.fares.saveme.feature.auth.domain.HomeOverviewSummary
 import com.fares.saveme.feature.auth.domain.SessionManager
 import com.fares.saveme.feature.reports.data.ReportsApi
 import com.fares.saveme.feature.reports.domain.DefaultReportsService
@@ -14,6 +15,7 @@ import com.fares.saveme.feature.reports.domain.NoParityProbe
 import com.fares.saveme.feature.reports.domain.ReportChoicesStore
 import com.fares.saveme.feature.reports.domain.ReportParityProbe
 import com.fares.saveme.feature.reports.domain.ReportsCleaner
+import com.fares.saveme.feature.reports.domain.ReportsHomeOverview
 import com.fares.saveme.feature.reports.domain.ReportsService
 import com.fares.saveme.feature.reports.domain.model.ReportScope
 import com.fares.saveme.feature.reports.ui.categories.ReportCategoriesViewModel
@@ -54,6 +56,7 @@ val reportsModule = module {
             probe = get(),
         )
     }
+    single<HomeOverviewSummary> { ReportsHomeOverview(get(), get(), get()) }
     // The screens (P-16): one store per scope, domain lambdas only. The key is the wallet's id, or empty for every wallet.
     viewModel { params ->
         val wallet: String = params[0]

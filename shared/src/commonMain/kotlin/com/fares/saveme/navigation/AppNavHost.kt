@@ -347,6 +347,13 @@ fun AppNavHost(
                                 HomeEffect.NavigateReports -> appStack.add(ReportsKey())
                                 HomeEffect.OpenInvitation -> heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
                                 is HomeEffect.OpenBudget -> appStack.add(BudgetEditorKey(effect.id))
+                                is HomeEffect.OpenWallet -> appStack.add(WalletDetailKey(effect.id))
+                                is HomeEffect.OpenTransaction -> appStack.add(TransactionEditorKey(effect.id, effect.walletId))
+                                HomeEffect.OpenReport -> appStack.add(ReportsKey())
+                                is HomeEffect.OpenReportCategories -> appStack.add(
+                                    ReportCategoriesKey(null, effect.from.toString(), effect.to.toString(), effect.currency, false, "expense"),
+                                )
+                                HomeEffect.OpenBudgetEditor -> appStack.add(BudgetEditorKey())
                                 is HomeEffect.ShowMessage -> Unit // shown by the route
                             }
                         })

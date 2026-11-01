@@ -29,4 +29,7 @@ data class RecentTransaction(
     val date: LocalDate,
     val amountMinor: Long,
     val currency: String,
+    /** The transaction's description; null when none. */
+    val note: String? = null,
+    val walletId: String = "",
 )

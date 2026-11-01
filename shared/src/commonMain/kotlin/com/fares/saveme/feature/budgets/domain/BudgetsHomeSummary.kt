@@ -16,9 +16,17 @@ class BudgetsHomeSummary(private val service: BudgetsService) : BudgetSummary {
     override fun observeTop(limit: Int): Flow<List<BudgetGlimpse>> = service.observeOverview().map { overview ->
         overview.active
             .sortedWith(compareBy<BudgetView> { it.figures == null }.thenByDescending { it.figures?.percent ?: 0 }.thenBy { it.server.createdAt }.thenBy { it.id })
-            .take(limit)
+            .let { sorted ->
+                // The all-expenses budget leads Home's ring card, so it stays even when others rank higher.
+                val allExpenses = sorted.firstOrNull { it.category == null && it.figures != null }
+                val top = sorted.take(limit)
+                if (allExpenses == null || allExpenses in top) top else top.dropLast(1) + allExpenses
+            }
             .map { it.toGlimpse(overview) }
     }
+
+    override fun observeTypicalSpend(currency: String): Flow<Long?> =
+        service.observeSpendHistory(null, currency).map { it.averageMinor ?: it.lastPeriodMinor }
 
     private fun BudgetView.toGlimpse(overview: BudgetsOverview) = BudgetGlimpse(
         id = id,

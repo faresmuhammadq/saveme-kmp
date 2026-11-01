@@ -170,7 +170,7 @@ fun HomeScreen(
                 AppTextButton(stringResource(Res.string.home_invitation_open), { onIntent(HomeIntent.InvitationClicked) })
             }
         }
-        if (hero != null) BudgetHero(hero, onIntent)
+        if (state.overview.loaded && !state.overview.noWallets) SpentCard(state.overview)
         if (state.dueCount > 0) {
             val card = pluralStringResource(Res.plurals.recurring_due_count, state.dueCount, state.dueCount)
             val first = state.firstDue?.title ?: stringResource(Res.string.recurring_rule_title)
@@ -203,7 +203,20 @@ fun HomeScreen(
                 Text(stringResource(Res.string.homec_review), style = AppTheme.type.label, color = AppTheme.money.pending)
             }
         }
+        if (hero != null) BudgetHero(hero, onIntent)
         if (rows.isNotEmpty()) BudgetsCard(rows, onIntent)
+        if (state.overview.loaded) {
+            WalletsCard(state.overview, onIntent)
+            if (!state.overview.noWallets) {
+                WhereItWentCard(
+                    state.overview,
+                    showSuggestion = !state.suggestionDismissed && state.budgets.none { it.categoryName == null },
+                    typicalSpendMinor = state.typicalSpendMinor,
+                    onIntent = onIntent,
+                )
+                RecentCard(state.overview, onIntent)
+            }
+        }
     }
 }
 
@@ -221,8 +234,9 @@ private fun HomeHeader(state: HomeState, hero: BudgetGlimpse?, onIntent: (HomeIn
         },
     )
     val line = state.displayName?.let { stringResource(Res.string.homec_greeting_named, greeting, it) } ?: greeting
-    val period = (hero ?: state.budgets.firstOrNull { it.periodStart != null })
-        ?.let { g -> g.periodStart?.let { start -> g.periodEnd?.let { end -> "${formatDayMonth(start)} – ${formatDayMonth(end)}" } } }
+    val period = state.overview.periodStart?.let { start -> state.overview.periodEnd?.let { end -> "${formatDayMonth(start)} – ${formatDayMonth(end)}" } }
+        ?: (hero ?: state.budgets.firstOrNull { it.periodStart != null })
+            ?.let { g -> g.periodStart?.let { start -> g.periodEnd?.let { end -> "${formatDayMonth(start)} – ${formatDayMonth(end)}" } } }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 10.dp)) {
         Column(Modifier.weight(1f)) {
             Text(line, style = AppTheme.type.label.copy(fontWeight = FontWeight.Medium), color = AppTheme.colors.ink2, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -270,7 +284,7 @@ private fun HomeHeader(state: HomeState, hero: BudgetGlimpse?, onIntent: (HomeIn
 }
 
 /** A whole-unit figure without the currency: "9,700", or "9,700.50" when it has a fraction. */
-private fun plainAmount(minor: Long, currency: String): String {
+internal fun plainAmount(minor: Long, currency: String): String {
     val digits = MoneyFormatter.digitsFor(currency)
     var unit = 1L
     repeat(digits) { unit *= 10 }

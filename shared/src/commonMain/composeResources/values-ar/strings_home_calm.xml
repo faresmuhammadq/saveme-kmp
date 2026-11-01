@@ -23,4 +23,34 @@
     <string name="homec_over">تجاوز</string>
     <string name="homec_due_line">%1$s · %2$s</string>
     <string name="homec_categories_sub">فئات الدخل والمصروفات</string>
+    <string name="homec_spent_period">المصروف في هذه الفترة</string>
+    <string name="homec_trend_less">أقل بنسبة %1$d% من الفترة السابقة في اليوم نفسه</string>
+    <string name="homec_trend_more">أكثر بنسبة %1$d% من الفترة السابقة في اليوم نفسه</string>
+    <string name="homec_trend_same">مثل الفترة السابقة في اليوم نفسه</string>
+    <string name="homec_income">الدخل</string>
+    <string name="homec_left_over">المتبقي</string>
+    <string name="homec_chart_cd">الإنفاق اليومي من %1$s إلى %2$s، %3$s حتى الآن</string>
+    <string name="homec_today">اليوم</string>
+    <string name="homec_yesterday">أمس</string>
+    <string name="homec_wallets_total">الإجمالي %1$s</string>
+    <string name="homec_wallets_empty">أضف محفظة لترى أرصدتك هنا.</string>
+    <string name="homec_add_wallet">إضافة محفظة</string>
+    <string name="homec_where">أين ذهبت الأموال</string>
+    <string name="homec_report">التقرير</string>
+    <plurals name="homec_more_categories">
+        <item quantity="zero">%1$d فئة أخرى</item>
+        <item quantity="one">فئة أخرى</item>
+        <item quantity="two">فئتان أخريان</item>
+        <item quantity="few">%1$d فئات أخرى</item>
+        <item quantity="many">%1$d فئة أخرى</item>
+        <item quantity="other">%1$d فئة أخرى</item>
+    </plurals>
+    <string name="homec_suggestion">تنفق نحو %1$s شهريًا. حوّل ذلك إلى ميزانية وستعرض الرئيسية ما تبقى.</string>
+    <string name="homec_suggestion_plain">حدّد ميزانية شهرية وستعرض الرئيسية ما تبقى.</string>
+    <string name="homec_set_budget">تحديد ميزانية شهرية</string>
+    <string name="homec_dismiss">إخفاء الاقتراح</string>
+    <string name="homec_recent">الأحدث</string>
+    <string name="homec_other_currencies">الأرقام بعملة %1$s. المحافظ بعملة %2$s غير مشمولة.</string>
+    <string name="homec_figures_after_sync">تظهر الأرقام بعد المزامنة</string>
+    <string name="homec_transfer">تحويل</string>
 </resources>

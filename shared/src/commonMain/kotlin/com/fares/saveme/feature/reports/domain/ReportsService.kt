@@ -16,6 +16,7 @@ import com.fares.saveme.feature.recurring.domain.ScheduledMoney
 import com.fares.saveme.feature.reports.data.ReportsApi
 import com.fares.saveme.feature.reports.domain.model.BudgetPeriodSpan
 import com.fares.saveme.feature.reports.domain.model.Covered
+import com.fares.saveme.feature.reports.domain.model.HomePeriod
 import com.fares.saveme.feature.reports.domain.model.PeriodLookup
 import com.fares.saveme.feature.reports.domain.model.RangeChoice
 import com.fares.saveme.feature.reports.domain.model.RangeKind
@@ -83,6 +84,9 @@ interface ReportsService {
 
     /** Names, icons and colours for the categories of the scope's wallets. */
     fun observeLabels(scope: ReportScope): Flow<ReportLabels>
+
+    /** Home's figures: the current period over every wallet in the profile's currency, whatever the Reports screen chose. */
+    fun observeHomePeriod(): Flow<HomePeriod> = flowOf()
 }
 
 class DefaultReportsService(
@@ -327,6 +331,65 @@ class DefaultReportsService(
         ReportScope.AllWallets -> wallets.observeList().map { list -> (list.active + list.archived).map { it.id }.toSet() }
             .distinctUntilChanged()
             .flatMapLatest { ids -> categories.observeReportLabels(ids) }
+    }
+
+    // ---- Home ------------------------------------------------------------------------------------------------------
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeHomePeriod(): Flow<HomePeriod> = accountFlow().flatMapLatest { account ->
+        if (account == null) {
+            flowOf()
+        } else {
+            combine(wallets.observeList(), ctxFlow(account)) { list, ctx -> list to ctx }.flatMapLatest { (list, ctx) ->
+                homePeriod((list.active + list.archived).map(::reportWallet), ctx)
+            }
+        }
+    }
+
+    private fun homePeriod(all: List<ReportWallet>, ctx: Ctx): Flow<HomePeriod> {
+        val currency = ctx.base.defaultCurrency ?: all.firstOrNull { !it.archived }?.currency ?: CoveredWallets.FALLBACK_CURRENCY
+        val covered = CoveredWallets.forCurrency(all, currency)
+        val range = resolve(RangeSelection.CurrentPeriod, ctx).range
+        val empty = HomePeriod(
+            noWallets = all.isEmpty(), currency = currency, today = ctx.today, range = range, excluded = covered.excluded, summary = null,
+            breakdown = null, dailyExpenses = emptyList(), todayIndex = -1, changePercent = null, includesWaiting = false,
+            tooLarge = false, labels = ReportLabels.identity(),
+        )
+        if (all.isEmpty() || covered.walletIds.isEmpty() || range == null) return flowOf(empty)
+        val ids = covered.walletIds
+        val previous = ReportPeriods.previous(BudgetPeriodSpan(range.from, range.to), ctx.profile, ctx.learned) as? PeriodLookup.Known
+        val extraFrom = previous?.span?.start ?: range.from
+        return combine(ledger.observe(ids, range.from, range.to, extraFrom, range.to), categories.observeReportLabels(ids)) { snap, labels ->
+            val waiting = snap.waitingTouches.any { it.date <= range.to } || covered.wallets.any { it.waiting }
+            try {
+                val summary = ReportCalculator.summary(currency, ids, covered.openings, range.from, range.to, snap.lines, snap.before)
+                val breakdown = ReportCalculator.breakdown(currency, ids, range.from, range.to, snap.lines, null, labels::keyOf)
+                val days = (range.to.toEpochDays() - range.from.toEpochDays() + 1).toInt().coerceAtLeast(0)
+                val daily = LongArray(days)
+                for (line in snap.lines) {
+                    if (line.kind != "expense" || line.walletId !in ids || line.date < range.from || line.date > range.to) continue
+                    val index = (line.date.toEpochDays() - range.from.toEpochDays()).toInt()
+                    daily[index] = addExact(daily[index], line.amountMinor)
+                }
+                val todayIndex = (ctx.today.toEpochDays() - range.from.toEpochDays()).toInt().coerceIn(-1, days - 1)
+                val change = previous?.let { prev ->
+                    val dayCount = todayIndex + 1
+                    val from = prev.span.start
+                    val last = minOf(from.plus(DatePeriod(days = dayCount - 1)), prev.span.end)
+                    var before = 0L
+                    for (day in snap.daily) if (day.date >= from && day.date <= last) before = addExact(before, day.expensesMinor)
+                    var now = 0L
+                    for (index in 0..todayIndex) now = addExact(now, daily[index])
+                    if (before <= 0L || dayCount <= 0) null else (((now - before) * 100) / before).toInt()
+                }
+                empty.copy(
+                    summary = summary, breakdown = breakdown, dailyExpenses = daily.toList(), todayIndex = todayIndex,
+                    changePercent = change, includesWaiting = waiting, labels = labels,
+                )
+            } catch (_: TooLarge) {
+                empty.copy(tooLarge = true, includesWaiting = waiting, labels = labels)
+            }
+        }
     }
 
     // ---- choices ---------------------------------------------------------------------------------------------------
