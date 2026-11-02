@@ -1,5 +1,6 @@
 package com.fares.saveme.feature.sharedbudgets.domain
 
+import com.fares.saveme.feature.sharing.domain.ShareUrlRebase
 import co.touchlab.kermit.Logger
 import com.fares.saveme.core.network.ApiErrorCode
 import com.fares.saveme.core.network.ApiResult
@@ -121,6 +122,7 @@ class DefaultSharedBudgetsManager(
     private val deviceZoneId: () -> String,
     private val scope: CoroutineScope,
     private val newId: () -> String = { Uuid.generateV7().toString() },
+    private val shareUrlRebase: ShareUrlRebase = ShareUrlRebase.None,
 ) : SharedBudgetsManager {
     private val log = Logger.withTag("shared-budgets")
 
@@ -197,7 +199,7 @@ class DefaultSharedBudgetsManager(
     override suspend fun invite(budgetId: String): InviteResult {
         if (accountId == null || !emailVerified) return InviteResult.NotVerified
         return when (val answer = api.putInvitation(budgetId, newId())) {
-            is ApiResult.Success -> InviteResult.Created(answer.value.shareUrl)
+            is ApiResult.Success -> InviteResult.Created(answer.value.shareUrl?.let(shareUrlRebase::rebase))
             ApiResult.Offline, ApiResult.Timeout -> InviteResult.Offline
             is ApiResult.Failure -> when (answer.code) {
                 ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND -> InviteResult.NotAllowed

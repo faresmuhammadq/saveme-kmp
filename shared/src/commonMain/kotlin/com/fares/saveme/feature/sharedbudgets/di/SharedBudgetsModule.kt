@@ -44,6 +44,7 @@ import com.fares.saveme.core.session.UserDataCleaner
 import com.fares.saveme.feature.sharedbudgets.domain.HeldSharedBudgetInvitation
 import com.fares.saveme.feature.sharedbudgets.domain.SharedBudgetLinkParser
 import com.fares.saveme.feature.sharedbudgets.ui.invitation.SharedBudgetInvitationViewModel
+import com.fares.saveme.feature.sharing.domain.ShareUrlRebase
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -103,6 +104,7 @@ val sharedBudgetsModule = module {
             authState = get<SessionManager>().state,
             deviceZoneId = { get<ClientInfo>().timezoneId() },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            shareUrlRebase = ShareUrlRebase.of(get<AppConfig>()),
         )
     }
     single<SharedBudgetsService> { DefaultSharedBudgetsService(get(), accountId = { (get<SessionManager>().state.value as? AuthState.SignedIn)?.account?.userId }) }
