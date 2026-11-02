@@ -597,6 +597,10 @@
     <string name="tx_field_wallet">المحفظة</string>
     <string name="tx_field_amount">المبلغ</string>
     <string name="tx_field_category">الفئة</string>
+    <string name="tx_field_budget">ميزانية مشتركة</string>
+    <string name="tx_budget_none">ليس ضمن ميزانية مشتركة</string>
+    <string name="tx_budget_choose">اختر ميزانية مشتركة</string>
+    <string name="tx_budget_unknown">ميزانية مشتركة</string>
     <string name="tx_field_destination">إلى المحفظة</string>
     <string name="tx_field_date">التاريخ</string>
     <string name="tx_field_note">ملاحظة</string>
@@ -645,6 +649,7 @@
     <string name="tx_reason_gone">هذه المعاملة أو محفظتها لم تعد متاحة.</string>
     <string name="tx_reason_no_right">لا يمكنك إضافة المعاملات أو تغييرها في هذه المحفظة.</string>
     <string name="tx_reason_no_right_other">لا يمكنك إضافة المعاملات أو تغييرها في المحفظة الأخرى.</string>
+    <string name="tx_reason_budget">لا تستطيع الميزانية المشتركة قبول هذا المصروف بعد الآن. اختر ميزانية أخرى أو بدونها.</string>
     <string name="tx_reason_category">لا يمكن استخدام هذه الفئة بعد الآن. اختر فئة أخرى.</string>
     <string name="tx_reason_destination">المحفظة التي حوّلت إليها لم تعد متاحة.</string>
     <string name="tx_reason_currency_changed">تغيّرت عملة هذه المحفظة إلى %1$s. أدخل المبلغ مرة أخرى.</string>
@@ -1454,4 +1459,17 @@
     <string name="play_dev_price_label">السعر بوحدات الميكرو (جنيه)</string>
     <string name="play_dev_set_price">حدّد سعر المنتج</string>
     <string name="play_dev_count">المشتريات: %1$d</string>
+    <string name="sb_title">الميزانيات المشتركة</string>
+    <string name="sb_empty">لا توجد ميزانيات مشتركة بعد. الميزانية المشتركة تتابع المصروفات التي تضيفها أنت وشخص آخر، من أي محفظة.</string>
+    <string name="sb_archived">مؤرشفة</string>
+    <string name="sb_no_limit">بدون حد</string>
+    <string name="sb_categories">الفئات</string>
+    <string name="sb_category_unavailable">الفئة غير متاحة</string>
+    <string name="sb_members">من أنفق</string>
+    <string name="sb_you">أنت</string>
+    <string name="sb_former_member">عضو سابق</string>
+    <string name="sb_other">أخرى</string>
+    <string name="sb_spent_label">المصروف في هذه الفترة</string>
+    <string name="sb_updated">آخر تحديث %1$s</string>
+    <string name="sb_open">الميزانيات المشتركة</string>
 </resources>

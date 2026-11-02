@@ -85,6 +85,10 @@ import kotlinx.coroutines.launch
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
 import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
 import com.fares.saveme.feature.budgets.ui.list.BudgetsRoute
+import com.fares.saveme.feature.sharedbudgets.ui.detail.SharedBudgetDetailEffect
+import com.fares.saveme.feature.sharedbudgets.ui.detail.SharedBudgetDetailRoute
+import com.fares.saveme.feature.sharedbudgets.ui.list.SharedBudgetsEffect
+import com.fares.saveme.feature.sharedbudgets.ui.list.SharedBudgetsRoute
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
 import com.fares.saveme.feature.sharing.domain.HeldInvitation
 import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
@@ -587,11 +591,32 @@ fun AppNavHost(
                             onEffect = { effect ->
                                 when (effect) {
                                     is BudgetsEffect.OpenEditor -> appStack.add(BudgetEditorKey(effect.id))
+                                    BudgetsEffect.OpenShared -> appStack.add(SharedBudgetsKey)
                                     BudgetsEffect.NavigateBack -> appStack.pop()
                                     BudgetsEffect.RequireVerification -> Unit // routed to onRequireVerification
                                 }
                             },
                             onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<SharedBudgetsKey> {
+                        SharedBudgetsRoute(
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is SharedBudgetsEffect.OpenBudget -> appStack.add(SharedBudgetKey(effect.id))
+                                    SharedBudgetsEffect.NavigateBack -> appStack.pop()
+                                }
+                            },
+                        )
+                    }
+                    entry<SharedBudgetKey> { key ->
+                        SharedBudgetDetailRoute(
+                            budgetId = key.budgetId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    SharedBudgetDetailEffect.NavigateBack -> appStack.pop()
+                                }
+                            },
                         )
                     }
                     entry<ReportsKey> { key ->
@@ -935,7 +960,7 @@ private fun SnapshotStateList<NavKey>.resetTo(vararg keys: NavKey) {
 private fun tabOf(key: NavKey): MainTab? = when (key) {
     is HomeKey -> MainTab.Home
     is WalletsKey, is WalletDetailKey, is TransactionsKey -> MainTab.Wallets
-    is BudgetsKey -> MainTab.Budgets
+    is BudgetsKey, is SharedBudgetsKey, is SharedBudgetKey -> MainTab.Budgets
     is ReportsKey, is ReportCategoriesKey -> MainTab.Reports
     else -> null
 }

@@ -20,6 +20,8 @@ data class TransactionPayload(
     val memo: String? = null,
     val counterparty: String? = null,
     val cleared: Boolean = false,
+    /** The Shared Budget the transaction counts toward (backend ADR-0027), or null. */
+    val sharedBudgetId: String? = null,
 )
 
 /** The plain field names [com.fares.saveme.feature.transactions.data.TransactionSyncHandler.refusalFields] returns. */
@@ -34,6 +36,7 @@ object TransactionFields {
     const val DETAILS = "details"
     const val PERSON = "person"
     const val CLEARED = "cleared"
+    const val BUDGET = "budget"
 
     val byPointer: Map<String, String> = mapOf(
         "/amount_minor" to AMOUNT,
@@ -46,5 +49,6 @@ object TransactionFields {
         "/memo" to DETAILS,
         "/counterparty" to PERSON,
         "/cleared" to CLEARED,
+        "/shared_budget_id" to BUDGET,
     )
 }

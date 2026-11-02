@@ -108,6 +108,14 @@ data object BudgetsKey : NavKey
 @Serializable
 data class BudgetEditorKey(val budgetId: String? = null) : NavKey
 
+// Shared Budgets (backend ADR-0027).
+
+@Serializable
+data object SharedBudgetsKey : NavKey
+
+@Serializable
+data class SharedBudgetKey(val budgetId: String) : NavKey
+
 // Reports (spec 014).
 
 /** The Reports screen: one wallet's report, or every wallet on the phone in one currency when [walletId] is null. */

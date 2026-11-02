@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,6 +89,7 @@ import com.fares.saveme.designsystem.component.Skeleton
 import com.fares.saveme.designsystem.component.formatMoney
 import com.fares.saveme.designsystem.format.formatDate
 import com.fares.saveme.designsystem.icon.AppIcons
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
 import com.fares.saveme.designsystem.icon.CategoryIcons
 import com.fares.saveme.designsystem.icon.TxNote
 import com.fares.saveme.designsystem.theme.AppTheme
@@ -172,6 +174,11 @@ import saveme.shared.generated.resources.tx_title_new
 import saveme.shared.generated.resources.tx_unknown_note
 import saveme.shared.generated.resources.tx_viewer_note
 import saveme.shared.generated.resources.tx_wallets_locked_note
+import saveme.shared.generated.resources.tx_reason_budget
+import saveme.shared.generated.resources.tx_field_budget
+import saveme.shared.generated.resources.tx_budget_unknown
+import saveme.shared.generated.resources.tx_budget_none
+import saveme.shared.generated.resources.tx_budget_choose
 import saveme.shared.generated.resources.wallet_status_waiting
 
 @Composable
@@ -280,6 +287,7 @@ private fun ColumnScope.EditorBody(state: TransactionEditorState, onIntent: (Tra
     state.errors[TransactionField.Date]?.let {
         Text(it.text(TransactionField.Date), style = AppTheme.type.caption, color = AppTheme.colors.error, modifier = Modifier.align(Alignment.CenterHorizontally))
     }
+    BudgetSection(state, onIntent)
     CategoryOrDestination(state, onIntent)
     NoteField(state, onIntent)
     MoreAndRecurring(state, onIntent)
@@ -549,6 +557,61 @@ private fun KindSection(state: TransactionEditorState, onIntent: (TransactionEdi
     )
 }
 
+/** The Shared Budget an expense counts toward: the person's frequent picks first, then the full list (backend ADR-0027). */
+@Composable
+private fun BudgetSection(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
+    if (!state.budgetVisible) return
+    val none = stringResource(Res.string.tx_budget_none)
+    val unknown = stringResource(Res.string.tx_budget_unknown)
+    val frequent = state.budgetsForWallet.filter { it.frequent }
+    if (state.isCreate && frequent.isNotEmpty()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+            frequent.forEach { budget ->
+                BudgetChip(
+                    text = budget.name,
+                    selected = budget.id == state.budgetId,
+                    onClick = { onIntent(TransactionEditorIntent.BudgetChosen(budget.id.takeIf { it != state.budgetId })) },
+                    modifier = Modifier.testTag("txEditor.budgetFrequent.${budget.id}"),
+                )
+            }
+        }
+    }
+    AppSelectField(
+        label = stringResource(Res.string.tx_field_budget),
+        value = state.chosenBudget?.name ?: if (state.budgetId != null) unknown else none,
+        onClick = { onIntent(TransactionEditorIntent.BudgetClicked) },
+        modifier = Modifier.testTag("txEditor.budget"),
+        errorText = if (state.budgetRefused) stringResource(Res.string.tx_reason_budget) else null,
+        enabled = state.budgetsForWallet.isNotEmpty() || state.budgetId != null,
+    )
+}
+
+@Composable
+private fun BudgetChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = AppTheme.shapes.pill
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.heightIn(min = 48.dp).selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .height(36.dp)
+                .background(if (selected) AppTheme.colors.primaryContainer else AppTheme.colors.sunken, shape)
+                .border(1.dp, if (selected) AppTheme.colors.primary else Color.Transparent, shape)
+                .padding(horizontal = 16.dp),
+        ) {
+            Text(
+                text,
+                style = AppTheme.type.caption.copy(fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold),
+                color = if (selected) AppTheme.colors.primary else AppTheme.colors.ink2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
 @Composable
 private fun CategoryOrDestination(state: TransactionEditorState, onIntent: (TransactionEditorIntent) -> Unit) {
     if (state.kind == TransactionKind.Transfer) {
@@ -573,7 +636,7 @@ private fun CategoryOrDestination(state: TransactionEditorState, onIntent: (Tran
     }
     if (state.kind == TransactionKind.Unknown) return
     Text(stringResource(Res.string.tx_field_category), style = AppTheme.type.label, color = AppTheme.colors.ink2, modifier = Modifier.padding(top = 8.dp))
-    val choices = state.categoryChoices
+    val choices = state.visibleCategoryChoices
     val options = (listOfNotNull(state.category) + listOfNotNull(choices?.current) + (choices?.own.orEmpty()) + (choices?.defaults.orEmpty()))
         .distinctBy { it.id }
         .let { all -> all.sortedByDescending { it.id == state.categoryId } }
@@ -837,7 +900,7 @@ private fun Dialogs(state: TransactionEditorState, onIntent: (TransactionEditorI
         )
     }
     if (state.categorySheetOpen) {
-        val choices = state.categoryChoices ?: CategoryChoices(null, emptyList(), emptyList())
+        val choices = state.visibleCategoryChoices ?: CategoryChoices(null, emptyList(), emptyList())
         val current = stringResource(Res.string.category_choice_current)
         val own = stringResource(Res.string.category_choice_own)
         val defaults = stringResource(Res.string.category_choice_defaults)
@@ -854,6 +917,20 @@ private fun Dialogs(state: TransactionEditorState, onIntent: (TransactionEditorI
             onSelect = { onIntent(TransactionEditorIntent.CategoryChosen(it)) },
             onDismiss = { onIntent(TransactionEditorIntent.SheetDismissed) },
             emptyMessage = stringResource(Res.string.category_choice_empty),
+        )
+    }
+    if (state.budgetSheetOpen) {
+        val none = stringResource(Res.string.tx_budget_none)
+        // The first entry takes the expense out of any budget.
+        val options: List<BudgetChoice?> = listOf<BudgetChoice?>(null) + state.budgetsForWallet
+        SelectionSheet(
+            title = stringResource(Res.string.tx_budget_choose),
+            options = options,
+            label = { it?.name ?: none },
+            selected = state.chosenBudget,
+            onSelect = { onIntent(TransactionEditorIntent.BudgetChosen(it?.id)) },
+            onDismiss = { onIntent(TransactionEditorIntent.SheetDismissed) },
+            searchable = false,
         )
     }
     if (state.destinationSheetOpen) {

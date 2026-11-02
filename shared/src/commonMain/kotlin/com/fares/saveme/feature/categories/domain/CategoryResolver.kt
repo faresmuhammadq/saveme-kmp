@@ -16,7 +16,7 @@ internal fun CategoryView.toDisplay() = CategoryDisplay(
 /** A default's display; its name follows the app language (FR-003), a retired one still resolves. */
 internal fun DefaultCategory.toDisplay(language: AppLanguage) = CategoryDisplay(
     id = id, name = if (language == AppLanguage.Ar) nameAr else nameEn, iconKey = icon, colorHex = color,
-    kindWire = kindWire, source = CategorySource.Default, archived = retiredAt != null,
+    kindWire = kindWire, source = CategorySource.Default, archived = retiredAt != null, systemKey = systemKey,
 )
 
 internal fun CategoryReference.toDisplay() = CategoryDisplay(

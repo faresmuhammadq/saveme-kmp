@@ -39,13 +39,14 @@ data class Transaction(
     val version: Long,
     val createdAt: Instant,
     val updatedAt: Instant,
+    val sharedBudgetId: String? = null,
 ) {
     val kind: TransactionKind get() = TransactionKind.fromWire(kindWire)
 
     fun toDraft() = TransactionDraft(
         walletId = walletId, kindWire = kindWire, date = date, amountMinor = amountMinor, currency = currency,
         categoryId = categoryId, counterWalletId = counterWalletId, description = description, memo = memo,
-        counterparty = counterparty, cleared = cleared,
+        counterparty = counterparty, cleared = cleared, sharedBudgetId = sharedBudgetId,
     )
 }
 
@@ -62,12 +63,14 @@ data class TransactionDraft(
     val memo: String?,
     val counterparty: String?,
     val cleared: Boolean,
+    /** The Shared Budget it counts toward, or null (backend ADR-0027). */
+    val sharedBudgetId: String? = null,
 ) {
     val kind: TransactionKind get() = TransactionKind.fromWire(kindWire)
 }
 
 /** The fields a validation problem or a refusal can point at (data-model §3). */
-enum class TransactionField { Wallet, Kind, Amount, Date, Category, Destination, Currency, Note, Details, Person, Cleared;
+enum class TransactionField { Wallet, Kind, Amount, Date, Category, Destination, Currency, Note, Details, Person, Cleared, Budget;
 
     companion object {
         fun fromName(name: String): TransactionField? = when (name) {
@@ -81,6 +84,7 @@ enum class TransactionField { Wallet, Kind, Amount, Date, Category, Destination,
             "details" -> Details
             "person" -> Person
             "cleared" -> Cleared
+            "budget" -> Budget
             else -> null
         }
     }

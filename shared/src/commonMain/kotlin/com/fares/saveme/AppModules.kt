@@ -10,6 +10,7 @@ import com.fares.saveme.feature.categories.di.categoriesModule
 import com.fares.saveme.feature.recurring.di.recurringModule
 import com.fares.saveme.feature.notifications.di.notificationsModule
 import com.fares.saveme.feature.reports.di.reportsModule
+import com.fares.saveme.feature.sharedbudgets.di.sharedBudgetsModule
 import com.fares.saveme.feature.sharing.di.sharingModule
 import com.fares.saveme.feature.transactions.di.transactionsModule
 import com.fares.saveme.feature.wallets.di.walletsModule
@@ -17,4 +18,4 @@ import com.fares.saveme.navigation.navigationModule
 import org.koin.core.module.Module
 
 /** Every feature module the app starts with; `core` never lists these itself (P-10.7). */
-val appFeatureModules: List<Module> = listOf(navigationModule, devToolsModule, serverModule, authModule, accountModule, billingModule, walletsModule, categoriesModule, transactionsModule, recurringModule, budgetsModule, sharingModule, reportsModule, notificationsModule)
+val appFeatureModules: List<Module> = listOf(navigationModule, devToolsModule, serverModule, authModule, accountModule, billingModule, walletsModule, categoriesModule, transactionsModule, recurringModule, budgetsModule, sharedBudgetsModule, sharingModule, reportsModule, notificationsModule)

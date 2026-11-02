@@ -69,7 +69,7 @@ class Migration9To10Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_9_10)
+        .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
         .build()
 
     @Test
@@ -83,11 +83,10 @@ class Migration9To10Test {
             assertNull(scope, row.feedPosition)
         }
         assertEquals("the push stamp of a wallet scope is kept", "2026-10-01T09:30:00Z", dao.observe("wallet:w1").first()!!.lastPushedAt)
+        // The chain runs on to v11, whose migration forgets the person's own place once (Migration10To11Test); 9 → 10 itself kept it.
         val user = dao.observe("user:u1").first()!!
-        assertEquals("user-cursor", user.feedCursor)
-        assertEquals("2026-10-02T08:00:00.000Z", user.feedReadAt)
-        assertEquals(41L, user.feedPosition)
-        assertEquals(FeedPlace("user-cursor", 41L), dao.feedPlace("user:u1"))
+        assertNull(user.feedCursor)
+        assertEquals("the push stamp of the user scope is kept", "2026-10-01T09:00:00Z", user.lastPushedAt)
         assertNotNull("a scope that is not a feed scope is untouched", dao.observe("profile").first())
         db.close()
     }

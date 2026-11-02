@@ -242,3 +242,44 @@ internal val MIGRATION_9_10 = object : Migration(9, 10) {
         )
     }
 }
+
+/**
+ * v10 → v11 (backend ADR-0027): the Shared Budget tables, `transactions.shared_budget_id` (the budget a transaction counts toward,
+ * null for none), and the person's own feed place forgotten once. Memberships of Shared Budgets ride the user feed, which skipped
+ * `shared_budget_member` rows until now; clearing the cursor, the read stamp and the integer position together makes the next read
+ * start from the beginning so budgets the person already belongs to appear. Wallet scopes keep theirs; every other row is kept.
+ */
+internal val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `shared_budget` (`id` TEXT NOT NULL, `owner_id` TEXT NOT NULL, `name` TEXT NOT NULL,
+            `currency` TEXT NOT NULL, `start_day` INTEGER NOT NULL, `timezone` TEXT NOT NULL, `limit_minor` INTEGER, `archived_at` TEXT,
+            `limit_history` TEXT NOT NULL, `start_day_history` TEXT NOT NULL, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL,
+            `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `shared_budget_member` (`id` TEXT NOT NULL, `shared_budget_id` TEXT NOT NULL,
+            `user_id` TEXT NOT NULL, `display_name` TEXT, `role` TEXT NOT NULL, `read_only` INTEGER NOT NULL, `version` INTEGER NOT NULL,
+            `change_seq` INTEGER NOT NULL, `updated_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_shared_budget_member_shared_budget_id` ON `shared_budget_member` (`shared_budget_id`)")
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_shared_budget_member_user_id` ON `shared_budget_member` (`user_id`)")
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `shared_budget_line` (`id` TEXT NOT NULL, `shared_budget_id` TEXT NOT NULL,
+            `category_id` TEXT NOT NULL, `limit_minor` INTEGER, `name` TEXT, `icon` TEXT, `color` TEXT, `limit_history` TEXT NOT NULL,
+            `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `updated_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_shared_budget_line_shared_budget_id` ON `shared_budget_line` (`shared_budget_id`)")
+        connection.execSQL(
+            """CREATE TABLE IF NOT EXISTS `shared_budget_entry` (`id` TEXT NOT NULL, `shared_budget_id` TEXT NOT NULL,
+            `created_by` TEXT NOT NULL, `category_id` TEXT NOT NULL, `date` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL,
+            `description` TEXT, `detached_at` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL,
+            `updated_at` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+        )
+        connection.execSQL("CREATE INDEX IF NOT EXISTS `index_shared_budget_entry_shared_budget_id_date` ON `shared_budget_entry` (`shared_budget_id`, `date`)")
+        connection.execSQL("ALTER TABLE `transactions` ADD COLUMN `shared_budget_id` TEXT")
+        connection.execSQL(
+            "UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL, `feed_position` = NULL WHERE `scope` LIKE 'user:%'",
+        )
+    }
+}

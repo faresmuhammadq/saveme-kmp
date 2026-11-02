@@ -31,6 +31,9 @@ sealed interface ReadTarget {
 
     /** One wallet: its transactions, detail or members. */
     data class Wallet(val id: String) : ReadTarget
+
+    /** One Shared Budget's feed (backend ADR-0027): a budget screen refreshing the budget it shows. */
+    data class SharedBudget(val id: String) : ReadTarget
 }
 
 /** How the reads a caller asked for ended. `core` never returns a feature's outcome type (P-10.7); services map this. */
@@ -73,6 +76,7 @@ class DefaultSyncRunner(
     private val scope: CoroutineScope,
     private val clock: Clock = Clock.System,
     private val floor: Duration = 60.seconds,
+    private val sharedBudgetScopes: () -> SharedBudgetScopes? = { null },
 ) : SyncRunner {
 
     private class Request(val target: ReadTarget?, val force: Boolean) {
@@ -173,6 +177,15 @@ class DefaultSyncRunner(
         }
         // A named wallet is read whatever the heads say; so is every wallet an upload wrote to (FR-004, FR-007).
         reads.forEach { request -> (request.target as? ReadTarget.Wallet)?.let { want(it.id, request.force, direct = true) } }
+
+        // Shared Budgets (backend ADR-0027): a named one and every one an upload wrote to are read; "everything" reads each followed one.
+        // Their feeds are cheap to re-read from a stored position, so there is no heads read for them.
+        val budgetWant = linkedMapOf<String, Boolean>()
+        fun wantBudget(id: String, force: Boolean) {
+            budgetWant[id] = (budgetWant[id] ?: false) || force
+        }
+        reads.forEach { request -> (request.target as? ReadTarget.SharedBudget)?.let { wantBudget(it.id, request.force) } }
+        report.written.filter { it.kind == ScopeKind.SharedBudget }.forEach { wantBudget(it.id, force = true) }
         report.written.filter { it.kind == ScopeKind.Wallet }.forEach { want(it.id, force = true, direct = true) }
 
         var stopped = false
@@ -184,10 +197,12 @@ class DefaultSyncRunner(
             val completed = read.read as? ScopeRead.Done
             // Wallets held whose own membership a complete read did not return: their own feeds decide (FR-011).
             completed?.seenWalletIds?.let { seen -> walletScopes()?.unconfirmed(seen)?.forEach { want(it, force = true, direct = true) } }
+            completed?.seenSharedBudgetIds?.let { seen -> sharedBudgetScopes()?.unconfirmed(seen)?.forEach { wantBudget(it, force = true) } }
         }
         if (wantsEverything && !stopped) {
             val everythingForced = reads.any { it.target == ReadTarget.Everything && it.force }
             walletScopes()?.followed()?.forEach { want(it, everythingForced, direct = false) }
+            sharedBudgetScopes()?.followed()?.forEach { wantBudget(it, everythingForced) }
         }
 
         // One heads read decides which of the wallets that came only from "everything" need reading at all (spec 011).
@@ -252,14 +267,34 @@ class DefaultSyncRunner(
             log.i { "wallets: ${walletWant.size} followed, ${tally.skipped} unchanged, ${tally.read} read, ${tally.fromStart} from the start (purge horizon), ${tally.direct} direct" }
         }
 
+        for ((id, force) in budgetWant) {
+            val budgetScope = SyncScope(ScopeKind.SharedBudget, id)
+            if (stopped) {
+                results[budgetScope.key] = ScopeResult.Offline
+                continue
+            }
+            val budgets = sharedBudgetScopes()
+            if (budgets != null && !budgets.isAccepted(id)) {
+                // A budget made on this phone has no feed yet.
+                results[budgetScope.key] = ScopeResult.Done
+                continue
+            }
+            val read = readScope(budgetScope, force, readRun)
+            results[budgetScope.key] = read.result
+            if (read.result == ScopeResult.Offline) stopped = true
+        }
+
         val followedForEverything = if (wantsEverything) walletWant.keys else emptySet()
+        val budgetsForEverything = if (wantsEverything) budgetWant.keys else emptySet()
         batch.forEach { request ->
             val outcome = when (val target = request.target) {
                 null -> ReadOutcome.Done
                 ReadTarget.User -> results[userScope.key].toOutcome()
                 is ReadTarget.Wallet -> results[SyncScope(ScopeKind.Wallet, target.id).key].toOutcome()
+                is ReadTarget.SharedBudget -> results[SyncScope(ScopeKind.SharedBudget, target.id).key].toOutcome()
                 ReadTarget.Everything -> combine(
-                    listOf(results[userScope.key]) + followedForEverything.map { results[SyncScope(ScopeKind.Wallet, it).key] },
+                    listOf(results[userScope.key]) + followedForEverything.map { results[SyncScope(ScopeKind.Wallet, it).key] } +
+                        budgetsForEverything.map { results[SyncScope(ScopeKind.SharedBudget, it).key] },
                 )
             }
             request.result.complete(outcome)

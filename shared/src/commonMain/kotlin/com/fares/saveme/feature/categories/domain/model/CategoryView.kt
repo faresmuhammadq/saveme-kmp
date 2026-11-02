@@ -67,6 +67,8 @@ data class CategoryDisplay(
     val kindWire: String?,
     val source: CategorySource,
     val archived: Boolean,
+    /** The platform's key of a default category (`other_expense`); null for any other. */
+    val systemKey: String? = null,
 )
 
 /**

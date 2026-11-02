@@ -52,6 +52,8 @@ data class TransactionEntity(
     @ColumnInfo(name = "carry_confirmed_at") val carryConfirmedAt: String? = null,
     /** Phone-only row showing a recurring confirmation the server has not answered yet (spec 010 R-07). */
     @ColumnInfo(name = "pending_confirmation", defaultValue = "0") val pendingConfirmation: Boolean = false,
+    /** The Shared Budget the transaction counts toward, or null (backend ADR-0027). Only its author sets it. */
+    @ColumnInfo(name = "shared_budget_id") val sharedBudgetId: String? = null,
 ) {
     /** Amounts, notes and people are the person's own; they are never printed (P-09.2). */
     override fun toString() = "TransactionEntity($id, version=$version)"
@@ -86,8 +88,22 @@ data class WalletBalanceSum(
     val total: Long,
 )
 
+/** How often the person put their own expenses into one Shared Budget. */
+data class BudgetUse(
+    @ColumnInfo(name = "shared_budget_id") val budgetId: String,
+    val uses: Int,
+)
+
 @Dao
 interface TransactionDao {
+    /** The person's own live expenses dated on or after [since], counted per Shared Budget, most used first (frequent picks). */
+    @Query(
+        """SELECT shared_budget_id, COUNT(*) AS uses FROM transactions WHERE account_id = :accountId AND created_by = :accountId
+        AND deleted_at IS NULL AND shared_budget_id IS NOT NULL AND date >= :since
+        GROUP BY shared_budget_id ORDER BY uses DESC, MAX(date) DESC""",
+    )
+    fun observeBudgetUse(accountId: String, since: String): Flow<List<BudgetUse>>
+
     /** Live rows where the wallet is the source or the destination, newest first (research R-13). */
     @Query(
         """SELECT * FROM transactions WHERE account_id = :accountId AND deleted_at IS NULL

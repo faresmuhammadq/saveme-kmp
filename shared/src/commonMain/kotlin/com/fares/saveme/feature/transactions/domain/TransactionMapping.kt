@@ -32,6 +32,7 @@ internal fun TransactionEntity.toTransaction() = Transaction(
     amountMinor = amountMinor, currency = currency, categoryId = categoryId, description = description, memo = memo,
     counterparty = counterparty, cleared = cleared, createdBy = createdBy, recurringRuleId = recurringRuleId,
     occurrenceId = occurrenceId, version = version, createdAt = parseInstant(createdAt), updatedAt = parseInstant(updatedAt),
+    sharedBudgetId = sharedBudgetId,
 )
 
 /** The row a server copy the phone no longer holds would have been (the save of a removed transaction). */
@@ -41,6 +42,7 @@ internal fun Transaction.toEntity(accountId: String, refreshedAt: String) = Tran
     description = description, memo = memo, counterparty = counterparty, cleared = cleared, createdBy = createdBy,
     recurringRuleId = recurringRuleId, occurrenceId = occurrenceId, version = version, changeSeq = 0,
     createdAt = createdAt.toString(), updatedAt = updatedAt.toString(), deletedAt = null, refreshedAt = refreshedAt,
+    sharedBudgetId = sharedBudgetId,
 )
 
 internal fun TransactionDto.toTransaction() = Transaction(
@@ -48,17 +50,19 @@ internal fun TransactionDto.toTransaction() = Transaction(
     amountMinor = amountMinor, currency = currency, categoryId = categoryId, description = description, memo = memo,
     counterparty = counterparty, cleared = cleared, createdBy = createdBy, recurringRuleId = recurringRuleId,
     occurrenceId = occurrenceId, version = version, createdAt = parseInstant(createdAt), updatedAt = parseInstant(updatedAt),
+    sharedBudgetId = sharedBudgetId,
 )
 
 internal fun TransactionDraft.toPayload() = TransactionPayload(
     kind = kindWire, date = date.toString(), amountMinor = amountMinor, currency = currency, categoryId = categoryId,
     counterWalletId = counterWalletId, description = description, memo = memo, counterparty = counterparty, cleared = cleared,
+    sharedBudgetId = sharedBudgetId,
 )
 
 internal fun TransactionPayload.toDraft(walletId: String) = TransactionDraft(
     walletId = walletId, kindWire = kind, date = parseDate(date), amountMinor = amountMinor, currency = currency,
     categoryId = categoryId, counterWalletId = counterWalletId, description = description, memo = memo,
-    counterparty = counterparty, cleared = cleared,
+    counterparty = counterparty, cleared = cleared, sharedBudgetId = sharedBudgetId,
 )
 
 internal fun TransactionDraft.toPayloadJson(): String = AppJson.encodeToString(TransactionPayload.serializer(), toPayload())
@@ -99,6 +103,8 @@ internal fun refusalKind(code: String?, fields: Map<TransactionField, String>, k
     "FORBIDDEN" -> if (kindWire == BalanceEffect.TRANSFER) RefusalKind.NoRightInOtherWallet else RefusalKind.NoRightHere
     "VALIDATION_FAILED" -> when {
         fields[TransactionField.Category] == "INVALID_ENUM_VALUE" -> RefusalKind.CategoryUnusable
+        fields[TransactionField.Budget] == "INVALID_ENUM_VALUE" -> RefusalKind.BudgetUnusable
+        fields[TransactionField.Budget] == "CURRENCY_MISMATCH" -> RefusalKind.BudgetUnusable
         fields[TransactionField.Destination] == "CURRENCY_MISMATCH" -> RefusalKind.CurrenciesDiffer
         fields[TransactionField.Destination] in setOf("INVALID_ENUM_VALUE", "REQUIRED") -> RefusalKind.DestinationUnavailable
         fields[TransactionField.Currency] == "CURRENCY_MISMATCH" -> RefusalKind.CurrencyChanged

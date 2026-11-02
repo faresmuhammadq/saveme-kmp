@@ -569,6 +569,10 @@
     <string name="tx_field_wallet">Wallet</string>
     <string name="tx_field_amount">Amount</string>
     <string name="tx_field_category">Category</string>
+    <string name="tx_field_budget">Shared budget</string>
+    <string name="tx_budget_none">Not in a shared budget</string>
+    <string name="tx_budget_choose">Choose a shared budget</string>
+    <string name="tx_budget_unknown">Shared budget</string>
     <string name="tx_field_destination">To wallet</string>
     <string name="tx_field_date">Date</string>
     <string name="tx_field_note">Note</string>
@@ -617,6 +621,7 @@
     <string name="tx_reason_gone">This transaction or its wallet is no longer available.</string>
     <string name="tx_reason_no_right">You can’t add or change transactions in this wallet.</string>
     <string name="tx_reason_no_right_other">You can’t add or change transactions in the other wallet.</string>
+    <string name="tx_reason_budget">The shared budget can’t take this expense any more. Choose another, or none.</string>
     <string name="tx_reason_category">This category can’t be used any more. Choose another.</string>
     <string name="tx_reason_destination">The wallet you transferred to is no longer available.</string>
     <string name="tx_reason_currency_changed">This wallet’s currency changed to %1$s. Enter the amount again.</string>
@@ -1390,4 +1395,17 @@
     <string name="play_dev_price_label">Price in micro-units (EGP)</string>
     <string name="play_dev_set_price">Set price for the product</string>
     <string name="play_dev_count">Purchases: %1$d</string>
+    <string name="sb_title">Shared budgets</string>
+    <string name="sb_empty">No shared budgets yet. A shared budget tracks spending you and someone else both add, from any wallet.</string>
+    <string name="sb_archived">Archived</string>
+    <string name="sb_no_limit">No limit set</string>
+    <string name="sb_categories">Categories</string>
+    <string name="sb_category_unavailable">Category unavailable</string>
+    <string name="sb_members">Who spent</string>
+    <string name="sb_you">You</string>
+    <string name="sb_former_member">Former member</string>
+    <string name="sb_other">Other</string>
+    <string name="sb_spent_label">Spent this period</string>
+    <string name="sb_updated">Last updated %1$s</string>
+    <string name="sb_open">Shared budgets</string>
 </resources>

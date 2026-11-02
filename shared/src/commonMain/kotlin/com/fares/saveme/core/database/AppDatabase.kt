@@ -25,6 +25,11 @@ import com.fares.saveme.feature.recurring.data.local.OccurrenceDao
 import com.fares.saveme.feature.recurring.data.local.OccurrenceEntity
 import com.fares.saveme.feature.recurring.data.local.RecurringRuleDao
 import com.fares.saveme.feature.recurring.data.local.RecurringRuleEntity
+import com.fares.saveme.feature.sharedbudgets.data.local.SharedBudgetDao
+import com.fares.saveme.feature.sharedbudgets.data.local.SharedBudgetEntity
+import com.fares.saveme.feature.sharedbudgets.data.local.SharedBudgetEntryEntity
+import com.fares.saveme.feature.sharedbudgets.data.local.SharedBudgetLineEntity
+import com.fares.saveme.feature.sharedbudgets.data.local.SharedBudgetMemberEntity
 import com.fares.saveme.feature.sharing.data.local.InvitationDao
 import com.fares.saveme.feature.sharing.data.local.InvitationEntity
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
@@ -45,8 +50,9 @@ import kotlinx.coroutines.IO
         TransactionEntity::class, RecurringRuleEntity::class, OccurrenceEntity::class,
         BudgetEntity::class, BudgetProgressEntity::class,
         InvitationEntity::class,
+        SharedBudgetEntity::class, SharedBudgetMemberEntity::class, SharedBudgetLineEntity::class, SharedBudgetEntryEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -66,6 +72,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun budgetProgressDao(): BudgetProgressDao
     abstract fun invitationDao(): InvitationDao
+    abstract fun sharedBudgetDao(): SharedBudgetDao
 }
 
 @Suppress("KotlinNoActualForExpect", "NO_ACTUAL_FOR_EXPECT", "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
@@ -75,7 +82,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
 
 fun buildAppDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase =
     builder
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()

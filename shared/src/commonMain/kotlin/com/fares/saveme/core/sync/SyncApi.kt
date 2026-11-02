@@ -92,6 +92,9 @@ interface SyncApi {
 
     suspend fun walletChanges(walletId: String, cursor: String?, limit: Int = HttpSyncApi.PAGE_SIZE): ApiResult<FeedPageDto>
 
+    /** One Shared Budget's change feed (`listSharedBudgetChanges`, sync.yaml v1.16). A fake that does not exercise budgets keeps this default. */
+    suspend fun sharedBudgetChanges(budgetId: String, cursor: String?, limit: Int = HttpSyncApi.PAGE_SIZE): ApiResult<FeedPageDto> = ApiResult.Offline
+
     /** One page of the heads of the wallets the person follows (`listWalletHeads`, sync.yaml v1.10). Only `cursor` and `limit` are sent. */
     suspend fun walletHeads(cursor: String?, limit: Int = HttpSyncApi.PAGE_SIZE): ApiResult<HeadsPageDto>
 
@@ -114,6 +117,9 @@ class HttpSyncApi(
 
     override suspend fun walletChanges(walletId: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> =
         feed("sync/wallets/$walletId/changes", cursor, limit)
+
+    override suspend fun sharedBudgetChanges(budgetId: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> =
+        feed("sync/shared-budgets/$budgetId/changes", cursor, limit)
 
     override suspend fun walletHeads(cursor: String?, limit: Int): ApiResult<HeadsPageDto> = guarded {
         client.execute({
