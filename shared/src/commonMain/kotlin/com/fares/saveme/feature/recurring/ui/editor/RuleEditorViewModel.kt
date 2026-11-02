@@ -11,6 +11,8 @@ import com.fares.saveme.feature.recurring.domain.model.RuleFieldProblem
 import com.fares.saveme.feature.recurring.domain.model.RuleResult
 import com.fares.saveme.feature.recurring.domain.model.RuleView
 import com.fares.saveme.feature.recurring.domain.model.RecurringSyncState
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
+import kotlinx.coroutines.flow.flowOf
 import com.fares.saveme.feature.recurring.domain.model.SchedulePreview
 import com.fares.saveme.feature.transactions.domain.TransactionAmount
 import com.fares.saveme.feature.transactions.domain.model.TransactionKind
@@ -43,6 +45,8 @@ class RuleEditorViewModel(
     private val save: suspend (String, RuleDraft, Long) -> RuleResult,
     private val changeFrom: suspend (String, LocalDate, RuleDraft, Long) -> RuleResult,
     private val today: () -> LocalDate,
+    /** The Shared Budgets the person may record into, frequent ones first (backend ADR-0027). */
+    private val budgets: Flow<List<BudgetChoice>> = flowOf(emptyList()),
 ) : MviViewModel<RuleEditorState, RuleEditorIntent, RuleEditorEffect>(
     RuleEditorState(ruleId = args.ruleId, fromDateMode = args.fromDate && args.ruleId != null),
 ) {
@@ -71,6 +75,7 @@ class RuleEditorViewModel(
             }.collect { choices -> change(RuleEditorChange.Choices(choices)) }
         }
         viewModelScope.launch { categoryChoices(TransactionKind.Income, currentState.payoutCategoryId).collect { change(RuleEditorChange.PayoutChoices(it)) } }
+        viewModelScope.launch { budgets.collect { change(RuleEditorChange.Budgets(it)) } }
     }
 
     private suspend fun loadCreate() {
@@ -129,6 +134,8 @@ class RuleEditorViewModel(
         displaysSnapshot = snapshot
         val destinationName = rule.counterWalletId?.let { walletName(it).first() }
         val fromDate = args.fromDate
+        val refusedFields = (first.syncState as? RecurringSyncState.Refused)?.fields.orEmpty().asProblems()
+        val budgetRefused = RuleField.Budget in refusedFields
         val base = RuleEditorState(
             ruleId = id,
             fromDateMode = fromDate,
@@ -140,6 +147,9 @@ class RuleEditorViewModel(
             basis = shown.amountBasis,
             categoryId = shown.categoryId,
             category = shown.categoryId?.let { c -> snapshot.resolve(c) },
+            // A budget the server refused is cleared and asked again.
+            budgetRefused = budgetRefused,
+            budgetId = shown.sharedBudgetId.takeUnless { budgetRefused },
             payoutCategoryId = shown.payoutCategoryId,
             payoutCategory = shown.payoutCategoryId?.let { c -> snapshot.resolve(c) },
             destinationId = shown.counterWalletId,
@@ -207,7 +217,9 @@ class RuleEditorViewModel(
             is RuleEditorIntent.AmountChanged -> change(RuleEditorChange.Amount(intent.text))
             is RuleEditorIntent.BasisChosen -> change(RuleEditorChange.Basis(intent.basis))
             RuleEditorIntent.CategoryClicked -> if (currentState.canEdit) change(RuleEditorChange.Sheet(EditorSheet.Category))
-            is RuleEditorIntent.CategoryChosen -> currentState.categoryChoices.display(intent.id)?.let { change(RuleEditorChange.Category(it)) }
+            RuleEditorIntent.BudgetClicked -> if (currentState.budgetEditable) change(RuleEditorChange.Sheet(EditorSheet.Budget))
+            is RuleEditorIntent.BudgetChosen -> change(RuleEditorChange.Budget(intent.id))
+            is RuleEditorIntent.CategoryChosen -> currentState.visibleCategoryChoices.display(intent.id)?.let { change(RuleEditorChange.Category(it)) }
             RuleEditorIntent.PayoutCategoryClicked -> if (currentState.canEdit) change(RuleEditorChange.Sheet(EditorSheet.PayoutCategory))
             is RuleEditorIntent.PayoutCategoryChosen -> currentState.payoutChoices.display(intent.id)?.let { change(RuleEditorChange.PayoutCategory(it)) }
             RuleEditorIntent.DestinationClicked -> if (currentState.destinationEditable) change(RuleEditorChange.Sheet(EditorSheet.Destination))

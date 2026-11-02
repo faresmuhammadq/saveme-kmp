@@ -78,4 +78,37 @@ class HomeBudgetsTest {
     fun aGlimpseNeverPrintsItsAmounts() {
         assertEquals("BudgetGlimpse(b1)", glimpse("b1").toString())
     }
+
+    @Test
+    fun theOverviewAndTheSuggestionFollowTheirFlowsAndDismissingIsRemembered() = runMviTest {
+        val overview = MutableStateFlow(com.fares.saveme.feature.auth.domain.HomeOverview(loaded = true, currency = "EGP"))
+        val dismissed = MutableStateFlow(false)
+        var stored = false
+        val vm = HomeViewModel(
+            MutableStateFlow(AuthState.SignedIn(account)),
+            overview = overview,
+            typicalSpend = { MutableStateFlow(1_340_000L) },
+            suggestionDismissed = dismissed,
+            dismissSuggestion = { stored = true },
+        )
+        assertTrue(vm.state.value.overview.loaded)
+        assertEquals(1_340_000L, vm.state.value.typicalSpendMinor)
+        assertFalse(vm.state.value.suggestionDismissed)
+        vm.onIntent(HomeIntent.DismissSuggestion)
+        assertTrue(vm.state.value.suggestionDismissed, "gone at once")
+        assertTrue(stored, "and kept")
+    }
+
+    @Test
+    fun walletTransactionAndBudgetEditorTapsOpenTheirScreens() = runMviTest {
+        val vm = HomeViewModel(MutableStateFlow(AuthState.SignedIn(account)))
+        vm.effects.test {
+            vm.onIntent(HomeIntent.WalletClicked("w1"))
+            assertEquals(HomeEffect.OpenWallet("w1"), awaitItem())
+            vm.onIntent(HomeIntent.TransactionClicked("t1", "w1"))
+            assertEquals(HomeEffect.OpenTransaction("t1", "w1"), awaitItem())
+            vm.onIntent(HomeIntent.SetBudgetClicked)
+            assertEquals(HomeEffect.OpenBudgetEditor, awaitItem())
+        }
+    }
 }

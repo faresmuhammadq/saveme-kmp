@@ -15,9 +15,11 @@ class FakeSyncApi : SyncApi {
     val walletCalls = mutableListOf<Pair<String, String?>>()
     val batches = mutableListOf<List<BatchItemDto>>()
     val headsCalls = mutableListOf<String?>()
+    val sharedBudgetCalls = mutableListOf<Pair<String, String?>>()
 
     var user: suspend (cursor: String?) -> ApiResult<FeedPageDto> = { ApiResult.Success(emptyPage("u-end")) }
     var wallet: suspend (walletId: String, cursor: String?) -> ApiResult<FeedPageDto> = { _, _ -> ApiResult.Success(emptyPage("w-end")) }
+    var sharedBudget: suspend (budgetId: String, cursor: String?) -> ApiResult<FeedPageDto> = { _, _ -> ApiResult.Success(emptyPage("s-end")) }
     var heads: suspend (cursor: String?) -> ApiResult<HeadsPageDto> = { ApiResult.Success(HeadsPageDto()) }
     var batchAnswer: suspend (List<BatchItemDto>) -> ApiResult<List<BatchItemResultDto>> = { items -> ApiResult.Success(items.map { appliedResult(it) }) }
 
@@ -29,6 +31,11 @@ class FakeSyncApi : SyncApi {
     override suspend fun walletChanges(walletId: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> {
         walletCalls += walletId to cursor
         return wallet(walletId, cursor)
+    }
+
+    override suspend fun sharedBudgetChanges(budgetId: String, cursor: String?, limit: Int): ApiResult<FeedPageDto> {
+        sharedBudgetCalls += budgetId to cursor
+        return sharedBudget(budgetId, cursor)
     }
 
     override suspend fun walletHeads(cursor: String?, limit: Int): ApiResult<HeadsPageDto> {

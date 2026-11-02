@@ -79,4 +79,17 @@ class BudgetsHomeSummaryTest {
         env.signedIn()
         assertEquals(emptyList(), BudgetsHomeSummary(env.service).observeTop(3).first())
     }
+
+    @Test
+    fun theAllExpensesBudgetStaysEvenWhenOthersRankHigher() = runTest {
+        val env = BudgetTestEnv(backgroundScope)
+        env.signedIn()
+        env.seed(budgetJson("all", categoryId = null, amount = 10_000_000, createdAt = "2026-09-01T00:00:00Z"))
+        env.seed(budgetJson("c1", categoryId = "c1", amount = 10_000, createdAt = "2026-09-02T00:00:00Z"))
+        env.seed(budgetJson("c2", categoryId = "c2", amount = 10_000, createdAt = "2026-09-03T00:00:00Z"))
+        env.spending.set(expense("a", "2026-10-01", 9_000, category = "c1"), expense("b", "2026-10-01", 9_000, category = "c2"))
+        val top = BudgetsHomeSummary(env.service).observeTop(2).first()
+        assertEquals(2, top.size)
+        assertTrue("all" in top.map { it.id }, "the ring card needs it")
+    }
 }

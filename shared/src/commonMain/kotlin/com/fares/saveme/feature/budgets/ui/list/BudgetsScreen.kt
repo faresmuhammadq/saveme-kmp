@@ -65,6 +65,7 @@ import saveme.shared.generated.resources.budgets_refresh_failed
 import saveme.shared.generated.resources.budgets_set
 import saveme.shared.generated.resources.budgets_title
 import saveme.shared.generated.resources.budgets_updated_at
+import saveme.shared.generated.resources.sb_open
 import kotlin.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -152,6 +153,23 @@ private fun BudgetsContent(state: BudgetsState, onIntent: (BudgetsIntent) -> Uni
                     item { ArchivedLink(state.archived.size, archivedOpen) { archivedOpen = !archivedOpen } }
                     if (archivedOpen) tiles(state.archived.withIndex().toList(), "archived", onIntent)
                 }
+            }
+        }
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Button) { onIntent(BudgetsIntent.SharedClicked) }
+                    .padding(horizontal = 4.dp)
+                    .testTag("budgets.shared"),
+            ) {
+                Text(
+                    stringResource(Res.string.sb_open),
+                    style = AppTheme.type.label.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Bold),
+                    color = AppTheme.colors.primary,
+                )
             }
         }
         if (state.offline && state.updatedAt != null) {

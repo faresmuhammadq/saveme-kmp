@@ -32,6 +32,7 @@ import saveme.shared.generated.resources.tx_kind_expense
 import saveme.shared.generated.resources.tx_kind_income
 import saveme.shared.generated.resources.tx_kind_transfer
 import saveme.shared.generated.resources.tx_kind_unknown
+import saveme.shared.generated.resources.tx_reason_budget
 import saveme.shared.generated.resources.tx_reason_category
 import saveme.shared.generated.resources.tx_reason_currencies_differ
 import saveme.shared.generated.resources.tx_reason_currency_changed
@@ -51,6 +52,7 @@ fun RefusalKind.messageRes(): StringResource = when (this) {
     RefusalKind.NoRightHere -> Res.string.refusal_now_viewer
     RefusalKind.NoRightInOtherWallet -> Res.string.tx_reason_no_right_other
     RefusalKind.CategoryUnusable -> Res.string.tx_reason_category
+    RefusalKind.BudgetUnusable -> Res.string.tx_reason_budget
     RefusalKind.DestinationUnavailable -> Res.string.tx_reason_destination
     RefusalKind.CurrencyChanged -> Res.string.tx_reason_currency_changed
     RefusalKind.CurrenciesDiffer -> Res.string.tx_reason_currencies_differ

@@ -67,6 +67,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
+import com.fares.saveme.feature.auth.domain.HomeOverviewSummary
+import com.fares.saveme.feature.auth.domain.HomeSuggestionStore
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -113,6 +115,8 @@ val accountModule = module {
         val due = get<DueSummary>()
         val budgets = get<BudgetSummary>()
         val held = get<HeldInvitationGlimpse>()
+        val overviewSummary = get<HomeOverviewSummary>()
+        val suggestion = HomeSuggestionStore(get(), get<SessionManager>().state)
         HomeViewModel(
             authState = get<SessionManager>().state,
             signOut = { signOut() },
@@ -133,6 +137,10 @@ val accountModule = module {
             invitationDeclined = held.observeDeclined(),
             minuteTicks = minuteTicks(),
             displayName = get<ProfileSyncer>().view.map { it?.effective?.displayName },
+            overview = overviewSummary.observe(),
+            typicalSpend = { currency -> budgets.observeTypicalSpend(currency) },
+            suggestionDismissed = suggestion.observe(),
+            dismissSuggestion = { suggestion.dismiss() },
         )
     }
     // Registered here, not in authModule: it re-reads the account through this feature's

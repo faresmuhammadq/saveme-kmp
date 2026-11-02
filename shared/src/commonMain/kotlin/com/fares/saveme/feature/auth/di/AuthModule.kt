@@ -8,6 +8,8 @@ import com.fares.saveme.core.sync.CurrentAccount
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.BudgetSummary
 import com.fares.saveme.feature.auth.domain.DueSummary
+import com.fares.saveme.feature.auth.domain.HomeOverviewSummary
+import com.fares.saveme.feature.auth.domain.NoHomeOverview
 import com.fares.saveme.feature.auth.domain.HeldInvitationGlimpse
 import com.fares.saveme.feature.auth.domain.NoBudgetSummary
 import com.fares.saveme.feature.auth.domain.NoHeldInvitation
@@ -47,6 +49,7 @@ val authModule = module {
     // Default until the recurring module rebinds it (spec 010 research R-10).
     single<DueSummary> { NoDueSummary }
     single<BudgetSummary> { NoBudgetSummary }
+    single<HomeOverviewSummary> { NoHomeOverview }
     // Default until the sharing module rebinds it (spec 013 R-16).
     single<HeldInvitationGlimpse> { NoHeldInvitation }
     single { AccountSnapshotStore(get()) }

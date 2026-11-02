@@ -131,7 +131,13 @@ import saveme.shared.generated.resources.recurring_update_after_sync
 import saveme.shared.generated.resources.tx_choose_destination
 import saveme.shared.generated.resources.tx_create_wallet
 import saveme.shared.generated.resources.tx_field_amount
+import saveme.shared.generated.resources.tx_budget_choose
+import saveme.shared.generated.resources.tx_budget_none
+import saveme.shared.generated.resources.tx_budget_unknown
+import saveme.shared.generated.resources.tx_field_budget
 import saveme.shared.generated.resources.tx_field_category
+import saveme.shared.generated.resources.tx_reason_budget
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
 import saveme.shared.generated.resources.tx_field_destination
 import saveme.shared.generated.resources.tx_field_details
 import saveme.shared.generated.resources.tx_field_note
@@ -403,6 +409,16 @@ private fun CategoryOrDestination(state: RuleEditorState, onIntent: (RuleEditorI
         return
     }
     if (state.kind == TransactionKind.Unknown) return
+    if (state.budgetVisible) {
+        AppSelectField(
+            label = stringResource(Res.string.tx_field_budget),
+            value = state.chosenBudget?.name ?: if (state.budgetId != null) stringResource(Res.string.tx_budget_unknown) else stringResource(Res.string.tx_budget_none),
+            onClick = { onIntent(RuleEditorIntent.BudgetClicked) },
+            modifier = Modifier.testTag("ruleEditor.budget"),
+            errorText = if (state.budgetRefused) stringResource(Res.string.tx_reason_budget) else null,
+            enabled = state.budgetsForWallet.isNotEmpty() || state.budgetId != null,
+        )
+    }
     CategoryPickField(
         label = stringResource(Res.string.tx_field_category),
         categoryId = state.categoryId,
@@ -601,8 +617,22 @@ private fun Dialogs(state: RuleEditorState, onIntent: (RuleEditorIntent) -> Unit
             onDismiss = { onIntent(RuleEditorIntent.DatePickerDismissed) },
         )
     }
+    if (state.budgetSheetOpen) {
+        val none = stringResource(Res.string.tx_budget_none)
+        // The first entry takes the rule out of any budget.
+        val options: List<BudgetChoice?> = listOf<BudgetChoice?>(null) + state.budgetsForWallet
+        SelectionSheet(
+            title = stringResource(Res.string.tx_budget_choose),
+            options = options,
+            label = { it?.name ?: none },
+            selected = state.chosenBudget,
+            onSelect = { onIntent(RuleEditorIntent.BudgetChosen(it?.id)) },
+            onDismiss = { onIntent(RuleEditorIntent.SheetDismissed) },
+            searchable = false,
+        )
+    }
     if (state.categorySheetOpen) {
-        RecurringCategorySheet(state.categoryChoices, state.categoryId, { onIntent(RuleEditorIntent.CategoryChosen(it)) }, { onIntent(RuleEditorIntent.SheetDismissed) })
+        RecurringCategorySheet(state.visibleCategoryChoices, state.categoryId, { onIntent(RuleEditorIntent.CategoryChosen(it)) }, { onIntent(RuleEditorIntent.SheetDismissed) })
     }
     if (state.payoutSheetOpen) {
         RecurringCategorySheet(state.payoutChoices, state.payoutCategoryId, { onIntent(RuleEditorIntent.PayoutCategoryChosen(it)) }, { onIntent(RuleEditorIntent.SheetDismissed) })

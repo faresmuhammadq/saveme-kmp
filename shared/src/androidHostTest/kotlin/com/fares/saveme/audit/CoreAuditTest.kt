@@ -4,6 +4,12 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import com.fares.saveme.designsystem.component.MainTab
 import com.fares.saveme.feature.auth.domain.BudgetGlimpse
 import com.fares.saveme.feature.auth.domain.DueGlimpse
+import com.fares.saveme.feature.auth.domain.HomeCategory
+import com.fares.saveme.feature.auth.domain.HomeOverview
+import com.fares.saveme.feature.auth.domain.HomeRecent
+import com.fares.saveme.feature.auth.domain.HomeRecentKind
+import com.fares.saveme.feature.auth.domain.HomeTotal
+import com.fares.saveme.feature.auth.domain.HomeWallet
 import com.fares.saveme.feature.auth.ui.home.HomeScreen
 import com.fares.saveme.feature.auth.ui.home.HomeState
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
@@ -40,16 +46,47 @@ class CoreAuditTest {
 
     private fun cat(id: String, name: String, icon: String, hex: String? = null) = CategoryDisplay(id, name, icon, hex, "expense", CategorySource.Default, false)
 
+    private val homeOverview = HomeOverview(
+        loaded = true, currency = "EGP",
+        periodStart = LocalDate(2026, 9, 25), periodEnd = LocalDate(2026, 10, 24), today = LocalDate(2026, 10, 18), daysLeft = 7,
+        spentMinor = 1_230_000, incomeMinor = 1_850_000, leftOverMinor = 620_000, changePercent = -6,
+        dailySpend = List(30) { 4_000L + (it * 7_919L) % 40_000 }, todayIndex = 22,
+        categories = listOf(
+            HomeCategory("Groceries", "cart", "#4C6FD6", 324_000, 26, 1f),
+            HomeCategory("Bills & utilities", "bolt", "#4C6FD6", 265_000, 22, 0.82f),
+            HomeCategory("Dining out", "restaurant", "#4C6FD6", 218_000, 18, 0.67f),
+        ),
+        moreCategories = 6, moreCategoriesMinor = 423_000,
+        wallets = listOf(
+            HomeWallet("a", "CIB current", "checking", null, 3_240_000, "EGP", false, false),
+            HomeWallet("b", "Cash", "cash", null, 185_000, "EGP", false, false),
+            HomeWallet("c", "Visa credit", "credit_card", null, -260_000, "EGP", true, false),
+        ),
+        totals = listOf(HomeTotal("EGP", 3_165_000)),
+        recent = listOf(
+            HomeRecent("r1", "a", HomeRecentKind.Expense, "Carrefour Maadi", "Groceries", "cart", LocalDate(2026, 10, 18), 64_000, "EGP", false),
+            HomeRecent("r2", "a", HomeRecentKind.Expense, "Uber", "Transport", "bus", LocalDate(2026, 10, 17), 9_500, "EGP", false),
+            HomeRecent("r3", "a", HomeRecentKind.Income, "Salary", "Income", "wallet", LocalDate(2026, 9, 25), 1_850_000, "EGP", true),
+        ),
+    )
+
+    private val homeBase = HomeState(
+        email = "layla@example.com",
+        displayName = "Layla",
+        now = Instant.parse("2026-10-18T07:00:00Z"),
+        dueCount = 2,
+        firstDue = DueGlimpse("Internet bill", LocalDate(2026, 10, 18)),
+        overview = homeOverview,
+        typicalSpendMinor = 1_340_000,
+        suggestionDismissed = false,
+    )
+
     @Test
+    @Config(qualifiers = "w390dp-h1900dp-xhdpi")
     fun home() = compose.auditCapture("Home-B") {
         WithTabBar(MainTab.Home) {
             HomeScreen(
-                HomeState(
-                    email = "layla@example.com",
-                    displayName = "Layla",
-                    now = Instant.parse("2026-10-18T07:00:00Z"),
-                    dueCount = 2,
-                    firstDue = DueGlimpse("Internet bill", LocalDate(2026, 10, 18)),
+                homeBase.copy(
                     budgets = listOf(
                         BudgetGlimpse(
                             "all", null, 1_230_000, 2_200_000, "EGP", false,
@@ -63,6 +100,12 @@ class CoreAuditTest {
                 {},
             )
         }
+    }
+
+    @Test
+    @Config(qualifiers = "w390dp-h1300dp-xhdpi")
+    fun homeNoBudget() = compose.auditCapture("Home-B-NoBudget") {
+        WithTabBar(MainTab.Home) { HomeScreen(homeBase, {}) }
     }
 
     @Test

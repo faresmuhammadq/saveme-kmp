@@ -14,6 +14,7 @@ import com.fares.saveme.feature.recurring.domain.RecurringWalletCleanup
 import com.fares.saveme.feature.recurring.domain.OccurrenceScheduledMoney
 import com.fares.saveme.feature.recurring.domain.ScheduledMoney
 import com.fares.saveme.feature.transactions.domain.RecurringLinks
+import com.fares.saveme.feature.transactions.domain.SharedBudgetLinks
 import com.fares.saveme.feature.wallets.domain.WalletDeletionParticipant
 import kotlinx.coroutines.flow.map
 import com.fares.saveme.core.network.AppJson
@@ -196,6 +197,7 @@ val recurringModule = module {
             save = { id, draft, base -> service.save(id, draft, base) },
             changeFrom = { id, from, draft, base -> service.changeFrom(id, from, draft, base) },
             today = { get<ProfileToday>().today() },
+            budgets = get<SharedBudgetLinks>().observeChoices(),
         )
     }
     viewModel { params ->

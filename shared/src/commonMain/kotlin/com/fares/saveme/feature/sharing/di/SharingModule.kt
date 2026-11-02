@@ -31,6 +31,7 @@ import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
 import com.fares.saveme.feature.sharing.domain.InvitationsWalletCleanup
 import com.fares.saveme.feature.sharing.domain.PlanDemotionNotes
 import com.fares.saveme.feature.sharing.domain.ShareLinks
+import com.fares.saveme.feature.sharing.domain.ShareUrlRebase
 import com.fares.saveme.feature.sharing.domain.ShareText
 import com.fares.saveme.feature.sharing.domain.SharingNotices
 import com.fares.saveme.feature.sharing.domain.SharingService
@@ -85,10 +86,11 @@ val sharingModule = module {
     single { InvitationFeedApplier(get()) } bind FeedApplier::class
     single {
         val links = get<ShareLinks>()
+        val rebase = ShareUrlRebase.of(get<AppConfig>())
         InvitationSyncHandler(
             repository = get(),
             api = get(),
-            onShareLink = { id, url -> links.offer(id, url) },
+            onShareLink = { id, url -> links.offer(id, rebase.rebase(url)) },
             walletVersion = { id -> get<WalletsService>().observeWallet(id).first()?.server?.version },
         )
     } bind SyncHandler::class

@@ -19,4 +19,30 @@
     <string name="homec_over">over</string>
     <string name="homec_due_line">%1$s · %2$s</string>
     <string name="homec_categories_sub">Income and expense categories</string>
+    <string name="homec_spent_period">Spent this period</string>
+    <string name="homec_trend_less">%1$d% less than last period, same day</string>
+    <string name="homec_trend_more">%1$d% more than last period, same day</string>
+    <string name="homec_trend_same">Same as last period, same day</string>
+    <string name="homec_income">Income</string>
+    <string name="homec_left_over">Left over</string>
+    <string name="homec_chart_cd">Daily spending from %1$s to %2$s, %3$s so far</string>
+    <string name="homec_today">Today</string>
+    <string name="homec_yesterday">Yesterday</string>
+    <string name="homec_wallets_total">Total %1$s</string>
+    <string name="homec_wallets_empty">Add a wallet to see your balances here.</string>
+    <string name="homec_add_wallet">Add a wallet</string>
+    <string name="homec_where">Where it went</string>
+    <string name="homec_report">Report</string>
+    <plurals name="homec_more_categories">
+        <item quantity="one">%1$d more category</item>
+        <item quantity="other">%1$d more categories</item>
+    </plurals>
+    <string name="homec_suggestion">You spend about %1$s a month. Turn that into a budget and Home will show what's left.</string>
+    <string name="homec_suggestion_plain">Set a monthly budget and Home will show what's left.</string>
+    <string name="homec_set_budget">Set a monthly budget</string>
+    <string name="homec_dismiss">Dismiss suggestion</string>
+    <string name="homec_recent">Recent</string>
+    <string name="homec_other_currencies">Figures are in %1$s. Wallets in %2$s aren't included.</string>
+    <string name="homec_figures_after_sync">Figures appear after sync</string>
+    <string name="homec_transfer">Transfer</string>
 </resources>

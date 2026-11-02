@@ -195,7 +195,7 @@ class DefaultTransactionsService(
                 id = id, accountId = account, walletId = clean.walletId, counterWalletId = clean.counterWalletId,
                 kind = clean.kindWire, date = clean.date.toString(), amountMinor = clean.amountMinor, currency = clean.currency,
                 categoryId = clean.categoryId, description = clean.description, memo = clean.memo,
-                counterparty = clean.counterparty, cleared = clean.cleared, createdBy = account,
+                counterparty = clean.counterparty, cleared = clean.cleared, createdBy = account, sharedBudgetId = clean.sharedBudgetId,
             ),
         )
         engine.enqueue(TransactionSyncHandler.RECORD_TYPE, id, scopeOf(clean.walletId), 0, clean.toPayloadJson())

@@ -32,6 +32,7 @@ class BudgetsViewModel(
             is BudgetsIntent.BudgetClicked -> {
                 if ((currentState.active + currentState.archived).any { it.id == intent.id }) sendEffect(BudgetsEffect.OpenEditor(intent.id))
             }
+            BudgetsIntent.SharedClicked -> sendEffect(BudgetsEffect.OpenShared)
             BudgetsIntent.Back -> sendEffect(BudgetsEffect.NavigateBack)
         }
     }

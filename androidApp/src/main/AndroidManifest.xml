@@ -39,6 +39,7 @@
                 <data android:path="/verify-email" />
                 <data android:path="/reset-password" />
                 <data android:path="/invite" />
+                <data android:path="/invite/shared-budget" />
             </intent-filter>
         </activity>
     </application>

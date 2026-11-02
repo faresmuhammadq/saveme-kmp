@@ -225,7 +225,10 @@ class BudgetsScreenshotTest(
             arrayOf("home_budgets_unknown_period", @Composable {
                 HomeScreen(home.copy(budgets = listOf(glimpse("a", "Groceries", null, 600_000), glimpse("b", null, null, 900_000))), {})
             }),
-            arrayOf("home_no_budgets", @Composable { HomeScreen(HomeState(email = "sara@example.com"), {}) }),
+            arrayOf("home_no_budgets", @Composable {
+                // Nothing yet: the wallets card invites the first wallet, and no budget suggestion without spending history.
+                HomeScreen(HomeState(email = "sara@example.com", overview = com.fares.saveme.feature.auth.domain.HomeOverview(loaded = true, noWallets = true, currency = "EGP")), {})
+            }),
         )
     }
 }

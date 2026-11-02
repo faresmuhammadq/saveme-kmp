@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
 enum class RefusalKind {
-    NotVerified, NoLongerAvailable, NoRightHere, NoRightInOtherWallet, CategoryUnusable, DestinationUnavailable,
+    NotVerified, NoLongerAvailable, NoRightHere, NoRightInOtherWallet, CategoryUnusable, BudgetUnusable, DestinationUnavailable,
     CurrencyChanged, CurrenciesDiffer, Invalid, Other,
 }
 

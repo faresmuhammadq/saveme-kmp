@@ -26,6 +26,8 @@ import com.fares.saveme.feature.transactions.domain.ReportLedger
 import com.fares.saveme.feature.transactions.domain.TransactionReportLedger
 import com.fares.saveme.feature.transactions.domain.TransactionOwnSpending
 import com.fares.saveme.feature.transactions.domain.NoRecurringLinks
+import com.fares.saveme.feature.transactions.domain.NoSharedBudgetLinks
+import com.fares.saveme.feature.transactions.domain.SharedBudgetLinks
 import com.fares.saveme.feature.transactions.domain.RecurringLinks
 import com.fares.saveme.feature.transactions.domain.TransactionCategoryUses
 import com.fares.saveme.feature.transactions.domain.TransactionPostings
@@ -130,6 +132,8 @@ val transactionsModule = module {
     single { TransactionCategoryUses(engine = { get<SyncEngine>() }) } bind PendingCategoryUses::class
     // Default until the recurring module rebinds it (research R-10).
     single<RecurringLinks> { NoRecurringLinks }
+    // Default until the shared budgets module rebinds it.
+    single<SharedBudgetLinks> { NoSharedBudgetLinks }
     single { BalanceReconciler(repository = get(), runner = get(), scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
     // The wallet feed's transactions (spec 009).
     single { TransactionFeedApplier(get()) } bind FeedApplier::class
@@ -213,6 +217,7 @@ val transactionsModule = module {
             matches = { wallet, kind, category, destination, date -> get<RecurringLinks>().observeMatches(wallet, kind, category, destination, date) },
             confirmFromDraft = { occurrenceId, draft -> get<RecurringLinks>().confirmFromDraft(occurrenceId, draft) },
             ruleOnPhone = { ruleId -> get<RecurringLinks>().observeRuleOnPhone(ruleId) },
+            budgets = get<SharedBudgetLinks>().observeChoices(),
         )
     }
 }

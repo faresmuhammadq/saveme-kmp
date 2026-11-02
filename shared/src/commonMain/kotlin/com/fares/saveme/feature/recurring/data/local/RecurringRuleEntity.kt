@@ -53,6 +53,8 @@ data class RecurringRuleEntity(
     @ColumnInfo(name = "updated_at") val updatedAt: String,
     @ColumnInfo(name = "refreshed_at") val refreshedAt: String,
     @ColumnInfo(name = "follows_rule_id") val followsRuleId: String? = null,
+    /** The Shared Budget every expense of this rule counts toward (backend ADR-0027); null for none. */
+    @ColumnInfo(name = "shared_budget_id") val sharedBudgetId: String? = null,
 ) {
     /** Amounts, notes and people are the person's own; they are never printed (P-09.2). */
     override fun toString() = "RecurringRuleEntity($id, version=$version)"

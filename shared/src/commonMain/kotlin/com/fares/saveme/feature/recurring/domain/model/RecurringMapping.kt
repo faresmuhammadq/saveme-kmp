@@ -26,7 +26,7 @@ internal fun RecurringRuleEntity.toRule() = Rule(
     interval = interval, anchorDay = anchorDay, startDate = parseDate(startDate), endDate = endDate?.let(::parseDate),
     occurrenceCount = occurrenceCount, payoutRound = payoutRound, payoutCategoryId = payoutCategoryId, timezone = timezone,
     createdBy = createdBy, version = version, createdAt = parseInstant(createdAt), updatedAt = parseInstant(updatedAt),
-    followsRuleId = followsRuleId,
+    followsRuleId = followsRuleId, sharedBudgetId = sharedBudgetId,
 )
 
 internal fun OccurrenceEntity.toOccurrence() = Occurrence(
@@ -42,6 +42,7 @@ internal fun Rule.toDraft() = RuleDraft(
     counterWalletId = counterWalletId, description = description, memo = memo, counterparty = counterparty,
     autoConfirm = autoConfirm, frequency = frequency, interval = interval, anchorDay = anchorDay, startDate = startDate,
     endDate = endDate, occurrenceCount = occurrenceCount, payoutRound = payoutRound, payoutCategoryId = payoutCategoryId,
+    sharedBudgetId = sharedBudgetId,
 )
 
 /** The queue content of a rule change; wire values that are unknown stay as the server sent them (via [rule]). */
@@ -67,6 +68,7 @@ internal fun RuleDraft.toPayload(status: String, currency: String, followsRuleId
     payoutRound = payoutRound,
     payoutCategoryId = payoutCategoryId,
     followsRuleId = followsRuleId,
+    sharedBudgetId = sharedBudgetId,
 )
 
 internal fun RulePayload.toDraft() = RuleDraft(
@@ -75,7 +77,7 @@ internal fun RulePayload.toDraft() = RuleDraft(
     description = description, memo = memo, counterparty = counterparty, autoConfirm = autoConfirm,
     frequency = Frequency.fromWire(frequency), interval = interval, anchorDay = anchorDay, startDate = parseDate(startDate),
     endDate = endDate?.let(::parseDate), occurrenceCount = occurrenceCount, payoutRound = payoutRound,
-    payoutCategoryId = payoutCategoryId,
+    payoutCategoryId = payoutCategoryId, sharedBudgetId = sharedBudgetId,
 )
 
 internal fun decodeRulePayload(json: String): RulePayload? =

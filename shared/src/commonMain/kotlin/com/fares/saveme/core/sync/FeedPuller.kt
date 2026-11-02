@@ -23,6 +23,8 @@ sealed interface ScopeRead {
         val startedAt: Instant,
         val seenWalletIds: Set<String>? = null,
         val lost: Boolean = false,
+        /** Likewise the Shared Budgets of the own memberships (`shared_budget_member` rows), after a complete read from the start. */
+        val seenSharedBudgetIds: Set<String>? = null,
     ) : ScopeRead
 
     /** No answer: the position stays at the last applied page. */
@@ -71,6 +73,7 @@ class FeedPuller(
     private val lock: SyncLock,
     private val currentAccountId: () -> String?,
     private val clock: Clock = Clock.System,
+    private val sharedBudgetScopes: () -> SharedBudgetScopes? = { null },
 ) {
     suspend fun read(scope: SyncScope, run: ReadRun = ReadRun(currentAccountId())): ScopeRead =
         lock.withLock { readWithRestart(scope, run) }
@@ -157,6 +160,7 @@ class FeedPuller(
         val byType = appliers().filter { it.scopeKind == scope.kind }.associateBy { it.rowType }
         val seen = mutableMapOf<String, MutableSet<String>>()
         val seenWalletIds = mutableSetOf<String>()
+        val seenBudgetIds = mutableSetOf<String>()
         val skipped = mutableMapOf<String, Int>()
         var rowCount = 0
         var pageCount = 0
@@ -165,6 +169,7 @@ class FeedPuller(
             val answer = when (scope.kind) {
                 ScopeKind.User -> api.userChanges(sentPosition)
                 ScopeKind.Wallet -> api.walletChanges(scope.id, sentPosition)
+                ScopeKind.SharedBudget -> api.sharedBudgetChanges(scope.id, sentPosition)
             }
             if (!stillSignedIn(run)) {
                 log.i { "read of ${scope.kind.wire} scope dropped: the account changed" }
@@ -183,7 +188,7 @@ class FeedPuller(
                         return finished(ScopeRead.Failed)
                     }
                     try {
-                        applyPage(scope, page.data, byType, seen, seenWalletIds, skipped, collect = fromStart)
+                        applyPage(scope, page.data, byType, seen, seenWalletIds, seenBudgetIds, skipped, collect = fromStart)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -218,7 +223,11 @@ class FeedPuller(
                             (if (skipped.isEmpty()) "" else ", skipped ${skipped.entries.joinToString { "${it.key} x${it.value}" }}") +
                             (if (fromStart) ", from the start" else "")
                     }
-                    return finished(ScopeRead.Done(startedAt, seenWalletIds.takeIf { fromStart && scope.kind == ScopeKind.User }))
+                    return finished(ScopeRead.Done(
+                        startedAt,
+                        seenWalletIds.takeIf { fromStart && scope.kind == ScopeKind.User },
+                        seenSharedBudgetIds = seenBudgetIds.takeIf { fromStart && scope.kind == ScopeKind.User },
+                    ))
                 }
             }
         }
@@ -258,6 +267,17 @@ class FeedPuller(
                     finished(ScopeRead.Done(clock.now(), lost = true))
                 }
             }
+            answer.code == ApiErrorCode.NOT_FOUND && scope.kind == ScopeKind.SharedBudget -> {
+                val budgets = sharedBudgetScopes()
+                if (budgets == null) {
+                    log.w { "shared budget feed not found, nobody to ask ($where)" }
+                    finished(ScopeRead.Failed)
+                } else {
+                    log.i { "shared budget feed not found: access lost ($where)" }
+                    budgets.accessLost(scope.id)
+                    finished(ScopeRead.Done(clock.now(), lost = true))
+                }
+            }
             else -> {
                 log.w { "read of $where refused: ${answer.problem.code.ifEmpty { "status ${answer.problem.status}" }}" }
                 finished(ScopeRead.Failed)
@@ -272,6 +292,7 @@ class FeedPuller(
         byType: Map<String, FeedApplier>,
         seen: MutableMap<String, MutableSet<String>>,
         seenWalletIds: MutableSet<String>,
+        seenBudgetIds: MutableSet<String>,
         skipped: MutableMap<String, Int>,
         collect: Boolean,
     ) {
@@ -291,6 +312,7 @@ class FeedPuller(
                     group.forEach { record ->
                         record.stringMember("id")?.let { ids += it }
                         if (scope.kind == ScopeKind.User && type == OWN_MEMBERSHIP) record.stringMember("wallet_id")?.let { seenWalletIds += it }
+                        if (scope.kind == ScopeKind.User && type == OWN_BUDGET_MEMBERSHIP) record.stringMember("shared_budget_id")?.let { seenBudgetIds += it }
                     }
                 }
             }
@@ -307,5 +329,8 @@ class FeedPuller(
 
         /** The user feed's `wallet_member` rows are the person's own memberships (backend ADR-0017). */
         const val OWN_MEMBERSHIP = "wallet_member"
+
+        /** The user feed's `shared_budget_member` rows are the person's own memberships of Shared Budgets (backend ADR-0027 rule 9). */
+        const val OWN_BUDGET_MEMBERSHIP = "shared_budget_member"
     }
 }

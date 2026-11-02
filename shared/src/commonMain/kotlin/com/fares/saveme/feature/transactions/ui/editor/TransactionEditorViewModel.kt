@@ -5,6 +5,7 @@ import com.fares.saveme.core.presentation.MviViewModel
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplays
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
 import com.fares.saveme.feature.transactions.domain.ConfirmFromDraftResult
 import com.fares.saveme.feature.transactions.domain.DueItem
 import com.fares.saveme.feature.transactions.domain.MakeRecurringDraft
@@ -61,6 +62,8 @@ class TransactionEditorViewModel(
     private val matches: (String, String, String?, String?, LocalDate) -> Flow<List<DueItem>> = { _, _, _, _, _ -> flowOf(emptyList()) },
     private val confirmFromDraft: suspend (String, TransactionDraft) -> ConfirmFromDraftResult = { _, _ -> ConfirmFromDraftResult.NotAvailable },
     private val ruleOnPhone: (String) -> Flow<Boolean> = { flowOf(false) },
+    /** The Shared Budgets the person may record into, frequent ones first (backend ADR-0027). */
+    private val budgets: Flow<List<BudgetChoice>> = flowOf(emptyList()),
 ) : MviViewModel<TransactionEditorState, TransactionEditorIntent, TransactionEditorEffect>(
     TransactionEditorState(transactionId = transactionId),
 ) {
@@ -124,6 +127,7 @@ class TransactionEditorViewModel(
             )
         }
         if (chosen == null) return
+        observeBudgets()
         walletFlow.value = chosen.id
         viewModelScope.launch { writableWallets.collect { list -> setState { reduce(it, TransactionEditorChange.Wallets(list)) } } }
         viewModelScope.launch {
@@ -141,6 +145,10 @@ class TransactionEditorViewModel(
             }.collect { items -> setState { reduce(it, TransactionEditorChange.Matches(items)) } }
         }
         updateMatchKey()
+    }
+
+    private fun observeBudgets() {
+        viewModelScope.launch { budgets.collect { list -> setState { reduce(it, TransactionEditorChange.Budgets(list)) } } }
     }
 
     private data class MatchKey(val walletId: String, val kindWire: String, val categoryId: String?, val counterWalletId: String?, val date: LocalDate)
@@ -179,6 +187,7 @@ class TransactionEditorViewModel(
         loadedForm = EditorForm.of(currentState)
         lastServer = first.server
         kindFlow.value = first.shown.kind
+        observeBudgets()
         viewModelScope.launch {
             kindFlow.flatMapLatest { kind ->
                 if (kind == TransactionKind.Income || kind == TransactionKind.Expense) categoryChoices(kind, currentCategoryId) else emptyFlow()
@@ -206,6 +215,9 @@ class TransactionEditorViewModel(
             date = shown.date,
             categoryId = shown.categoryId,
             category = category,
+            // A budget the server refused is cleared and asked again; the rest keeps what the phone holds (backend ADR-0027).
+            budgetRefused = refusal?.kind == RefusalKind.BudgetUnusable,
+            budgetId = shown.sharedBudgetId.takeIf { refusal?.kind != RefusalKind.BudgetUnusable },
             destinationId = shown.counterWalletId,
             destinationName = (view.counterpart as? Counterpart.Named)?.name,
             note = shown.description.orEmpty(),
@@ -269,7 +281,10 @@ class TransactionEditorViewModel(
             TransactionEditorIntent.SheetDismissed -> {
                 change(TransactionEditorChange.CategorySheet(false))
                 change(TransactionEditorChange.DestinationSheet(false))
+                change(TransactionEditorChange.BudgetSheet(false))
             }
+            TransactionEditorIntent.BudgetClicked -> change(TransactionEditorChange.BudgetSheet(true))
+            is TransactionEditorIntent.BudgetChosen -> change(TransactionEditorChange.Budget(intent.id))
             TransactionEditorIntent.DestinationClicked -> if (currentState.isCreate) change(TransactionEditorChange.DestinationSheet(true))
             is TransactionEditorIntent.DestinationChosen -> currentState.destinationChoices.firstOrNull { it.id == intent.id }
                 ?.let { change(TransactionEditorChange.Destination(it)) }
@@ -344,6 +359,7 @@ class TransactionEditorViewModel(
             walletId = state.walletId, kindWire = state.kindWire, date = state.date ?: today(), amountMinor = amount.minor,
             currency = state.currency, categoryId = state.categoryId, counterWalletId = state.destinationId,
             description = state.note, memo = state.details, counterparty = state.person, cleared = state.cleared,
+            sharedBudgetId = state.budgetId.takeIf { state.kind == TransactionKind.Expense },
         )
         change(TransactionEditorChange.Saving(true))
         viewModelScope.launch {
@@ -358,7 +374,7 @@ class TransactionEditorViewModel(
     }
 
     private fun chooseCategory(id: String) {
-        val choices = currentState.categoryChoices ?: return
+        val choices = currentState.visibleCategoryChoices ?: return
         val display = (listOfNotNull(choices.current) + choices.own + choices.defaults).firstOrNull { it.id == id } ?: return
         change(TransactionEditorChange.Category(display))
     }
@@ -384,6 +400,7 @@ class TransactionEditorViewModel(
             memo = state.details,
             counterparty = state.person,
             cleared = state.cleared,
+            sharedBudgetId = state.budgetId.takeIf { state.kind == TransactionKind.Expense },
         )
         change(TransactionEditorChange.Saving(true))
         viewModelScope.launch {
@@ -466,9 +483,10 @@ private data class EditorForm(
     val details: String,
     val person: String,
     val cleared: Boolean,
+    val budgetId: String?,
 ) {
     companion object {
         fun of(state: TransactionEditorState) =
-            EditorForm(state.amountText, state.date, state.categoryId, state.note, state.details, state.person, state.cleared)
+            EditorForm(state.amountText, state.date, state.categoryId, state.note, state.details, state.person, state.cleared, state.budgetId)
     }
 }

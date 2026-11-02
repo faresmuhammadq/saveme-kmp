@@ -30,6 +30,7 @@ data class NewTransaction(
     val counterparty: String?,
     val cleared: Boolean,
     val createdBy: String,
+    val sharedBudgetId: String? = null,
 )
 
 /**
@@ -97,7 +98,7 @@ class TransactionRepository(
                 categoryId = new.categoryId, description = new.description, memo = new.memo,
                 counterparty = new.counterparty, cleared = new.cleared, createdBy = new.createdBy,
                 recurringRuleId = null, occurrenceId = null, version = 0, changeSeq = 0, createdAt = now,
-                updatedAt = now, deletedAt = null, refreshedAt = now,
+                updatedAt = now, deletedAt = null, refreshedAt = now, sharedBudgetId = new.sharedBudgetId,
             ),
         )
     }
@@ -273,7 +274,7 @@ internal fun TransactionDto.toEntity(accountId: String, refreshedAt: String) = T
     amountMinor = amountMinor, currency = currency, categoryId = categoryId, description = description, memo = memo,
     counterparty = counterparty, cleared = cleared, createdBy = createdBy, recurringRuleId = recurringRuleId,
     occurrenceId = occurrenceId, version = version, changeSeq = changeSeq, createdAt = createdAt, updatedAt = updatedAt,
-    deletedAt = deletedAt, refreshedAt = refreshedAt,
+    deletedAt = deletedAt, refreshedAt = refreshedAt, sharedBudgetId = sharedBudgetId,
 )
 
 /** A fixed-width UTC instant (milliseconds), so stored times compare as strings in the DAO. */

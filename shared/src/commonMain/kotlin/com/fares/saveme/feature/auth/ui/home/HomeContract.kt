@@ -4,6 +4,7 @@ import com.fares.saveme.core.sync.SyncStatus
 import com.fares.saveme.feature.auth.domain.AuthState
 import com.fares.saveme.feature.auth.domain.BudgetGlimpse
 import com.fares.saveme.feature.auth.domain.DueGlimpse
+import com.fares.saveme.feature.auth.domain.HomeOverview
 import com.fares.saveme.feature.auth.domain.model.AccountState
 import com.fares.saveme.feature.auth.ui.verify.ResendChange
 import com.fares.saveme.feature.auth.ui.verify.ResendState
@@ -34,6 +35,12 @@ data class HomeState(
     val invitationHeld: Boolean = false,
     /** The profile's display name for the greeting; null when none is set. */
     val displayName: String? = null,
+    /** The current period's spending, the wallets and the newest transactions. */
+    val overview: HomeOverview = HomeOverview(),
+    /** What the person typically spends in a period, for the "set a budget" suggestion; null when unknown. */
+    val typicalSpendMinor: Long? = null,
+    /** True until the stored choice is read, so the suggestion never flashes. */
+    val suggestionDismissed: Boolean = true,
 )
 
 /** Whether the scheduled deletion date has passed while the account is still pending (spec 016 FR-032). */
@@ -59,6 +66,12 @@ sealed interface HomeIntent {
     data object ReportsClicked : HomeIntent
     data class BudgetClicked(val id: String) : HomeIntent
     data object InvitationClicked : HomeIntent
+    data class WalletClicked(val id: String) : HomeIntent
+    data class TransactionClicked(val id: String, val walletId: String) : HomeIntent
+    data object ReportClicked : HomeIntent
+    data object MoreCategoriesClicked : HomeIntent
+    data object SetBudgetClicked : HomeIntent
+    data object DismissSuggestion : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -71,6 +84,11 @@ sealed interface HomeEffect {
     data object NavigateReports : HomeEffect
     data class OpenBudget(val id: String) : HomeEffect
     data object OpenInvitation : HomeEffect
+    data class OpenWallet(val id: String) : HomeEffect
+    data class OpenTransaction(val id: String, val walletId: String) : HomeEffect
+    data object OpenReport : HomeEffect
+    data class OpenReportCategories(val from: kotlinx.datetime.LocalDate, val to: kotlinx.datetime.LocalDate, val currency: String) : HomeEffect
+    data object OpenBudgetEditor : HomeEffect
     data class ShowMessage(val message: HomeMessage) : HomeEffect
 }
 
@@ -89,6 +107,9 @@ sealed interface HomeChange {
     data class InvitationHeld(val held: Boolean) : HomeChange
     data class Tick(val now: Instant) : HomeChange
     data class Name(val displayName: String?) : HomeChange
+    data class Overview(val overview: HomeOverview) : HomeChange
+    data class TypicalSpend(val minor: Long?) : HomeChange
+    data class SuggestionDismissed(val dismissed: Boolean) : HomeChange
 }
 
 fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
@@ -109,5 +130,8 @@ fun reduce(state: HomeState, change: HomeChange): HomeState = when (change) {
     is HomeChange.Budgets -> state.copy(budgets = change.budgets)
     is HomeChange.InvitationHeld -> state.copy(invitationHeld = change.held)
     is HomeChange.Tick -> state.copy(now = change.now)
+    is HomeChange.Overview -> state.copy(overview = change.overview)
+    is HomeChange.TypicalSpend -> state.copy(typicalSpendMinor = change.minor)
+    is HomeChange.SuggestionDismissed -> state.copy(suggestionDismissed = change.dismissed)
     is HomeChange.Name -> state.copy(displayName = change.displayName?.takeIf { it.isNotBlank() })
 }

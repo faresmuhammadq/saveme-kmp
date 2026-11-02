@@ -11,6 +11,9 @@ import kotlinx.datetime.LocalDate
 interface BudgetSummary {
     /** Active budgets, highest share spent first then oldest; at most [limit]. Empty when there is none. */
     fun observeTop(limit: Int): Flow<List<BudgetGlimpse>>
+
+    /** What the person typically spends in a period in [currency] (the average of earlier periods); null when unknown. */
+    fun observeTypicalSpend(currency: String): Flow<Long?> = flowOf(null)
 }
 
 /**
