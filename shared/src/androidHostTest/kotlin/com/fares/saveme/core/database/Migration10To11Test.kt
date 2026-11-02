@@ -121,17 +121,20 @@ class Migration10To11Test {
     }
 
     @Test
-    fun theExportedSchemaOnlyAddsTheFourTablesAndTheColumn() {
+    fun theExportedSchemaOnlyAddsTheFourTablesAndTheTwoColumns() {
         fun tables(version: Int): Map<String, JsonObject> = Json.parseToJsonElement(File("$schemas/$version.json").readText())
             .jsonObject.getValue("database").jsonObject.getValue("entities").jsonArray.map { it.jsonObject }
             .associateBy { it.getValue("tableName").jsonPrimitive.content }
         val before = tables(10)
         val after = tables(11)
         assertEquals(before.keys + setOf("shared_budget", "shared_budget_member", "shared_budget_line", "shared_budget_entry"), after.keys)
-        (before.keys - "transactions").forEach { assertEquals(it, before[it], after[it]) }
+        (before.keys - "transactions" - "recurring_rule").forEach { assertEquals(it, before[it], after[it]) }
         fun fields(table: JsonObject) = table.getValue("fields").jsonArray.map { it.jsonObject.getValue("columnName").jsonPrimitive.content }
         assertEquals(fields(before.getValue("transactions")) + "shared_budget_id", fields(after.getValue("transactions")).let { all ->
             all.filter { it != "shared_budget_id" }.let { rest -> rest + "shared_budget_id" }
+        })
+        assertEquals(fields(before.getValue("recurring_rule")) + "shared_budget_id", fields(after.getValue("recurring_rule")).let { all ->
+            all.filter { it != "shared_budget_id" } + "shared_budget_id"
         })
         val entry = fields(after.getValue("shared_budget_entry"))
         assertTrue(entry.toString(), entry.none { "wallet" in it || "memo" in it || "counterparty" in it || "transaction" in it })

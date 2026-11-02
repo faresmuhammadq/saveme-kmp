@@ -52,6 +52,29 @@ class SharedBudgetRepository(
 
     suspend fun get(id: String): SharedBudgetEntity? = dao.get(id)
 
+    suspend fun getLine(id: String): SharedBudgetLineEntity? = dao.line(id)
+
+    suspend fun lines(budgetId: String): List<SharedBudgetLineEntity> = dao.lines(budgetId)
+
+    /**
+     * A budget made on this phone before the server has seen it: `version = 0`, listed to its owner, held by the sync queue.
+     * The owner's own membership arrives from the server with the first answer.
+     */
+    suspend fun insertPlaceholder(id: String, ownerId: String, name: String, currency: String, startDay: Int, limitMinor: Long?, timezone: String) {
+        val now = clock.now().toString()
+        dao.upsert(
+            SharedBudgetEntity(
+                id = id, ownerId = ownerId, name = name, currency = currency, startDay = startDay, timezone = timezone, limitMinor = limitMinor,
+                archivedAt = null, limitHistory = "[]", startDayHistory = "[]", version = 0, changeSeq = 0, createdAt = now, updatedAt = now, refreshedAt = now,
+            ),
+        )
+    }
+
+    /** Removes a placeholder that never reached the server; nothing else holds data for it. */
+    suspend fun removePlaceholder(id: String) {
+        if (dao.get(id)?.version == 0L) dao.deleteBudgetWithChildren(id)
+    }
+
     /** Writes the server's answer to this phone's own write; a tombstone removes the budget with everything under it. */
     suspend fun storeServerCopy(dto: SharedBudgetDto): Boolean {
         if (dto.deletedAt != null) {

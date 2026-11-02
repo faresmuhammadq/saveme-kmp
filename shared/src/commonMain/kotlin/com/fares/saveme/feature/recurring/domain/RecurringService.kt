@@ -378,6 +378,7 @@ class DefaultRecurringService(
         autoConfirm = autoConfirm, frequency = frequency.wire, interval = interval, anchorDay = anchorDay,
         startDate = startDate.toString(), endDate = endDate?.toString(), occurrenceCount = occurrenceCount,
         payoutRound = payoutRound, payoutCategoryId = payoutCategoryId, followsRuleId = followsRuleId,
+        sharedBudgetId = sharedBudgetId,
     )
 
     override suspend fun create(walletId: String, draft: RuleDraft): RuleResult {

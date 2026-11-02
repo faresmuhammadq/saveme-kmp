@@ -3,6 +3,7 @@ package com.fares.saveme.navigation
 import androidx.navigation3.runtime.NavKey
 import com.fares.saveme.feature.auth.domain.AuthLink
 import com.fares.saveme.feature.auth.domain.AuthLinkParser
+import com.fares.saveme.feature.sharedbudgets.domain.SharedBudgetLinkParser
 import com.fares.saveme.feature.sharing.domain.InvitationLink
 import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
 
@@ -15,14 +16,26 @@ sealed interface LinkRoute {
      * Push [key]. An invitation link opened while nobody is signed in is [hold] in memory so the invitation screen opens right
      * after the next sign-in (FR-011); a malformed one opens in its "not a valid invitation" mode without any call (FR-009).
      */
-    data class Open(val key: NavKey, val hold: InvitationLink.Valid? = null) : LinkRoute
+    data class Open(val key: NavKey, val hold: InvitationLink.Valid? = null, val holdSharedBudget: InvitationLink.Valid? = null) : LinkRoute
 }
 
 /** Auth links first, as before, then invitation links; pure so it can be tested without a back stack. */
-fun routeLink(raw: String, signedIn: Boolean, auth: AuthLinkParser, invitations: InvitationLinkParser): LinkRoute {
+fun routeLink(
+    raw: String,
+    signedIn: Boolean,
+    auth: AuthLinkParser,
+    invitations: InvitationLinkParser,
+    sharedBudgetInvitations: SharedBudgetLinkParser? = null,
+): LinkRoute {
     when (val link = auth.parse(raw)) {
         is AuthLink.VerifyEmail -> return LinkRoute.Open(VerifyEmailKey(link.token))
         is AuthLink.ResetPassword -> return LinkRoute.Open(ResetPasswordKey(link.token))
+        null -> Unit
+    }
+    // A Shared Budget link has its own path; the wallet parser never matches it.
+    when (val link = sharedBudgetInvitations?.parse(raw)) {
+        is InvitationLink.Valid -> return LinkRoute.Open(SharedBudgetInvitationKey(link.token), holdSharedBudget = link.takeUnless { signedIn })
+        InvitationLink.Malformed -> return LinkRoute.Open(SharedBudgetInvitationKey(""))
         null -> Unit
     }
     return when (val link = invitations.parse(raw)) {

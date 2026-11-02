@@ -33,6 +33,7 @@ data class NewRule(
     val payoutRound: Int?,
     val payoutCategoryId: String?,
     val followsRuleId: String?,
+    val sharedBudgetId: String? = null,
 ) {
     override fun toString() = "NewRule($id)"
 }
@@ -80,7 +81,7 @@ class RecurringRepository(
                 interval = new.interval, anchorDay = new.anchorDay, startDate = new.startDate, endDate = new.endDate,
                 occurrenceCount = new.occurrenceCount, payoutRound = new.payoutRound, payoutCategoryId = new.payoutCategoryId,
                 timezone = null, createdBy = null, version = 0, changeSeq = 0, createdAt = old?.createdAt ?: now,
-                updatedAt = now, refreshedAt = now, followsRuleId = new.followsRuleId,
+                updatedAt = now, refreshedAt = now, followsRuleId = new.followsRuleId, sharedBudgetId = new.sharedBudgetId,
             ),
         )
     }
@@ -149,5 +150,5 @@ internal fun RecurringRuleDto.toEntity(accountId: String, refreshedAt: String) =
     interval = interval, anchorDay = anchorDay, startDate = startDate, endDate = endDate, occurrenceCount = occurrenceCount,
     payoutRound = payoutRound, payoutCategoryId = payoutCategoryId, timezone = timezone, createdBy = createdBy,
     version = version, changeSeq = changeSeq, createdAt = createdAt, updatedAt = updatedAt, refreshedAt = refreshedAt,
-    followsRuleId = null,
+    followsRuleId = null, sharedBudgetId = sharedBudgetId,
 )

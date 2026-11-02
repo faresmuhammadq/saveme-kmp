@@ -465,3 +465,56 @@ class RuleEditorViewModelTest {
         assertTrue(store.state.value.frozen.schedule)
     }
 }
+
+private fun partnerCategory(id: String, name: String) =
+    com.fares.saveme.feature.categories.domain.model.CategoryDisplay(id, name, null, null, "expense", com.fares.saveme.feature.categories.domain.model.CategorySource.Partner, false)
+
+private val rentLine = partnerCategory("p1", "Rent")
+private val homeBudget = com.fares.saveme.feature.transactions.domain.BudgetChoice("b1", "Home", "EGP", listOf(rentLine), frequent = false)
+private val tripBudget = com.fares.saveme.feature.transactions.domain.BudgetChoice("b2", "Trip", "USD", emptyList(), frequent = false)
+
+/** A recurring rule that counts toward a Shared Budget (backend ADR-0027). */
+class RuleEditorBudgetTest {
+    private fun ready(extra: RuleEditorState.() -> RuleEditorState = { this }) =
+        reduce(created { copy(kind = TransactionKind.Expense, amountText = "4500", categoryId = "c1") }, RuleEditorChange.Budgets(listOf(homeBudget, tripBudget))).extra()
+
+    @Test
+    fun onlyBudgetsInTheWalletsCurrencyAreOfferedAndTheDraftCarriesTheChoice() {
+        val state = reduce(ready(), RuleEditorChange.Budget("b1"))
+        assertEquals(listOf("b1"), state.budgetsForWallet.map { it.id })
+        assertEquals("b1", assertIs<DraftResult.Ready>(state.copy(categoryId = "p1", category = rentLine).buildDraft()).draft.sharedBudgetId)
+    }
+
+    @Test
+    fun aBudgetLimitsTheCategoriesAndDropsOneThatDoesNotFit() {
+        val withChoices = ready { copy(categoryChoices = CategoryChoices(null, listOf(partnerCategory("c1", "Groceries")), emptyList()), category = partnerCategory("c1", "Groceries")) }
+        val state = reduce(withChoices, RuleEditorChange.Budget("b1"))
+        assertEquals(null, state.categoryId)
+        assertEquals(listOf("p1"), state.visibleCategoryChoices!!.own.map { it.id })
+        val back = reduce(reduce(state, RuleEditorChange.Category(rentLine)), RuleEditorChange.Budget(null))
+        assertEquals(null, back.categoryId) // her category is not the person's to use outside the budget
+    }
+
+    @Test
+    fun onlyExpensesOfARegularRuleCanJoinABudget() {
+        val income = ready { copy(kind = TransactionKind.Income) }
+        assertFalse(income.budgetEditable)
+        assertEquals(null, reduce(income, RuleEditorChange.Budget("b1")).budgetId)
+        val gameya = ready { copy(preset = com.fares.saveme.feature.recurring.domain.model.Preset.Gameya) }
+        assertFalse(gameya.budgetEditable)
+        val withBudget = reduce(ready(), RuleEditorChange.Budget("b1"))
+        assertEquals("b1", withBudget.budgetId)
+        assertEquals(null, reduce(withBudget, RuleEditorChange.Kind(TransactionKind.Income)).budgetId)
+    }
+
+    @Test
+    fun theWireMemberIsSentOnlyWhenThereIsSomethingToSay() {
+        fun request(budget: String?, send: Boolean) = com.fares.saveme.feature.recurring.data.dto.RecurringRuleWriteRequest(
+            "custom", "active", "expense", 100, "per_occurrence", "EGP", "c1", null, null, null, null, false, "monthly", 1, 1, "2026-10-01",
+            null, null, null, null, 0, sharedBudgetId = budget, sendSharedBudget = send,
+        ).toJson()
+        assertEquals(kotlinx.serialization.json.JsonPrimitive("b1"), request("b1", true)["shared_budget_id"])
+        assertEquals(kotlinx.serialization.json.JsonNull, request(null, true)["shared_budget_id"])
+        assertFalse(request(null, false).containsKey("shared_budget_id"))
+    }
+}

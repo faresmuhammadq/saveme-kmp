@@ -33,6 +33,8 @@ data class RulePayload(
     val payoutCategoryId: String? = null,
     /** Phone-only: the rule this one continues after "Change from a date" (research R-09). */
     val followsRuleId: String? = null,
+    /** The Shared Budget the rule's expenses count toward; null for none (backend ADR-0027). */
+    val sharedBudgetId: String? = null,
 )
 
 /**
@@ -56,6 +58,7 @@ data class OccurrencePayload(
 /** The plain field names the handlers' `refusalFields` return (research R-04, R-05). */
 object RecurringFields {
     const val AMOUNT = "amount"
+    const val BUDGET = "budget"
     const val AMOUNT_BASIS = "amountBasis"
     const val CATEGORY = "category"
     const val PAYOUT_CATEGORY = "payoutCategory"
@@ -96,6 +99,7 @@ object RecurringFields {
         "/description" to NOTE,
         "/memo" to DETAILS,
         "/counterparty" to PERSON,
+        "/shared_budget_id" to BUDGET,
     )
 
     val occurrenceByPointer: Map<String, String> = mapOf(

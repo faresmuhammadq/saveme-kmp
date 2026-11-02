@@ -19,11 +19,13 @@ data class SharedBudgetsState(
 
 sealed interface SharedBudgetsIntent {
     data class BudgetClicked(val id: String) : SharedBudgetsIntent
+    data object AddClicked : SharedBudgetsIntent
     data object Back : SharedBudgetsIntent
 }
 
 sealed interface SharedBudgetsEffect {
     data class OpenBudget(val id: String) : SharedBudgetsEffect
+    data object OpenNew : SharedBudgetsEffect
     data object NavigateBack : SharedBudgetsEffect
 }
 
@@ -39,6 +41,7 @@ class SharedBudgetsViewModel(
         when (intent) {
             is SharedBudgetsIntent.BudgetClicked ->
                 if (currentState.budgets.any { it.id == intent.id }) sendEffect(SharedBudgetsEffect.OpenBudget(intent.id))
+            SharedBudgetsIntent.AddClicked -> sendEffect(SharedBudgetsEffect.OpenNew)
             SharedBudgetsIntent.Back -> sendEffect(SharedBudgetsEffect.NavigateBack)
         }
     }

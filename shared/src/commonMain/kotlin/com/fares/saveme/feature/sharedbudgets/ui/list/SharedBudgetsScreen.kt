@@ -2,6 +2,11 @@ package com.fares.saveme.feature.sharedbudgets.ui.list
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import com.fares.saveme.designsystem.component.CalmCircleButton
+import com.fares.saveme.designsystem.icon.AppIcons
+import saveme.shared.generated.resources.sb_cd_add
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
@@ -44,7 +49,15 @@ fun SharedBudgetsScreen(state: SharedBudgetsState, onIntent: (SharedBudgetsInten
         title = null,
         onBack = { onIntent(SharedBudgetsIntent.Back) },
         backDescription = stringResource(Res.string.cd_back),
-        titleSlot = { CalmTitle(stringResource(Res.string.sb_title)) },
+        titleSlot = {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.weight(1f)) { CalmTitle(stringResource(Res.string.sb_title)) }
+                CalmCircleButton(
+                    AppIcons.Plus, stringResource(Res.string.sb_cd_add), { onIntent(SharedBudgetsIntent.AddClicked) },
+                    tint = AppTheme.colors.primary, modifier = Modifier.testTag("sharedBudgets.add"),
+                )
+            }
+        },
     ) {
         when {
             !state.loaded -> repeat(2) { Skeleton(Modifier.fillMaxWidth().height(96.dp), AppTheme.shapes.hero) }

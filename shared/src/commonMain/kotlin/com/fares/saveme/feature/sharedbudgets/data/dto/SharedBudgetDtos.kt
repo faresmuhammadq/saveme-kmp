@@ -104,3 +104,80 @@ data class SharedBudgetEntryDto(
 ) {
     override fun toString() = "SharedBudgetEntryDto($id, version=$version)"
 }
+
+/** shared-budgets.yaml `SharedBudgetWrite`: the whole writable budget; an explicit null limit means "no limit". */
+data class SharedBudgetWriteRequest(
+    val name: String,
+    val currency: String,
+    val startDay: Int,
+    val limitMinor: Long?,
+    val version: Long,
+) {
+    fun toJson(): kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.buildJsonObject {
+        put("name", kotlinx.serialization.json.JsonPrimitive(name))
+        put("currency", kotlinx.serialization.json.JsonPrimitive(currency))
+        put("start_day", kotlinx.serialization.json.JsonPrimitive(startDay))
+        put("limit_minor", limitMinor?.let { kotlinx.serialization.json.JsonPrimitive(it) } ?: kotlinx.serialization.json.JsonNull)
+        put("version", kotlinx.serialization.json.JsonPrimitive(version))
+    }
+
+    override fun toString() = "SharedBudgetWriteRequest(version=$version)"
+}
+
+/** shared-budgets.yaml `SharedBudgetLineWrite`. */
+data class SharedBudgetLineWriteRequest(val categoryId: String, val limitMinor: Long?, val version: Long) {
+    fun toJson(): kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.buildJsonObject {
+        put("category_id", kotlinx.serialization.json.JsonPrimitive(categoryId))
+        put("limit_minor", limitMinor?.let { kotlinx.serialization.json.JsonPrimitive(it) } ?: kotlinx.serialization.json.JsonNull)
+        put("version", kotlinx.serialization.json.JsonPrimitive(version))
+    }
+
+    override fun toString() = "SharedBudgetLineWriteRequest(version=$version)"
+}
+
+/** The delete, archive and invitation-withdraw bodies: nothing but the last-seen version. */
+@Serializable
+data class SharedBudgetVersionRequest(val version: Long)
+
+@Serializable
+data class SharedBudgetTransferRequest(@SerialName("user_id") val userId: String, val version: Long)
+
+/** A token body: never printed (P-09.2). */
+@Serializable
+data class SharedBudgetTokenRequest(val token: String) {
+    override fun toString() = "SharedBudgetTokenRequest(token=<redacted>)"
+}
+
+/** shared-budgets.yaml `SharedBudgetInvitation`: the owner's record of an invitation, never its secret. */
+@Serializable
+data class SharedBudgetInvitationDto(
+    val id: String,
+    @SerialName("shared_budget_id") val sharedBudgetId: String,
+    @SerialName("invited_by") val invitedBy: String = "",
+    val status: String = "pending",
+    @SerialName("expires_at") val expiresAt: String = "",
+    val version: Long = 1,
+    @SerialName("change_seq") val changeSeq: Long = 0,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("updated_at") val updatedAt: String = "",
+    @SerialName("deleted_at") val deletedAt: String? = null,
+)
+
+/** `meta` of a new invitation: the one-time link, never printed. */
+@Serializable
+data class SharedBudgetInvitationMetaDto(@SerialName("share_url") val shareUrl: String? = null) {
+    override fun toString() = "SharedBudgetInvitationMetaDto(link=<redacted>)"
+}
+
+/** shared-budgets.yaml `SharedBudgetInvitationPreview`: exactly what joining shows the person. */
+@Serializable
+data class SharedBudgetInvitationPreviewDto(
+    @SerialName("invitation_id") val invitationId: String,
+    @SerialName("shared_budget_id") val sharedBudgetId: String,
+    val name: String,
+    val currency: String,
+    @SerialName("owner_display_name") val ownerDisplayName: String? = null,
+    @SerialName("member_count") val memberCount: Int = 1,
+    @SerialName("expires_at") val expiresAt: String = "",
+    @SerialName("already_member") val alreadyMember: Boolean = false,
+)

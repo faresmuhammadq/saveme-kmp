@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 11,
-    "identityHash": "836378bbde7de478ca9e609f19e6f58f",
+    "identityHash": "2b39639bca39444c4261e93afc0ffad8",
     "entities": [
       {
         "tableName": "profile",
@@ -969,7 +969,7 @@
       },
       {
         "tableName": "recurring_rule",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL, `preset` TEXT NOT NULL, `status` TEXT NOT NULL, `kind` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL, `amount_basis` TEXT NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT, `counter_wallet_id` TEXT, `description` TEXT, `memo` TEXT, `counterparty` TEXT, `auto_confirm` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, `anchor_day` INTEGER, `start_date` TEXT NOT NULL, `end_date` TEXT, `occurrence_count` INTEGER, `payout_round` INTEGER, `payout_category_id` TEXT, `timezone` TEXT, `created_by` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, `follows_rule_id` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `account_id` TEXT NOT NULL, `wallet_id` TEXT NOT NULL, `preset` TEXT NOT NULL, `status` TEXT NOT NULL, `kind` TEXT NOT NULL, `amount_minor` INTEGER NOT NULL, `amount_basis` TEXT NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT, `counter_wallet_id` TEXT, `description` TEXT, `memo` TEXT, `counterparty` TEXT, `auto_confirm` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, `anchor_day` INTEGER, `start_date` TEXT NOT NULL, `end_date` TEXT, `occurrence_count` INTEGER, `payout_round` INTEGER, `payout_category_id` TEXT, `timezone` TEXT, `created_by` TEXT, `version` INTEGER NOT NULL, `change_seq` INTEGER NOT NULL, `created_at` TEXT NOT NULL, `updated_at` TEXT NOT NULL, `refreshed_at` TEXT NOT NULL, `follows_rule_id` TEXT, `shared_budget_id` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -1142,6 +1142,11 @@
           {
             "fieldPath": "followsRuleId",
             "columnName": "follows_rule_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sharedBudgetId",
+            "columnName": "shared_budget_id",
             "affinity": "TEXT"
           }
         ],
@@ -2012,7 +2017,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '836378bbde7de478ca9e609f19e6f58f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2b39639bca39444c4261e93afc0ffad8')"
     ]
   }
 }

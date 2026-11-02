@@ -116,6 +116,16 @@ data object SharedBudgetsKey : NavKey
 @Serializable
 data class SharedBudgetKey(val budgetId: String) : NavKey
 
+/** A Shared Budget invitation; an empty [token] is a link that was not valid. */
+@Serializable
+data class SharedBudgetInvitationKey(val token: String) : NavKey {
+    override fun toString() = "SharedBudgetInvitationKey(token=<redacted>)"
+}
+
+/** A null [budgetId] makes a shared budget; otherwise it is edited (owner) or shown read-only. */
+@Serializable
+data class SharedBudgetEditorKey(val budgetId: String? = null) : NavKey
+
 // Reports (spec 014).
 
 /** The Reports screen: one wallet's report, or every wallet on the phone in one currency when [walletId] is null. */

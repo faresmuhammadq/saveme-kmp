@@ -101,7 +101,7 @@ interface SharedBudgetDao {
     /** The budgets the person belongs to, by creation. */
     @Query(
         """SELECT b.* FROM shared_budget b WHERE b.id IN (SELECT shared_budget_id FROM shared_budget_member WHERE user_id = :userId)
-        ORDER BY b.created_at, b.id""",
+        OR (b.version = 0 AND b.owner_id = :userId) ORDER BY b.created_at, b.id""",
     )
     fun observeMine(userId: String): Flow<List<SharedBudgetEntity>>
 

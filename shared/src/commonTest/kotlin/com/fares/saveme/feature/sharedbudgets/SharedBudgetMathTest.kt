@@ -91,3 +91,45 @@ class SharedBudgetMathTest {
         assertEquals(3_100L, some.projectedMinor) // ceil(1000 * 31 / 10)
     }
 }
+
+class SharedBudgetPastPeriodTest {
+    private val today = LocalDate(2026, 10, 10)
+
+    @Test
+    fun anEarlierPeriodShowsItsOwnEntriesAndTheLimitItHadWithNoProjection() {
+        val history = """[{"applies_from":"2026-09-01","limit_minor":2000000},{"applies_from":"2026-10-01","limit_minor":3000000}]"""
+        val b = budget(limitHistory = history).copy(createdAt = "2026-08-15T10:00:00Z")
+        val anchor = SharedBudgetMath.anchorFor(today, 1, b)
+        assertEquals(LocalDate(2026, 9, 30), anchor)
+        val result = SharedBudgetMath.progress(
+            b, emptyList(),
+            listOf(entry("old", "c1", "2026-09-12", 700, by = "gone"), entry("new", "c1", "2026-10-02", 100)),
+            emptyList(), "me", today, anchor,
+        )
+        assertEquals(700, result.spentMinor)
+        assertEquals(2_000_000L, result.limitMinor)
+        assertNull(result.projectedMinor)
+        assertEquals(false, result.isCurrent)
+        assertEquals(LocalDate(2026, 9, 1), result.period.start)
+        assertEquals(true, result.canGoBack)
+    }
+
+    @Test
+    fun theEarliestPeriodCannotGoFurtherBack() {
+        val b = budget().copy(createdAt = "2026-10-03T10:00:00Z")
+        assertEquals(false, SharedBudgetMath.progress(b, emptyList(), emptyList(), emptyList(), "me", today).canGoBack)
+    }
+
+    @Test
+    fun expensesAreListedNewestFirstWithAuthorAndNoWalletData() {
+        val result = SharedBudgetMath.progress(
+            budget(), listOf(line("c1")),
+            listOf(entry("a", "c1", "2026-10-02", 100), entry("b", "c1", "2026-10-05", 200, by = "sara"), entry("c", "zz", "2026-10-05", 50)),
+            listOf(member("sara", "Sara")), "me", today,
+        )
+        assertEquals(listOf("b", "c", "a"), result.entries.map { it.id })
+        assertEquals("Sara", result.entries.first().authorName)
+        assertEquals(true, result.entries.last().isMine)
+        assertEquals("", result.entries[1].categoryName) // no line names it: shown as Other
+    }
+}

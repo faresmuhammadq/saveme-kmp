@@ -244,7 +244,7 @@ internal val MIGRATION_9_10 = object : Migration(9, 10) {
 }
 
 /**
- * v10 → v11 (backend ADR-0027): the Shared Budget tables, `transactions.shared_budget_id` (the budget a transaction counts toward,
+ * v10 → v11 (backend ADR-0027): the Shared Budget tables, `transactions.shared_budget_id` and `recurring_rule.shared_budget_id` (the budget they count toward,
  * null for none), and the person's own feed place forgotten once. Memberships of Shared Budgets ride the user feed, which skipped
  * `shared_budget_member` rows until now; clearing the cursor, the read stamp and the integer position together makes the next read
  * start from the beginning so budgets the person already belongs to appear. Wallet scopes keep theirs; every other row is kept.
@@ -278,6 +278,7 @@ internal val MIGRATION_10_11 = object : Migration(10, 11) {
         )
         connection.execSQL("CREATE INDEX IF NOT EXISTS `index_shared_budget_entry_shared_budget_id_date` ON `shared_budget_entry` (`shared_budget_id`, `date`)")
         connection.execSQL("ALTER TABLE `transactions` ADD COLUMN `shared_budget_id` TEXT")
+        connection.execSQL("ALTER TABLE `recurring_rule` ADD COLUMN `shared_budget_id` TEXT")
         connection.execSQL(
             "UPDATE `sync_scope` SET `feed_cursor` = NULL, `feed_read_at` = NULL, `feed_position` = NULL WHERE `scope` LIKE 'user:%'",
         )

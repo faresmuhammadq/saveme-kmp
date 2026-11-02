@@ -26,6 +26,24 @@ import com.fares.saveme.feature.sharedbudgets.ui.detail.SharedBudgetDetailViewMo
 import com.fares.saveme.feature.sharedbudgets.ui.list.SharedBudgetsViewModel
 import com.fares.saveme.feature.transactions.di.ProfileToday
 import org.koin.core.module.dsl.viewModel
+import com.fares.saveme.core.platform.ClientInfo
+import com.fares.saveme.core.sync.SyncHandler
+import com.fares.saveme.feature.sharedbudgets.data.SharedBudgetApi
+import com.fares.saveme.feature.sharedbudgets.data.SharedBudgetSyncHandler
+import com.fares.saveme.feature.sharedbudgets.domain.DefaultSharedBudgetsManager
+import com.fares.saveme.feature.sharedbudgets.domain.SharedBudgetsManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import com.fares.saveme.feature.budgets.domain.BudgetsService
+import com.fares.saveme.feature.categories.domain.CategoriesService
+import com.fares.saveme.feature.categories.domain.model.CategoryKind
+import com.fares.saveme.feature.sharedbudgets.ui.editor.SharedBudgetEditorViewModel
+import com.fares.saveme.core.config.AppConfig
+import com.fares.saveme.core.session.UserDataCleaner
+import com.fares.saveme.feature.sharedbudgets.domain.HeldSharedBudgetInvitation
+import com.fares.saveme.feature.sharedbudgets.domain.SharedBudgetLinkParser
+import com.fares.saveme.feature.sharedbudgets.ui.invitation.SharedBudgetInvitationViewModel
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -60,11 +78,48 @@ val sharedBudgetsModule = module {
             },
         )
     }
+    single {
+        val config = get<AppConfig>()
+        SharedBudgetLinkParser(config.linkHost, config.linkPort, scheme = config.linkScheme)
+    }
+    single { HeldSharedBudgetInvitation() } bind UserDataCleaner::class
+    viewModel { params ->
+        val held = get<HeldSharedBudgetInvitation>()
+        SharedBudgetInvitationViewModel(
+            token = params.get<String>(),
+            signedIn = { get<SessionManager>().state.value is AuthState.SignedIn },
+            manager = get(),
+            onAnswered = held::drop,
+        )
+    }
+    single { SharedBudgetApi(get()) }
+    single { SharedBudgetSyncHandler(get(), get()) } bind SyncHandler::class
+    single<SharedBudgetsManager> {
+        DefaultSharedBudgetsManager(
+            repository = get(),
+            api = get(),
+            engine = { get<SyncEngine>() },
+            runner = get(),
+            authState = get<SessionManager>().state,
+            deviceZoneId = { get<ClientInfo>().timezoneId() },
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        )
+    }
     single<SharedBudgetsService> { DefaultSharedBudgetsService(get(), accountId = { (get<SessionManager>().state.value as? AuthState.SignedIn)?.account?.userId }) }
+    viewModel { params ->
+        val id = params.get<String>().ifBlank { null }
+        SharedBudgetEditorViewModel(
+            budgetId = id,
+            manager = get(),
+            budget = { get<SharedBudgetsService>().observeEditor(it) },
+            currencies = get<BudgetsService>().observeChoices("", null).map { it.currencies },
+            categoryChoices = get<CategoriesService>().observeChoices(CategoryKind.Expense, null),
+        )
+    }
     viewModel { SharedBudgetsViewModel(get<SharedBudgetsService>().observeList { get<ProfileToday>().today() }) }
     viewModel { params ->
         val id = params.get<String>()
-        SharedBudgetDetailViewModel(get<SharedBudgetsService>().observeDetail(id) { get<ProfileToday>().today() })
+        SharedBudgetDetailViewModel(id, { back -> get<SharedBudgetsService>().observeDetail(id, { get<ProfileToday>().today() }, back) }, get())
     }
     single { SharedBudgetFeedApplier(get()) } bind FeedApplier::class
     single { SharedBudgetMemberFeedApplier(get()) } bind FeedApplier::class
