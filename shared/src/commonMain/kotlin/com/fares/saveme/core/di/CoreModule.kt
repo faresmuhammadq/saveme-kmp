@@ -14,6 +14,7 @@ import com.fares.saveme.core.sync.SyncLock
 import com.fares.saveme.core.sync.SyncRunner
 import com.fares.saveme.core.sync.SyncScheduler
 import com.fares.saveme.core.sync.SyncSignOutCleaner
+import com.fares.saveme.core.sync.SharedBudgetScopes
 import com.fares.saveme.core.sync.WalletScopes
 import com.fares.saveme.core.locale.AppLanguageStore
 import com.fares.saveme.core.network.ApiClient
@@ -74,6 +75,7 @@ val coreModule = module {
             scopes = get<AppDatabase>().syncScopeDao(),
             appliers = { getAll<FeedApplier>() },
             walletScopes = { getOrNull<WalletScopes>() },
+            sharedBudgetScopes = { getOrNull<SharedBudgetScopes>() },
             lock = get(),
             currentAccountId = { account.userId() },
         )
@@ -84,6 +86,7 @@ val coreModule = module {
             engine = get(),
             puller = get(),
             walletScopes = { getOrNull<WalletScopes>() },
+            sharedBudgetScopes = { getOrNull<SharedBudgetScopes>() },
             currentAccountId = { account.userId() },
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         )

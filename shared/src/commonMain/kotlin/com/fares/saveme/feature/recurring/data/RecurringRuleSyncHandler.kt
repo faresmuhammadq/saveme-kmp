@@ -94,6 +94,8 @@ class RecurringRuleSyncHandler(
             payoutRound = payload.payoutRound,
             payoutCategoryId = payload.payoutCategoryId,
             version = version,
+            sharedBudgetId = payload.sharedBudgetId,
+            sendSharedBudget = payload.sharedBudgetId != null || existing?.sharedBudgetId != null,
         )
     }
 

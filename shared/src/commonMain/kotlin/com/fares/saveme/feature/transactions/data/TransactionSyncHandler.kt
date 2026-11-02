@@ -120,6 +120,8 @@ class TransactionSyncHandler(
             counterparty = payload.counterparty,
             cleared = payload.cleared,
             version = restored.version,
+            sharedBudgetId = payload.sharedBudgetId,
+            sendSharedBudget = payload.sharedBudgetId != null || restored.sharedBudgetId != null,
         )
         // A failure here leaves the transaction live on the server; the engine shows it on the person's change (R-04).
         return api.put(pathWallet, change.recordId, request)
@@ -141,6 +143,9 @@ class TransactionSyncHandler(
             counterparty = payload.counterparty,
             cleared = payload.cleared,
             version = version,
+            sharedBudgetId = payload.sharedBudgetId,
+            // Only said when there is something to say, so a server older than v1.16 never sees the member.
+            sendSharedBudget = payload.sharedBudgetId != null || existing?.sharedBudgetId != null,
         )
     }
 
@@ -170,7 +175,7 @@ class TransactionSyncHandler(
     private fun TransactionDto.matches(payload: TransactionPayload) =
         date == payload.date && amountMinor == payload.amountMinor && categoryId == payload.categoryId &&
             description == payload.description && memo == payload.memo && counterparty == payload.counterparty &&
-            cleared == payload.cleared
+            cleared == payload.cleared && sharedBudgetId == payload.sharedBudgetId
 
     private fun ApiResult<TransactionDto>.toJson(): ApiResult<JsonElement> = when (this) {
         is ApiResult.Success -> ApiResult.Success(AppJson.encodeToJsonElement(TransactionDto.serializer(), value))

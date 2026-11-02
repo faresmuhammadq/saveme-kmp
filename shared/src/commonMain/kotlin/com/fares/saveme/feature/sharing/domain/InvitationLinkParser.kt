@@ -20,6 +20,8 @@ class InvitationLinkParser(
     private val linkHost: String,
     private val linkPort: Int?,
     private val scheme: String,
+    /** The path the link opens: `/invite` for a wallet, `/invite/shared-budget` for a Shared Budget. */
+    private val path: String = PATH,
 ) {
     fun parse(raw: String): InvitationLink? {
         val text = raw.trim()
@@ -31,7 +33,7 @@ class InvitationLinkParser(
         if (!authorityMatches(rest.substring(0, pathStart))) return null
 
         val pathAndQuery = rest.substring(pathStart).substringBefore('#')
-        if (pathAndQuery.substringBefore('?') != PATH) return null
+        if (pathAndQuery.substringBefore('?') != path) return null
 
         val token = pathAndQuery.substringAfter('?', "")
             .split('&')
@@ -48,9 +50,10 @@ class InvitationLinkParser(
         return host.equals(linkHost, ignoreCase = true) && port == linkPort
     }
 
-    private companion object {
+    companion object {
         const val PATH = "/invite"
-        const val TOKEN_PARAM = "token"
-        const val TOKEN_LENGTH = 43
+        const val SHARED_BUDGET_PATH = "/invite/shared-budget"
+        private const val TOKEN_PARAM = "token"
+        private const val TOKEN_LENGTH = 43
     }
 }

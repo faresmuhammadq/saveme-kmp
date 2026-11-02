@@ -1,6 +1,10 @@
 package com.fares.saveme.feature.recurring.ui.editor
 
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
+import com.fares.saveme.feature.categories.domain.model.CategorySource
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
+import com.fares.saveme.feature.transactions.ui.editor.OTHER_EXPENSE_KEY
+import com.fares.saveme.feature.transactions.ui.editor.limitedTo
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
 import com.fares.saveme.feature.recurring.domain.model.AmountBasis
 import com.fares.saveme.feature.recurring.domain.model.FrozenMembers
@@ -55,6 +59,12 @@ data class RuleEditorState(
     val category: CategoryDisplay? = null,
     val categoryChoices: CategoryChoices? = null,
     val categorySheetOpen: Boolean = false,
+    /** The Shared Budget every expense of the rule counts toward; null for none (backend ADR-0027). */
+    val budgetId: String? = null,
+    val budgetChoices: List<BudgetChoice> = emptyList(),
+    val budgetSheetOpen: Boolean = false,
+    /** True when the server refused the budget: it is cleared and the person is asked again. */
+    val budgetRefused: Boolean = false,
     val payoutCategoryId: String? = null,
     val payoutCategory: CategoryDisplay? = null,
     val payoutChoices: CategoryChoices? = null,
@@ -126,7 +136,16 @@ data class RuleEditorState(
     val isTransfer: Boolean get() = kind == TransactionKind.Transfer
     val showsDay: Boolean get() = !presetShaped && (frequency == Frequency.Monthly || frequency == Frequency.Yearly)
     val destinationsEmpty: Boolean get() = isTransfer && destinationChoices.isEmpty() && destinationId == null && isCreate
-    val categoriesEmpty: Boolean get() = !isTransfer && categoryChoices?.isEmpty == true && categoryId == null
+    val budgetsForWallet: List<BudgetChoice> get() = budgetChoices.filter { it.currency == currency }
+    val chosenBudget: BudgetChoice? get() = budgetChoices.firstOrNull { it.id == budgetId }
+
+    /** Only the rules of a person who may change them, that record expenses (a gam'eya's payout is not one). */
+    val budgetEditable: Boolean get() = loaded && canEdit && kind == TransactionKind.Expense && preset != Preset.Gameya
+    val budgetVisible: Boolean get() = budgetEditable && (budgetsForWallet.isNotEmpty() || budgetId != null)
+
+    /** All categories, or the chosen budget's list plus the platform's Other. */
+    val visibleCategoryChoices: CategoryChoices? get() = categoryChoices?.let { choices -> chosenBudget?.let { choices.limitedTo(it) } ?: choices }
+    val categoriesEmpty: Boolean get() = !isTransfer && visibleCategoryChoices?.isEmpty == true && categoryId == null
 
     val canSave: Boolean
         get() = loaded && canEdit && !saving && !busy && !noWallet && !destinationsEmpty && !categoriesEmpty
@@ -141,6 +160,10 @@ sealed interface RuleEditorIntent {
     data class AmountChanged(val text: String) : RuleEditorIntent
     data class BasisChosen(val basis: AmountBasis) : RuleEditorIntent
     data object CategoryClicked : RuleEditorIntent
+    data object BudgetClicked : RuleEditorIntent
+
+    /** A null id takes the rule out of any budget. */
+    data class BudgetChosen(val id: String?) : RuleEditorIntent
     data class CategoryChosen(val id: String) : RuleEditorIntent
     data object PayoutCategoryClicked : RuleEditorIntent
     data class PayoutCategoryChosen(val id: String) : RuleEditorIntent
@@ -196,6 +219,8 @@ sealed interface RuleEditorChange {
     data class Amount(val text: String) : RuleEditorChange
     data class Basis(val basis: AmountBasis) : RuleEditorChange
     data class Sheet(val sheet: EditorSheet?) : RuleEditorChange
+    data class Budgets(val choices: List<BudgetChoice>) : RuleEditorChange
+    data class Budget(val id: String?) : RuleEditorChange
     data class Category(val display: CategoryDisplay) : RuleEditorChange
     data class PayoutCategory(val display: CategoryDisplay) : RuleEditorChange
     data class Destination(val choice: WalletChoice) : RuleEditorChange
@@ -218,7 +243,7 @@ sealed interface RuleEditorChange {
 }
 
 /** Which sheet is open (only one at a time). */
-enum class EditorSheet { Wallet, Category, PayoutCategory, Destination, Frequency }
+enum class EditorSheet { Wallet, Category, PayoutCategory, Destination, Frequency, Budget }
 
 fun reduce(state: RuleEditorState, change: RuleEditorChange): RuleEditorState = when (change) {
     is RuleEditorChange.Loaded -> change.state.copy(loaded = true)
@@ -230,13 +255,15 @@ fun reduce(state: RuleEditorState, change: RuleEditorChange): RuleEditorState = 
         destinationName = if (state.isCreate && state.destinationId != null && change.choices.none { it.id == state.destinationId }) null else state.destinationName,
     )
     is RuleEditorChange.Choices -> state.copy(categoryChoices = change.choices)
+    is RuleEditorChange.Budgets -> state.copy(budgetChoices = change.choices)
+    is RuleEditorChange.Budget -> if (state.budgetEditable) state.withBudget(change.id) else state
     is RuleEditorChange.PayoutChoices -> state.copy(payoutChoices = change.choices)
     is RuleEditorChange.Wallet ->
         if (state.walletEditable) {
             state.copy(
                 walletId = change.choice.id, currency = change.choice.currency, destinationId = null, destinationName = null,
                 errors = state.errors - RuleField.Destination,
-            ).withAmountProblem()
+            ).withAmountProblem().withBudgetKeptOnlyIfFits()
         } else {
             state
         }
@@ -250,6 +277,7 @@ fun reduce(state: RuleEditorState, change: RuleEditorChange): RuleEditorState = 
                 categoryId = if (change.kind == state.kind) state.categoryId else null,
                 category = if (change.kind == state.kind) state.category else null,
                 categoryChoices = if (change.kind == state.kind) state.categoryChoices else null,
+                budgetId = if (change.kind == TransactionKind.Expense) state.budgetId else null,
                 destinationId = if (change.kind == TransactionKind.Transfer) state.destinationId else null,
                 destinationName = if (change.kind == TransactionKind.Transfer) state.destinationName else null,
                 errors = state.errors - RuleField.Category - RuleField.Destination,
@@ -265,6 +293,7 @@ fun reduce(state: RuleEditorState, change: RuleEditorChange): RuleEditorState = 
         payoutSheetOpen = change.sheet == EditorSheet.PayoutCategory,
         destinationSheetOpen = change.sheet == EditorSheet.Destination,
         frequencySheetOpen = change.sheet == EditorSheet.Frequency,
+        budgetSheetOpen = change.sheet == EditorSheet.Budget,
     )
     is RuleEditorChange.Category -> state.copy(
         categoryId = change.display.id, category = change.display, categorySheetOpen = false, errors = state.errors - RuleField.Category,
@@ -410,6 +439,27 @@ fun RuleEditorState.buildDraft(): DraftResult {
         occurrenceCount = if (usesCount) count else null,
         payoutRound = if (preset == Preset.Gameya) payoutRound else null,
         payoutCategoryId = if (preset == Preset.Gameya) payoutCategoryId else null,
+        sharedBudgetId = budgetId.takeIf { kind == TransactionKind.Expense && preset != Preset.Gameya },
     )
     return DraftResult.Ready(draft, if (fromDateMode) from else null)
 }
+
+/** Choosing a budget limits the categories; a category that no longer fits is dropped so the person picks again. */
+private fun RuleEditorState.withBudget(id: String?): RuleEditorState {
+    val budget = budgetChoices.firstOrNull { it.id == id }
+    val kept = category?.takeIf { shown ->
+        when {
+            budget != null -> budget.categories.any { it.id == shown.id } || shown.systemKey == OTHER_EXPENSE_KEY
+            else -> shown.source != CategorySource.Partner
+        }
+    }
+    return copy(
+        budgetId = budget?.id, budgetSheetOpen = false, budgetRefused = false,
+        categoryId = kept?.id ?: if (category == null) categoryId else null, category = kept,
+        errors = errors - RuleField.Budget - RuleField.Category,
+    )
+}
+
+/** A budget in another currency than the wallet's is dropped when the wallet changes. */
+private fun RuleEditorState.withBudgetKeptOnlyIfFits(): RuleEditorState =
+    if (budgetId != null && budgetChoices.none { it.id == budgetId && it.currency == currency }) withBudget(null) else this

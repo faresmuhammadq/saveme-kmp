@@ -69,7 +69,7 @@ class Migration8To9Test {
 
     private fun open(file: File) = Room.databaseBuilder<AppDatabase>(context, file.path)
         .setDriver(AndroidSQLiteDriver())
-        .addMigrations(MIGRATION_8_9, MIGRATION_9_10)
+        .addMigrations(MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
         .build()
 
     @Test

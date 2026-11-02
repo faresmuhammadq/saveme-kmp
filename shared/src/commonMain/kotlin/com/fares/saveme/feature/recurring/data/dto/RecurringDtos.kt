@@ -42,6 +42,7 @@ data class RecurringRuleDto(
     @SerialName("payout_category_id") val payoutCategoryId: String? = null,
     val timezone: String? = null,
     @SerialName("created_by") val createdBy: String? = null,
+    @SerialName("shared_budget_id") val sharedBudgetId: String? = null,
 )
 
 /** recurring.yaml `Occurrence`. */
@@ -103,6 +104,9 @@ data class RecurringRuleWriteRequest(
     val payoutRound: Int?,
     val payoutCategoryId: String?,
     val version: Long,
+    /** Sent only when there is something to say: a budget, or clearing one that was set; an older server never sees the member. */
+    val sharedBudgetId: String? = null,
+    val sendSharedBudget: Boolean = false,
 ) {
     fun toJson(): JsonObject = buildJsonObject {
         put("preset", JsonPrimitive(preset))
@@ -125,6 +129,7 @@ data class RecurringRuleWriteRequest(
         put("occurrence_count", occurrenceCount.orNull())
         put("payout_round", payoutRound.orNull())
         put("payout_category_id", payoutCategoryId.orNull())
+        if (sendSharedBudget) put("shared_budget_id", sharedBudgetId.orNull())
         put("version", JsonPrimitive(version))
     }
 }

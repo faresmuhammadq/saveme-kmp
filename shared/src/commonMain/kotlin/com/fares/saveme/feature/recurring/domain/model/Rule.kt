@@ -40,6 +40,8 @@ data class Rule(
     val updatedAt: Instant,
     /** Phone-only: the rule this one continues while it is unsent (research R-09). */
     val followsRuleId: String? = null,
+    /** The Shared Budget every expense of the rule counts toward; null for none. */
+    val sharedBudgetId: String? = null,
 ) {
     val preset: Preset get() = Preset.fromWire(presetWire)
     val status: RuleStatus get() = RuleStatus.fromWire(statusWire)
@@ -83,6 +85,7 @@ data class RuleDraft(
     val occurrenceCount: Int? = null,
     val payoutRound: Int? = null,
     val payoutCategoryId: String? = null,
+    val sharedBudgetId: String? = null,
 ) {
     /** Amounts, notes and people are the person's own; they are never printed (P-09.2). */
     override fun toString() = "RuleDraft($preset)"
@@ -107,7 +110,7 @@ data class RulePrefill(
 /** The fields a validation problem or a refusal can point at (contracts/ui-and-e2e.md tags). */
 enum class RuleField {
     Preset, Kind, Amount, Basis, Category, Destination, Frequency, Interval, Day, Start, End, Count, PayoutRound, PayoutCategory,
-    Note, Details, Person, From, Status;
+    Note, Details, Person, From, Status, Budget;
 
     companion object {
         fun fromName(name: String): RuleField? = when (name) {
@@ -124,6 +127,7 @@ enum class RuleField {
             "count" -> Count
             "payoutRound" -> PayoutRound
             "status" -> Status
+            "budget" -> Budget
             "preset" -> Preset
             "kind" -> Kind
             "note" -> Note

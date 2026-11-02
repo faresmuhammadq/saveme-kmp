@@ -25,6 +25,8 @@ data class TransactionDto(
     @SerialName("created_by") val createdBy: String = "",
     @SerialName("recurring_rule_id") val recurringRuleId: String? = null,
     @SerialName("occurrence_id") val occurrenceId: String? = null,
+    /** The Shared Budget it counts toward (backend ADR-0027); absent from a server older than v1.16. */
+    @SerialName("shared_budget_id") val sharedBudgetId: String? = null,
     val version: Long,
     @SerialName("change_seq") val changeSeq: Long = 0,
     @SerialName("created_at") val createdAt: String,
@@ -45,6 +47,9 @@ data class TransactionWriteRequest(
     val counterparty: String?,
     val cleared: Boolean,
     val version: Long,
+    /** The budget to count toward; null clears it. Sent only when [sendSharedBudget], so a server older than v1.16 never sees the member. */
+    val sharedBudgetId: String? = null,
+    val sendSharedBudget: Boolean = false,
 ) {
     /**
      * Built by hand because every nullable member is required-nullable: it is sent as an explicit
@@ -62,6 +67,7 @@ data class TransactionWriteRequest(
         put("counterparty", counterparty?.let { JsonPrimitive(it) } ?: JsonNull)
         put("cleared", JsonPrimitive(cleared))
         put("version", JsonPrimitive(version))
+        if (sendSharedBudget) put("shared_budget_id", sharedBudgetId?.let { JsonPrimitive(it) } ?: JsonNull)
     }
 }
 

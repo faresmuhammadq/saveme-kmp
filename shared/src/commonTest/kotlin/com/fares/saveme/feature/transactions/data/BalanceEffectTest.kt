@@ -44,7 +44,7 @@ class BalanceEffectTest {
 
     @Test
     fun everyPointerOfTheContractMapsToAFieldName() {
-        assertEquals(10, TransactionFields.byPointer.size)
+        assertEquals(11, TransactionFields.byPointer.size) // the 10 of spec 008 and `/shared_budget_id` (backend ADR-0027)
         assertEquals("amount", TransactionFields.byPointer["/amount_minor"])
         assertEquals("destination", TransactionFields.byPointer["/counter_wallet_id"])
     }

@@ -6,10 +6,14 @@ import kotlin.time.Instant
 
 enum class ChangeState { Waiting, Sending, Clash, Refused }
 
-/** The two sync scopes of the backend (api-conventions: Two scopes, and only two). */
+/**
+ * The sync scopes of the backend: the person's own, one per wallet, and from backend ADR-0027 one per Shared Budget (a third kind
+ * of feed scope that a person reads only as one of its members).
+ */
 enum class ScopeKind(val wire: String) {
     User("user"),
     Wallet("wallet"),
+    SharedBudget("shared_budget"),
     ;
 
     companion object {

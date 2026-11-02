@@ -2,6 +2,8 @@ package com.fares.saveme.feature.transactions.ui.editor
 
 import com.fares.saveme.feature.categories.domain.model.CategoryChoices
 import com.fares.saveme.feature.categories.domain.model.CategoryDisplay
+import com.fares.saveme.feature.categories.domain.model.CategorySource
+import com.fares.saveme.feature.transactions.domain.BudgetChoice
 import com.fares.saveme.feature.transactions.domain.DueItem
 import com.fares.saveme.feature.transactions.domain.MakeRecurringDraft
 import com.fares.saveme.feature.transactions.domain.TransactionAmount
@@ -81,6 +83,12 @@ data class TransactionEditorState(
     val category: CategoryDisplay? = null,
     val categoryChoices: CategoryChoices? = null,
     val categorySheetOpen: Boolean = false,
+    /** The Shared Budget this expense counts toward; null = none (backend ADR-0027). */
+    val budgetId: String? = null,
+    val budgetChoices: List<BudgetChoice> = emptyList(),
+    val budgetSheetOpen: Boolean = false,
+    /** True when this phone's change to the budget was refused: the person is asked again (FR-budget). */
+    val budgetRefused: Boolean = false,
     val destinationId: String? = null,
     val destinationName: String? = null,
     val destinationChoices: List<WalletChoice> = emptyList(),
@@ -132,10 +140,22 @@ data class TransactionEditorState(
     val canMakeRecurring: Boolean
         get() = loaded && isCreate && canEdit && !noWallet && walletId.isNotEmpty() && kind != TransactionKind.Unknown
 
+    /** The budgets that take this wallet's currency; only expenses qualify, and only their author may change it. */
+    val budgetsForWallet: List<BudgetChoice> get() = budgetChoices.filter { it.currency == currency }
+    val chosenBudget: BudgetChoice? get() = budgetChoices.firstOrNull { it.id == budgetId }
+    val budgetEditable: Boolean
+        get() = loaded && canEdit && kind == TransactionKind.Expense && (isCreate || addedBy == AddedBy.You)
+
+    /** The picker shows when there is something to pick or something already picked. */
+    val budgetVisible: Boolean get() = budgetEditable && (budgetsForWallet.isNotEmpty() || budgetId != null)
+
+    /** The categories on offer: all of them, or the chosen budget's list plus the platform's Other (backend ADR-0027). */
+    val visibleCategoryChoices: CategoryChoices? get() = categoryChoices?.let { choices -> chosenBudget?.let { choices.limitedTo(it) } ?: choices }
+
     val canOpenRule: Boolean get() = !isCreate && ruleId != null && ruleOnPhone
 
     val destinationsEmpty: Boolean get() = kind == TransactionKind.Transfer && destinationChoices.isEmpty() && destinationId == null
-    val categoriesEmpty: Boolean get() = categoryChoices?.isEmpty == true && categoryId == null
+    val categoriesEmpty: Boolean get() = visibleCategoryChoices?.isEmpty == true && categoryId == null
 
     val canSave: Boolean
         get() = loaded && canEdit && !saving && !busy && !noWallet &&
@@ -158,6 +178,9 @@ sealed interface TransactionEditorIntent {
     data object CategoryClicked : TransactionEditorIntent
     data class CategoryChosen(val id: String) : TransactionEditorIntent
     data object SheetDismissed : TransactionEditorIntent
+    data object BudgetClicked : TransactionEditorIntent
+    /** A null id takes the expense out of any budget. */
+    data class BudgetChosen(val id: String?) : TransactionEditorIntent
     data object DestinationClicked : TransactionEditorIntent
     data class DestinationChosen(val id: String) : TransactionEditorIntent
     data class NoteChanged(val text: String) : TransactionEditorIntent
@@ -207,6 +230,9 @@ sealed interface TransactionEditorChange {
     data class Wallets(val choices: List<WalletChoice>) : TransactionEditorChange
     data class Destinations(val choices: List<WalletChoice>) : TransactionEditorChange
     data class Choices(val choices: CategoryChoices) : TransactionEditorChange
+    data class Budgets(val choices: List<BudgetChoice>) : TransactionEditorChange
+    data class BudgetSheet(val open: Boolean) : TransactionEditorChange
+    data class Budget(val id: String?) : TransactionEditorChange
     data class Wallet(val choice: WalletChoice) : TransactionEditorChange
     data class Kind(val kind: TransactionKind) : TransactionEditorChange
     data class Amount(val text: String) : TransactionEditorChange
@@ -256,13 +282,17 @@ fun reduce(state: TransactionEditorState, change: TransactionEditorChange): Tran
         destinationId = if (state.isCreate && state.destinationId != null && change.choices.none { it.id == state.destinationId }) null else state.destinationId,
     )
     is TransactionEditorChange.Choices -> state.copy(categoryChoices = change.choices)
+    is TransactionEditorChange.Budgets -> state.copy(budgetChoices = change.choices)
+    is TransactionEditorChange.BudgetSheet -> state.copy(budgetSheetOpen = change.open && state.budgetEditable)
+    is TransactionEditorChange.Budget ->
+        if (state.budgetEditable) state.withBudget(change.id) else state
     is TransactionEditorChange.Wallet ->
         if (state.walletEditable) {
             // Switching keeps the amount, re-checks it against the new wallet's currency and clears the destination (FR-008).
             state.copy(
                 walletId = change.choice.id, currency = change.choice.currency, walletSheetOpen = false,
                 destinationId = null, destinationName = null, errors = state.errors - TransactionField.Destination,
-            ).withAmountProblem()
+            ).withAmountProblem().withBudgetKeptOnlyIfFits()
         } else {
             state
         }
@@ -276,6 +306,7 @@ fun reduce(state: TransactionEditorState, change: TransactionEditorChange): Tran
                 destinationId = if (change.kind == TransactionKind.Transfer) state.destinationId else null,
                 destinationName = if (change.kind == TransactionKind.Transfer) state.destinationName else null,
                 categoryChoices = if (change.kind == state.kind) state.categoryChoices else null,
+                budgetId = if (change.kind == TransactionKind.Expense) state.budgetId else null,
                 errors = state.errors - TransactionField.Category - TransactionField.Destination,
             )
         } else {
@@ -337,3 +368,43 @@ private fun TransactionEditorState.withAmountProblem(): TransactionEditorState {
         is TransactionAmount.Result.Invalid -> copy(errors = errors + (TransactionField.Amount to result.problem))
     }
 }
+
+/** The platform's "Other" for expenses: always on offer, so a budget never leaves an expense without a category. */
+const val OTHER_EXPENSE_KEY = "other_expense"
+
+/**
+ * Only the [budget]'s categories and the platform's Other (backend ADR-0027). The budget's list may name a partner's category;
+ * one that is also the person's own keeps the person's own display.
+ */
+fun CategoryChoices.limitedTo(budget: BudgetChoice): CategoryChoices {
+    val allowed = budget.categories.map { it.id }.toSet()
+    val ownKept = own.filter { it.id in allowed }
+    val partners = budget.categories.filter { line -> own.none { it.id == line.id } && defaults.none { it.id == line.id } }
+    val defaultsKept = defaults.filter { it.id in allowed || it.systemKey == OTHER_EXPENSE_KEY }
+    return CategoryChoices(
+        current = current?.takeIf { it.id in allowed || it.systemKey == OTHER_EXPENSE_KEY },
+        own = (ownKept + partners).sortedBy { it.name.lowercase() },
+        defaults = defaultsKept,
+    )
+}
+
+/** Choosing a budget limits the categories; a category that no longer fits is dropped so the person picks again. */
+private fun TransactionEditorState.withBudget(id: String?): TransactionEditorState {
+    val budget = budgetChoices.firstOrNull { it.id == id }
+    val kept = category?.takeIf { shown ->
+        when {
+            budget != null -> budget.categories.any { it.id == shown.id } || shown.systemKey == OTHER_EXPENSE_KEY
+            // Out of any budget a partner's category is not the person's to use.
+            else -> shown.source != CategorySource.Partner
+        }
+    }
+    return copy(
+        budgetId = budget?.id, budgetSheetOpen = false, budgetRefused = false,
+        categoryId = kept?.id ?: if (category == null) categoryId else null, category = kept,
+        errors = errors - TransactionField.Budget - TransactionField.Category,
+    )
+}
+
+/** A budget in another currency than the wallet's is dropped when the wallet changes. */
+private fun TransactionEditorState.withBudgetKeptOnlyIfFits(): TransactionEditorState =
+    if (budgetId != null && budgetChoices.none { it.id == budgetId && it.currency == currency }) withBudget(null) else this

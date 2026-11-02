@@ -29,6 +29,7 @@ import com.fares.saveme.feature.transactions.data.TransactionApi
 import com.fares.saveme.feature.transactions.data.TransactionRepository
 import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
 import com.fares.saveme.feature.transactions.data.dto.TransactionDto
+import com.fares.saveme.feature.transactions.data.local.BudgetUse
 import com.fares.saveme.feature.transactions.data.local.TransactionDao
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
 import com.fares.saveme.feature.transactions.data.local.WalletBalanceSum
@@ -70,6 +71,12 @@ class FakeTransactionDao : TransactionDao {
     }
 
     override fun observe(id: String): Flow<TransactionEntity?> = rows.map { it[id] }
+    override fun observeBudgetUse(accountId: String, since: String): Flow<List<BudgetUse>> = rows.map { map ->
+        val all = map.values
+        all.filter { it.accountId == accountId && it.createdBy == accountId && it.deletedAt == null && it.sharedBudgetId != null && it.date >= since }
+            .groupBy { it.sharedBudgetId!! }.map { (id, list) -> BudgetUse(id, list.size) }.sortedByDescending { it.uses }
+    }
+
     override fun observeForSpending(accountId: String, from: String, to: String, waitingIds: List<String>): Flow<List<TransactionEntity>> = rows.map { all ->
         all.values.filter {
             it.accountId == accountId && it.deletedAt == null &&

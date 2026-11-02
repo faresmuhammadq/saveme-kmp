@@ -42,6 +42,9 @@ sealed interface BudgetsIntent {
     data object Refresh : BudgetsIntent
     data object AddClicked : BudgetsIntent
     data class BudgetClicked(val id: String) : BudgetsIntent
+
+    /** "Shared budgets": the budgets the person tracks with others. */
+    data object SharedClicked : BudgetsIntent
     data object Back : BudgetsIntent
 }
 
@@ -49,6 +52,7 @@ sealed interface BudgetsEffect {
     /** A null [id] creates a budget. */
     data class OpenEditor(val id: String?) : BudgetsEffect
     data object RequireVerification : BudgetsEffect
+    data object OpenShared : BudgetsEffect
     data object NavigateBack : BudgetsEffect
 }
 

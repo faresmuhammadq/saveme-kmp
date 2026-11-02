@@ -85,6 +85,16 @@ import kotlinx.coroutines.launch
 import com.fares.saveme.feature.budgets.ui.editor.BudgetEditorRoute
 import com.fares.saveme.feature.budgets.ui.list.BudgetsEffect
 import com.fares.saveme.feature.budgets.ui.list.BudgetsRoute
+import com.fares.saveme.feature.sharedbudgets.domain.HeldSharedBudgetInvitation
+import com.fares.saveme.feature.sharedbudgets.domain.SharedBudgetLinkParser
+import com.fares.saveme.feature.sharedbudgets.ui.invitation.SharedBudgetInvitationEffect
+import com.fares.saveme.feature.sharedbudgets.ui.invitation.SharedBudgetInvitationRoute
+import com.fares.saveme.feature.sharedbudgets.ui.detail.SharedBudgetDetailEffect
+import com.fares.saveme.feature.sharedbudgets.ui.editor.SharedBudgetEditorEffect
+import com.fares.saveme.feature.sharedbudgets.ui.editor.SharedBudgetEditorRoute
+import com.fares.saveme.feature.sharedbudgets.ui.detail.SharedBudgetDetailRoute
+import com.fares.saveme.feature.sharedbudgets.ui.list.SharedBudgetsEffect
+import com.fares.saveme.feature.sharedbudgets.ui.list.SharedBudgetsRoute
 import com.fares.saveme.feature.categories.ui.editor.CategoryEditorEffect
 import com.fares.saveme.feature.sharing.domain.HeldInvitation
 import com.fares.saveme.feature.sharing.domain.InvitationLinkParser
@@ -162,6 +172,8 @@ fun AppNavHost(
     linkParser: AuthLinkParser = koinInject(),
     invitationParser: InvitationLinkParser = koinInject(),
     heldInvitation: HeldInvitation = koinInject(),
+    sharedBudgetParser: SharedBudgetLinkParser = koinInject(),
+    heldSharedBudget: HeldSharedBudgetInvitation = koinInject(),
     pushTaps: PushTapBus = koinInject(),
     promptGate: NotificationPromptGate = koinInject(),
     pushCoordinator: PushCoordinator = koinInject(),
@@ -188,6 +200,7 @@ fun AppNavHost(
                 appStack.resetTo(HomeKey)
                 // An invitation opened before sign-in is answered right after it, in the same app session (spec 013 FR-011).
                 heldInvitation.held.value?.let { appStack.add(InvitationKey(it.token)) }
+                heldSharedBudget.held.value?.let { appStack.add(SharedBudgetInvitationKey(it.token)) }
             }
             AuthState.Unknown -> Unit
         }
@@ -203,12 +216,14 @@ fun AppNavHost(
         deepLinks.links.collect { raw ->
             deepLinks.consume()
             val isSignedIn = sessionManager.state.value is AuthState.SignedIn
-            val route = routeLink(raw, isSignedIn, linkParser, invitationParser)
+            val route = routeLink(raw, isSignedIn, linkParser, invitationParser, sharedBudgetParser)
             val key = (route as? LinkRoute.Open)?.key ?: return@collect
             route.hold?.let(heldInvitation::hold)
+            route.holdSharedBudget?.let(heldSharedBudget::hold)
             if (isSignedIn) {
                 // A link opened while an invitation is showing replaces it (spec 013 edge cases).
                 if (key is InvitationKey && appStack.lastOrNull() is InvitationKey) appStack.removeAt(appStack.lastIndex)
+                if (key is SharedBudgetInvitationKey && appStack.lastOrNull() is SharedBudgetInvitationKey) appStack.removeAt(appStack.lastIndex)
                 appStack.add(key)
             } else {
                 // Replace a half-filled form on top, but keep the entry screen underneath.
@@ -587,8 +602,53 @@ fun AppNavHost(
                             onEffect = { effect ->
                                 when (effect) {
                                     is BudgetsEffect.OpenEditor -> appStack.add(BudgetEditorKey(effect.id))
+                                    BudgetsEffect.OpenShared -> appStack.add(SharedBudgetsKey)
                                     BudgetsEffect.NavigateBack -> appStack.pop()
                                     BudgetsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<SharedBudgetsKey> {
+                        SharedBudgetsRoute(
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is SharedBudgetsEffect.OpenBudget -> appStack.add(SharedBudgetKey(effect.id))
+                                    SharedBudgetsEffect.OpenNew -> appStack.add(SharedBudgetEditorKey(null))
+                                    SharedBudgetsEffect.NavigateBack -> appStack.pop()
+                                }
+                            },
+                        )
+                    }
+                    entry<SharedBudgetKey> { key ->
+                        SharedBudgetDetailRoute(
+                            budgetId = key.budgetId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    SharedBudgetDetailEffect.NavigateBack -> appStack.pop()
+                                    is SharedBudgetDetailEffect.OpenEditor -> appStack.add(SharedBudgetEditorKey(effect.id))
+                                    else -> Unit
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<SharedBudgetEditorKey> { key ->
+                        SharedBudgetEditorRoute(
+                            budgetId = key.budgetId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is SharedBudgetEditorEffect.Close -> {
+                                        appStack.pop()
+                                        effect.budgetId?.let { appStack.add(SharedBudgetKey(it)) }
+                                    }
+                                    SharedBudgetEditorEffect.Gone -> {
+                                        // Both the editor and the budget's own screen are over.
+                                        appStack.pop()
+                                        if (appStack.lastOrNull() is SharedBudgetKey) appStack.pop()
+                                    }
+                                    else -> Unit
                                 }
                             },
                             onRequireVerification = { emailNotVerifiedVisible = true },
@@ -734,6 +794,22 @@ fun AppNavHost(
                                 }
                             },
                             onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<SharedBudgetInvitationKey> { key ->
+                        SharedBudgetInvitationRoute(
+                            token = key.token,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    is SharedBudgetInvitationEffect.OpenBudget -> {
+                                        if (appStack.lastOrNull() is SharedBudgetInvitationKey) appStack.removeAt(appStack.lastIndex)
+                                        appStack.add(SharedBudgetKey(effect.budgetId))
+                                    }
+                                    SharedBudgetInvitationEffect.NavigateSignIn -> authStack.add(SignInKey())
+                                    SharedBudgetInvitationEffect.NavigateRegister -> authStack.add(RegisterKey())
+                                    SharedBudgetInvitationEffect.Close -> activeStack.pop()
+                                }
+                            },
                         )
                     }
                     entry<InvitationKey> { key ->
@@ -935,7 +1011,7 @@ private fun SnapshotStateList<NavKey>.resetTo(vararg keys: NavKey) {
 private fun tabOf(key: NavKey): MainTab? = when (key) {
     is HomeKey -> MainTab.Home
     is WalletsKey, is WalletDetailKey, is TransactionsKey -> MainTab.Wallets
-    is BudgetsKey -> MainTab.Budgets
+    is BudgetsKey, is SharedBudgetsKey, is SharedBudgetKey -> MainTab.Budgets
     is ReportsKey, is ReportCategoriesKey -> MainTab.Reports
     else -> null
 }

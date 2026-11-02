@@ -258,18 +258,21 @@ class AppGraphTest {
         assertNotNull(koin.get<SyncEngine>())
         val appliers = koin.getAll<FeedApplier>()
         val pairs = appliers.map { it.scopeKind to it.rowType }
-        assertEquals(12, appliers.size)
+        assertEquals(17, appliers.size)
         assertEquals(
             setOf(
                 ScopeKind.User to "profile", ScopeKind.User to "device_session", ScopeKind.User to "category", ScopeKind.User to "wallet_member",
                 ScopeKind.Wallet to "wallet", ScopeKind.Wallet to "wallet_member", ScopeKind.Wallet to "category_reference", ScopeKind.Wallet to "transaction",
                 ScopeKind.Wallet to "recurring_rule", ScopeKind.Wallet to "occurrence", ScopeKind.User to "budget",
                 ScopeKind.Wallet to "invitation",
+                ScopeKind.User to "shared_budget_member", ScopeKind.SharedBudget to "shared_budget", ScopeKind.SharedBudget to "shared_budget_member",
+                ScopeKind.SharedBudget to "shared_budget_line", ScopeKind.SharedBudget to "shared_budget_entry",
             ),
             pairs.toSet(),
         )
         assertEquals("one applier per (scope kind, row type)", pairs.size, pairs.toSet().size)
         assertEquals(1, koin.getAll<WalletScopes>().size)
+        assertTrue(koin.get<com.fares.saveme.core.sync.SharedBudgetScopes>() is com.fares.saveme.feature.sharedbudgets.domain.DefaultSharedBudgetScopes)
         assertTrue(koin.get<WalletScopes>() is DefaultWalletScopes)
         assertTrue(koin.getAll<UserDataCleaner>().any { it is SyncSignOutCleaner })
         assertNotNull(koin.get<AccountSyncCoordinator>())

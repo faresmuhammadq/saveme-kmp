@@ -11,6 +11,7 @@ class DatabaseCleaner(private val database: AppDatabase) : UserDataCleaner {
         database.profileDao().deleteAll()
         database.deviceSessionDao().deleteAll()
         database.invitationDao().deleteAll()
+        database.sharedBudgetDao().deleteEverything()
         database.budgetProgressDao().deleteAll()
         database.budgetDao().deleteAll()
         database.occurrenceDao().deleteAll()
