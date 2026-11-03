@@ -97,6 +97,7 @@ class WalletDetailViewModel(
                 viewModelScope.launch { readWallet() }
             }
             WalletDetailIntent.AddTransactionClicked -> if (currentState.canAddTransaction) sendEffect(WalletDetailEffect.OpenAddTransaction(walletId))
+            WalletDetailIntent.AdjustBalanceClicked -> if (currentState.canAddTransaction) sendEffect(WalletDetailEffect.OpenAdjustBalance(walletId))
             WalletDetailIntent.EditClicked -> if (currentState.canEdit) sendEffect(WalletDetailEffect.OpenEditor(walletId))
             WalletDetailIntent.ArchiveClicked -> if (currentState.canEdit) confirm(DetailConfirm.Archive)
             WalletDetailIntent.DeleteClicked -> if (currentState.canEdit) confirm(DetailConfirm.Delete)

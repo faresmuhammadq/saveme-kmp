@@ -586,6 +586,9 @@
     <string name="filter_apply">عرض النتائج</string>
     <string name="filter_clear_all">مسح الكل</string>
     <string name="tx_kind_expense">مصروف</string>
+    <string name="tx_kind_adjustment">تعديل الرصيد</string>
+    <string name="tx_kind_adjustment_in">زيادة في الرصيد</string>
+    <string name="tx_kind_adjustment_out">خصم من الرصيد</string>
     <string name="tx_kind_income">دخل</string>
     <string name="tx_kind_transfer">تحويل</string>
     <string name="tx_kind_unknown">أخرى</string>

@@ -25,6 +25,8 @@ object ReportCalculator {
     private const val INCOME = "income"
     private const val EXPENSE = "expense"
     private const val TRANSFER = "transfer"
+    private const val ADJUSTMENT_IN = "adjustment_in"
+    private const val ADJUSTMENT_OUT = "adjustment_out"
 
     /**
      * @param covered the wallets the report covers
@@ -44,6 +46,8 @@ object ReportCalculator {
         var expenses = 0L
         var transfersIn = 0L
         var transfersOut = 0L
+        var adjustmentsIn = 0L
+        var adjustmentsOut = 0L
         var start = 0L
         var inRange = 0L
         for (id in covered) {
@@ -61,6 +65,8 @@ object ReportCalculator {
             when (line.kind) {
                 INCOME -> if (line.walletId in covered) income = addExact(income, line.amountMinor)
                 EXPENSE -> if (line.walletId in covered) expenses = addExact(expenses, line.amountMinor)
+                ADJUSTMENT_IN -> if (line.walletId in covered) adjustmentsIn = addExact(adjustmentsIn, line.amountMinor)
+                ADJUSTMENT_OUT -> if (line.walletId in covered) adjustmentsOut = addExact(adjustmentsOut, line.amountMinor)
                 TRANSFER -> {
                     val sourceCovered = line.walletId in covered
                     val destinationCovered = line.counterWalletId != null && line.counterWalletId in covered
@@ -75,6 +81,8 @@ object ReportCalculator {
             net = subtractExact(income, expenses),
             transfersIn = transfersIn,
             transfersOut = transfersOut,
+            adjustmentsIn = adjustmentsIn,
+            adjustmentsOut = adjustmentsOut,
             balanceStart = start,
             balanceEnd = addExact(start, inRange),
             currency = currency,
@@ -85,6 +93,8 @@ object ReportCalculator {
     private fun coveredEffect(line: LedgerLine, covered: Set<String>): Long? = when (line.kind) {
         INCOME -> if (line.walletId in covered) line.amountMinor else 0L
         EXPENSE -> if (line.walletId in covered) -line.amountMinor else 0L
+        ADJUSTMENT_IN -> if (line.walletId in covered) line.amountMinor else 0L
+        ADJUSTMENT_OUT -> if (line.walletId in covered) -line.amountMinor else 0L
         TRANSFER -> {
             var effect = 0L
             if (line.walletId in covered) effect = subtractExact(effect, line.amountMinor)

@@ -15,6 +15,7 @@ import com.fares.saveme.feature.transactions.data.NewTransaction
 import com.fares.saveme.feature.transactions.data.TransactionRepository
 import com.fares.saveme.feature.transactions.data.TransactionSyncHandler
 import com.fares.saveme.feature.transactions.data.local.TransactionEntity
+import com.fares.saveme.feature.transactions.domain.model.AdjustTarget
 import com.fares.saveme.feature.transactions.domain.model.CreateResult
 import com.fares.saveme.feature.transactions.domain.model.SaveResult
 import com.fares.saveme.feature.transactions.domain.model.Transaction
@@ -98,6 +99,9 @@ interface TransactionsService {
 
     /** When the wallet's feed was last read completely, null before the first read (spec 014 R-11: a wallet report's "Updated"). */
     fun observeFeedReadAt(walletId: String): Flow<Instant?> = flowOf(null)
+
+    /** The wallet as the "Adjust balance" screen needs it; null when gone or hidden by a deletion that waits to sync. */
+    fun observeAdjustTarget(walletId: String): Flow<AdjustTarget?> = flowOf(null)
 }
 
 class DefaultTransactionsService(
@@ -151,6 +155,15 @@ class DefaultTransactionsService(
 
     override fun observeFeedReadAt(walletId: String): Flow<Instant?> =
         repository.observeRefreshedAt(walletId).map { stamp -> stamp?.let { runCatching { Instant.parse(it) }.getOrNull() } }
+
+    override fun observeAdjustTarget(walletId: String): Flow<AdjustTarget?> = wallets.observeWallet(walletId).map { view ->
+        view?.takeIf { !it.hidden }?.let {
+            AdjustTarget(
+                walletId = it.id, name = it.shown.name, currency = it.shown.currency, isLiability = it.isLiability,
+                balanceMinor = it.displayedBalanceMinor, canAdjust = it.canWrite() && !it.archived,
+            )
+        }
+    }
 
     private class ListInputs(
         val stored: List<TransactionEntity>,
@@ -280,8 +293,10 @@ class DefaultTransactionsService(
     /** Trims text (blank becomes none) and drops what does not apply to the kind (FR-002). */
     private fun clean(draft: TransactionDraft): TransactionDraft {
         val transfer = draft.kind == TransactionKind.Transfer
+        val adjustment = draft.kind.isAdjustment
         return draft.copy(
-            categoryId = draft.categoryId?.takeIf { !transfer && it.isNotBlank() },
+            categoryId = draft.categoryId?.takeIf { !transfer && !adjustment && it.isNotBlank() },
+            sharedBudgetId = draft.sharedBudgetId?.takeIf { !adjustment },
             counterWalletId = draft.counterWalletId?.takeIf { transfer && it.isNotBlank() },
             description = draft.description.trimmedOrNull(),
             memo = draft.memo.trimmedOrNull(),
@@ -307,6 +322,7 @@ class DefaultTransactionsService(
                     problems[TransactionField.Destination] = TransactionFieldProblem.DestinationRequired
                 }
             }
+            TransactionKind.AdjustmentIn, TransactionKind.AdjustmentOut -> Unit
             TransactionKind.Unknown -> if (creating) problems[TransactionField.Kind] = TransactionFieldProblem.KindUnknown
         }
         if (codePointLength(draft.description) > MAX_NOTE) problems[TransactionField.Note] = TransactionFieldProblem.TooLong(MAX_NOTE)
@@ -357,7 +373,8 @@ internal fun permissions(
 ): Pair<Boolean, Boolean> {
     val source = context.wallets[walletId]
     return when (TransactionKind.fromWire(kind)) {
-        TransactionKind.Income, TransactionKind.Expense -> (source?.canWrite() == true).let { it to it }
+        TransactionKind.Income, TransactionKind.Expense, TransactionKind.AdjustmentIn, TransactionKind.AdjustmentOut ->
+            (source?.canWrite() == true).let { it to it }
         TransactionKind.Unknown -> false to (source?.canWrite() == true)
         TransactionKind.Transfer -> {
             val counter = counterWalletId?.let { context.wallets[it] }

@@ -43,6 +43,8 @@ data class ReportSummaryDto(
     val net: ReportMoneyDto,
     @SerialName("transfers_in") val transfersIn: ReportMoneyDto,
     @SerialName("transfers_out") val transfersOut: ReportMoneyDto,
+    @SerialName("adjustments_in") val adjustmentsIn: ReportMoneyDto? = null,
+    @SerialName("adjustments_out") val adjustmentsOut: ReportMoneyDto? = null,
     @SerialName("balance_start") val balanceStart: ReportMoneyDto,
     @SerialName("balance_end") val balanceEnd: ReportMoneyDto,
     val planned: PlannedSummaryDto? = null,

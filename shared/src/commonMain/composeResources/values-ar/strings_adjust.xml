@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="adj_action">تعديل الرصيد</string>
+    <string name="adj_title">تعديل الرصيد</string>
+    <string name="adj_current">الرصيد الحالي</string>
+    <string name="adj_current_owed">المبلغ المستحق حاليًا</string>
+    <string name="adj_mode_new_balance">رصيد جديد</string>
+    <string name="adj_mode_change">إضافة أو خصم</string>
+    <string name="adj_field_new_balance">كم تحتوي المحفظة الآن</string>
+    <string name="adj_field_new_owed">كم عليك الآن</string>
+    <string name="adj_field_change">المبلغ</string>
+    <string name="adj_raise">إضافة</string>
+    <string name="adj_lower">خصم</string>
+    <string name="adj_raise_owed">عليّ أكثر</string>
+    <string name="adj_lower_owed">عليّ أقل</string>
+    <string name="adj_preview_balance">سيصبح الرصيد %1$s (%2$s)</string>
+    <string name="adj_preview_owed">سيكون عليك %1$s (%2$s)</string>
+    <string name="adj_note_hint">السبب (اختياري)</string>
+    <string name="adj_updated">آخر تحديث %1$s</string>
+    <string name="adj_explainer">يضيف قيدًا بتاريخ إلى المحفظة. لا يُحسب كمصروف ولا كدخل.</string>
+    <string name="adj_save">حفظ التعديل</string>
+    <string name="adj_opening_hint">لتصحيح الرصيد الحالي، استخدم تعديل الرصيد من المحفظة بدلًا من ذلك.</string>
+</resources>

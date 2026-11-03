@@ -93,6 +93,7 @@ import saveme.shared.generated.resources.calm_rep_more
 import saveme.shared.generated.resources.calm_rep_net_period
 import saveme.shared.generated.resources.calm_rep_spending_trend
 import saveme.shared.generated.resources.calm_rep_spent
+import saveme.shared.generated.resources.calm_rep_adjustments
 import saveme.shared.generated.resources.calm_rep_transfers
 import saveme.shared.generated.resources.calm_rep_where
 import saveme.shared.generated.resources.cd_back
@@ -405,6 +406,13 @@ private fun SummarySection(state: ReportsState) {
                     Figure(stringResource(Res.string.calm_rep_transfers), formatMoney(figures.transfersIn, currency, showPlus = true), "reports.summary.transfers_in")
                     Text("  /  ", style = AppTheme.type.caption, color = AppTheme.colors.ink2)
                     Figure(null, formatMoney(-figures.transfersOut, currency), "reports.summary.transfers_out")
+                }
+                if (figures.adjustmentsIn != 0L || figures.adjustmentsOut != 0L) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                        Figure(stringResource(Res.string.calm_rep_adjustments), formatMoney(figures.adjustmentsIn, currency, showPlus = true), "reports.summary.adjustments_in")
+                        Text("  /  ", style = AppTheme.type.caption, color = AppTheme.colors.ink2)
+                        Figure(null, formatMoney(-figures.adjustmentsOut, currency), "reports.summary.adjustments_out")
+                    }
                 }
                 if (planned != null && planned.transfersIn != 0L) ScheduledLine(planned.transfersIn, currency, "reports.planned.transfers_in")
                 if (planned != null && planned.transfersOut != 0L) ScheduledLine(planned.transfersOut, currency, "reports.planned.transfers_out")

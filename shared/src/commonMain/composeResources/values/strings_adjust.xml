@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="adj_action">Adjust balance</string>
+    <string name="adj_title">Adjust balance</string>
+    <string name="adj_current">Current balance</string>
+    <string name="adj_current_owed">Currently owed</string>
+    <string name="adj_mode_new_balance">New balance</string>
+    <string name="adj_mode_change">Add or take away</string>
+    <string name="adj_field_new_balance">What the wallet holds now</string>
+    <string name="adj_field_new_owed">What you owe now</string>
+    <string name="adj_field_change">Amount</string>
+    <string name="adj_raise">Add</string>
+    <string name="adj_lower">Take away</string>
+    <string name="adj_raise_owed">Owe more</string>
+    <string name="adj_lower_owed">Owe less</string>
+    <string name="adj_preview_balance">Balance will be %1$s (%2$s)</string>
+    <string name="adj_preview_owed">You will owe %1$s (%2$s)</string>
+    <string name="adj_note_hint">Why (optional)</string>
+    <string name="adj_updated">Updated %1$s</string>
+    <string name="adj_explainer">Adds a dated entry to the wallet. It is not counted as spending or income.</string>
+    <string name="adj_save">Save adjustment</string>
+    <string name="adj_opening_hint">To correct today’s balance, use Adjust balance on the wallet instead.</string>
+</resources>

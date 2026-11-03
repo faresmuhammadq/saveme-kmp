@@ -21,6 +21,7 @@
     <string name="calm_rep_under_one">under 1%</string>
     <string name="calm_rep_balance">Balance</string>
     <string name="calm_rep_transfers">Transfers</string>
+    <string name="calm_rep_adjustments">Balance adjustments</string>
     <string name="calm_shr_invite_to">Invite to %1$s</string>
     <string name="calm_shr_invited_as">Invited as %1$s</string>
     <string name="calm_shr_joined">Joined %1$s</string>

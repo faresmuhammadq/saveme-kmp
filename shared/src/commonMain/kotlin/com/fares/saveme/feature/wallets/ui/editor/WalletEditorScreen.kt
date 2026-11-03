@@ -72,6 +72,7 @@ import com.fares.saveme.feature.wallets.ui.label
 import com.fares.saveme.feature.wallets.ui.text
 import org.jetbrains.compose.resources.stringResource
 import saveme.shared.generated.resources.Res
+import saveme.shared.generated.resources.adj_opening_hint
 import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.cd_wallet_color_0
 import saveme.shared.generated.resources.cd_wallet_color_1
@@ -320,6 +321,7 @@ private fun FieldsCard(state: WalletEditorState, onIntent: (WalletEditorIntent) 
             currencyError,
             amountError,
             stringResource(Res.string.wallet_currency_locked_note).takeIf { state.currencyLocked },
+            stringResource(Res.string.adj_opening_hint).takeIf { state.walletId != null },
         ).forEachIndexed { index, text ->
             Text(
                 text,

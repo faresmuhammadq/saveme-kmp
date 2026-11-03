@@ -72,6 +72,7 @@ sealed interface WalletDetailIntent {
     data object ExportClicked : WalletDetailIntent
     data object JoiningRetryClicked : WalletDetailIntent
     data object AddTransactionClicked : WalletDetailIntent
+    data object AdjustBalanceClicked : WalletDetailIntent
     data object EditClicked : WalletDetailIntent
     data object ArchiveClicked : WalletDetailIntent
     data object DeleteClicked : WalletDetailIntent
@@ -97,6 +98,7 @@ sealed interface WalletDetailEffect {
     data class NavigateActivity(val walletId: String) : WalletDetailEffect
     data class OpenExport(val walletId: String) : WalletDetailEffect
     data class OpenAddTransaction(val walletId: String) : WalletDetailEffect
+    data class OpenAdjustBalance(val walletId: String) : WalletDetailEffect
     data class OpenEditor(val id: String) : WalletDetailEffect
     data object NavigateBack : WalletDetailEffect
     data class ShowMessage(val message: DetailMessage) : WalletDetailEffect

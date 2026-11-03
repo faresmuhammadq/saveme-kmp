@@ -2,7 +2,7 @@ package com.fares.saveme.feature.wallets.domain.model
 
 import kotlinx.datetime.LocalDate
 
-enum class RecentKind { Expense, Income, Transfer, Other }
+enum class RecentKind { Expense, Income, Transfer, Adjustment, Other }
 
 enum class RecentDirection { In, Out, None }
 

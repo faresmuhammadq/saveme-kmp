@@ -27,6 +27,8 @@ import saveme.shared.generated.resources.category_choice_own
 import saveme.shared.generated.resources.category_choice_title
 import saveme.shared.generated.resources.category_unavailable
 import saveme.shared.generated.resources.tx_field_category
+import saveme.shared.generated.resources.tx_kind_adjustment_in
+import saveme.shared.generated.resources.tx_kind_adjustment_out
 import saveme.shared.generated.resources.tx_kind_expense
 import saveme.shared.generated.resources.tx_kind_income
 import saveme.shared.generated.resources.tx_kind_transfer
@@ -41,6 +43,8 @@ internal fun TransactionKind.kindLabelRes(): StringResource = when (this) {
     TransactionKind.Expense -> Res.string.tx_kind_expense
     TransactionKind.Income -> Res.string.tx_kind_income
     TransactionKind.Transfer -> Res.string.tx_kind_transfer
+    TransactionKind.AdjustmentIn -> Res.string.tx_kind_adjustment_in
+    TransactionKind.AdjustmentOut -> Res.string.tx_kind_adjustment_out
     TransactionKind.Unknown -> Res.string.tx_kind_unknown
 }
 

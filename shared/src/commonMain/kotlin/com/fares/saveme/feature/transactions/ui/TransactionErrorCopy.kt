@@ -28,6 +28,8 @@ import saveme.shared.generated.resources.tx_error_destination_required
 import saveme.shared.generated.resources.tx_error_field_invalid
 import saveme.shared.generated.resources.tx_error_immutable
 import saveme.shared.generated.resources.tx_error_too_long
+import saveme.shared.generated.resources.tx_kind_adjustment_in
+import saveme.shared.generated.resources.tx_kind_adjustment_out
 import saveme.shared.generated.resources.tx_kind_expense
 import saveme.shared.generated.resources.tx_kind_income
 import saveme.shared.generated.resources.tx_kind_transfer
@@ -106,6 +108,8 @@ fun TransactionKind.labelRes(): StringResource = when (this) {
     TransactionKind.Expense -> Res.string.tx_kind_expense
     TransactionKind.Income -> Res.string.tx_kind_income
     TransactionKind.Transfer -> Res.string.tx_kind_transfer
+    TransactionKind.AdjustmentIn -> Res.string.tx_kind_adjustment_in
+    TransactionKind.AdjustmentOut -> Res.string.tx_kind_adjustment_out
     TransactionKind.Unknown -> Res.string.tx_kind_unknown
 }
 

@@ -103,7 +103,7 @@ class ReportsHomeOverview(
                             RecentKind.Expense -> HomeRecentKind.Expense
                             RecentKind.Income -> HomeRecentKind.Income
                             RecentKind.Transfer -> HomeRecentKind.Transfer
-                            RecentKind.Other -> HomeRecentKind.Other
+                            RecentKind.Adjustment, RecentKind.Other -> HomeRecentKind.Other
                         },
                         title = tx.note ?: tx.title,
                         categoryName = tx.title,

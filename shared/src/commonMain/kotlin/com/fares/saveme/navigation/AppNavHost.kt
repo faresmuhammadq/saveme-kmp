@@ -128,6 +128,8 @@ import com.fares.saveme.feature.recurring.ui.rule.RuleDetailEffect
 import com.fares.saveme.feature.recurring.ui.rule.RuleDetailRoute
 import com.fares.saveme.feature.recurring.ui.occurrence.OccurrenceEffect
 import com.fares.saveme.feature.recurring.ui.occurrence.OccurrenceRoute
+import com.fares.saveme.feature.transactions.ui.adjust.BalanceAdjustEffect
+import com.fares.saveme.feature.transactions.ui.adjust.BalanceAdjustRoute
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorEffect
 import com.fares.saveme.feature.wallets.ui.editor.WalletEditorRoute
 import com.fares.saveme.feature.wallets.ui.list.WalletsEffect
@@ -504,6 +506,7 @@ fun AppNavHost(
                                     is WalletDetailEffect.OpenExport -> appStack.add(ExportRequestKey(effect.walletId))
                                     is WalletDetailEffect.OpenReport -> appStack.add(ReportsKey(effect.walletId))
                                     is WalletDetailEffect.OpenAddTransaction -> appStack.add(TransactionEditorKey(walletId = effect.walletId))
+                                    is WalletDetailEffect.OpenAdjustBalance -> appStack.add(BalanceAdjustKey(effect.walletId))
                                     WalletDetailEffect.NavigateBack -> appStack.pop()
                                     is WalletDetailEffect.ShowMessage, WalletDetailEffect.RequireVerification -> Unit // shown by the route
                                 }
@@ -558,6 +561,18 @@ fun AppNavHost(
                                     is TransactionsEffect.OpenRecurring -> appStack.add(RecurringKey(effect.walletId))
                                     TransactionsEffect.Back -> appStack.pop()
                                     TransactionsEffect.RequireVerification -> Unit // routed to onRequireVerification
+                                }
+                            },
+                            onRequireVerification = { emailNotVerifiedVisible = true },
+                        )
+                    }
+                    entry<BalanceAdjustKey> { key ->
+                        BalanceAdjustRoute(
+                            walletId = key.walletId,
+                            onEffect = { effect ->
+                                when (effect) {
+                                    BalanceAdjustEffect.Close -> appStack.pop()
+                                    BalanceAdjustEffect.RequireVerification, is BalanceAdjustEffect.ShowMessage -> Unit // shown by the route
                                 }
                             },
                             onRequireVerification = { emailNotVerifiedVisible = true },

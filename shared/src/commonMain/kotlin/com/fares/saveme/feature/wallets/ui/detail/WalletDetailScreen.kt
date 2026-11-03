@@ -41,6 +41,7 @@ import com.fares.saveme.designsystem.icon.WlcHistory
 import com.fares.saveme.designsystem.icon.WlcPending
 import com.fares.saveme.designsystem.icon.WlcPersonAdd
 import com.fares.saveme.designsystem.icon.WlcRecurring
+import saveme.shared.generated.resources.adj_action
 import saveme.shared.generated.resources.cd_back
 import saveme.shared.generated.resources.invite_action
 import saveme.shared.generated.resources.member_you
@@ -75,6 +76,7 @@ import saveme.shared.generated.resources.tx_added_by
 import saveme.shared.generated.resources.tx_added_by_former
 import saveme.shared.generated.resources.tx_added_by_other
 import saveme.shared.generated.resources.tx_another_wallet
+import saveme.shared.generated.resources.tx_kind_adjustment
 import saveme.shared.generated.resources.tx_kind_expense
 import saveme.shared.generated.resources.tx_kind_income
 import saveme.shared.generated.resources.tx_kind_transfer
@@ -243,6 +245,9 @@ fun WalletDetailScreen(
 private fun WalletMenu(state: WalletDetailState, view: WalletView, onIntent: (WalletDetailIntent) -> Unit) {
     CalmCard(padding = PaddingValues(0.dp)) {
         val rows = buildList<@Composable () -> Unit> {
+            if (state.canAddTransaction) {
+                add { CalmRow(stringResource(Res.string.adj_action), Modifier.testTag("walletDetail.adjustBalance")) { onIntent(WalletDetailIntent.AdjustBalanceClicked) } }
+            }
             if (state.canEdit) {
                 add { CalmRow(stringResource(Res.string.wallet_edit), Modifier.testTag("walletDetail.edit")) { onIntent(WalletDetailIntent.EditClicked) } }
                 if (!view.archived) {
@@ -483,6 +488,7 @@ private fun RecentRow(item: RecentTransaction, today: LocalDate, shared: Boolean
             when (item.kind) {
                 RecentKind.Income -> Res.string.tx_kind_income
                 RecentKind.Expense -> Res.string.tx_kind_expense
+                RecentKind.Adjustment -> Res.string.tx_kind_adjustment
                 else -> Res.string.tx_kind_unknown
             },
         )

@@ -34,6 +34,7 @@ import com.fares.saveme.feature.transactions.domain.TransactionPostings
 import com.fares.saveme.feature.transactions.domain.TransactionsService
 import com.fares.saveme.feature.transactions.domain.TransactionsSyncCoordinator
 import com.fares.saveme.feature.transactions.domain.TransactionsWalletCleanup
+import com.fares.saveme.feature.transactions.ui.adjust.BalanceAdjustViewModel
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorArgs
 import com.fares.saveme.feature.transactions.ui.editor.TransactionEditorViewModel
 import com.fares.saveme.feature.transactions.ui.list.TransactionsViewModel
@@ -191,6 +192,17 @@ val transactionsModule = module {
             due = get<RecurringLinks>().observeDue(walletId),
             confirmationStatus = { id -> get<RecurringLinks>().observeConfirmationStatus(id) },
             planLimited = get<SharingGlance>().observePlanLimited(walletId),
+        )
+    }
+    viewModel { params ->
+        val walletId = params.get<String>()
+        val transactions = get<TransactionsService>()
+        BalanceAdjustViewModel(
+            walletId = walletId,
+            observeTarget = { id -> transactions.observeAdjustTarget(id) },
+            observeFeedReadAt = { id -> transactions.observeFeedReadAt(id) },
+            today = { get<ProfileToday>().today() },
+            create = { transactions.create(it) },
         )
     }
     viewModel { params ->
