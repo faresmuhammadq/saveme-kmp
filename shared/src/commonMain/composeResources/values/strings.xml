@@ -558,6 +558,9 @@
     <string name="filter_apply">Show results</string>
     <string name="filter_clear_all">Clear all</string>
     <string name="tx_kind_expense">Expense</string>
+    <string name="tx_kind_adjustment">Balance adjustment</string>
+    <string name="tx_kind_adjustment_in">Balance added</string>
+    <string name="tx_kind_adjustment_out">Balance reduced</string>
     <string name="tx_kind_income">Income</string>
     <string name="tx_kind_transfer">Transfer</string>
     <string name="tx_kind_unknown">Other</string>

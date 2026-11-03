@@ -22,6 +22,7 @@ internal object ReportMapping {
     fun summaryFigures(dto: ReportSummaryDto) = SummaryFigures(
         income = dto.income.amountMinor, expenses = dto.expenses.amountMinor, net = dto.net.amountMinor,
         transfersIn = dto.transfersIn.amountMinor, transfersOut = dto.transfersOut.amountMinor,
+        adjustmentsIn = dto.adjustmentsIn?.amountMinor ?: 0L, adjustmentsOut = dto.adjustmentsOut?.amountMinor ?: 0L,
         balanceStart = dto.balanceStart.amountMinor, balanceEnd = dto.balanceEnd.amountMinor, currency = dto.currency,
     )
 
@@ -39,6 +40,8 @@ internal object ReportMapping {
         check("net", phone.net, server.net.amountMinor)
         check("transfers_in", phone.transfersIn, server.transfersIn.amountMinor)
         check("transfers_out", phone.transfersOut, server.transfersOut.amountMinor)
+        check("adjustments_in", phone.adjustmentsIn, server.adjustmentsIn?.amountMinor ?: 0L)
+        check("adjustments_out", phone.adjustmentsOut, server.adjustmentsOut?.amountMinor ?: 0L)
         check("balance_start", phone.balanceStart, server.balanceStart.amountMinor)
         check("balance_end", phone.balanceEnd, server.balanceEnd.amountMinor)
         if (phone.currency != server.currency) members += "currency"

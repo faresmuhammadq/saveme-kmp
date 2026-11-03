@@ -132,7 +132,7 @@ internal object RuleValidation {
                     problems[RuleField.Destination] = RuleFieldProblem.Invalid
                 }
             }
-            TransactionKind.Unknown -> Unit
+            TransactionKind.AdjustmentIn, TransactionKind.AdjustmentOut, TransactionKind.Unknown -> Unit
         }
         textProblems(draft.description, draft.memo, draft.counterparty).forEach { (field, problem) ->
             problems[RuleField.valueOf(field)] = problem

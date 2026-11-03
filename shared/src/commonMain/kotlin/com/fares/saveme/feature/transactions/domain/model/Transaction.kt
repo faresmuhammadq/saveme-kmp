@@ -8,8 +8,13 @@ enum class TransactionKind(val wire: String) {
     Income("income"),
     Expense("expense"),
     Transfer("transfer"),
+    AdjustmentIn("adjustment_in"),
+    AdjustmentOut("adjustment_out"),
     Unknown(""),
     ;
+
+    /** A balance adjustment: raises or lowers a wallet's balance, never spending or income (ADR-0028). */
+    val isAdjustment: Boolean get() = this == AdjustmentIn || this == AdjustmentOut
 
     companion object {
         /** The kinds a person can choose when recording. */
@@ -109,3 +114,16 @@ sealed interface TransactionFieldProblem {
 
 /** A wallet the person can record in or transfer to. */
 data class WalletChoice(val id: String, val name: String, val currency: String)
+
+/**
+ * The wallet a balance adjustment is made in, as the phone shows it: [balanceMinor] counts unsent changes, and for a
+ * card or loan is stored negative (P-04.4). [canAdjust] is false for a viewer or an archived wallet.
+ */
+data class AdjustTarget(
+    val walletId: String,
+    val name: String,
+    val currency: String,
+    val isLiability: Boolean,
+    val balanceMinor: Long,
+    val canAdjust: Boolean,
+)

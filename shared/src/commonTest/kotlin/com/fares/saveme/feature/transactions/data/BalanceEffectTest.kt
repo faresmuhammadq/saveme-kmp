@@ -20,6 +20,14 @@ class BalanceEffectTest {
     }
 
     @Test
+    fun anAdjustmentRaisesOrLowersItsOwnWalletOnly() {
+        assertEquals(500, effect("adjustment_in", "w1"))
+        assertEquals(-500, effect("adjustment_out", "w1"))
+        assertEquals(0, effect("adjustment_in", "w2"))
+        assertEquals(0, effect("adjustment_out", "w1", deleted = true))
+    }
+
+    @Test
     fun aTransferMovesBothWalletsByItsDirection() {
         assertEquals(-500, effect("transfer", "w1", counter = "w2"))
         assertEquals(500, effect("transfer", "w2", counter = "w2".let { it }))

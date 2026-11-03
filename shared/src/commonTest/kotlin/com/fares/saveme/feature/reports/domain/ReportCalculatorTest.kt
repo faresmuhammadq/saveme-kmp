@@ -44,6 +44,28 @@ class ReportCalculatorTest {
     }
 
     @Test
+    fun anAdjustmentIsNeitherIncomeNorExpenseAndTheBalanceStillAddsUp() {
+        val figures = summary(
+            setOf("w1"),
+            listOf(
+                line("a", "expense", "2026-10-03", 3_000),
+                line("b", "adjustment_in", "2026-10-06", 2_500),
+                line("c", "adjustment_out", "2026-10-07", 700),
+                line("d", "adjustment_in", "2026-09-20", 400),
+            ),
+            openings = mapOf("w1" to 10_000),
+        )
+        assertEquals(0, figures.income)
+        assertEquals(3_000, figures.expenses)
+        assertEquals(0, figures.transfersIn)
+        assertEquals(0, figures.transfersOut)
+        assertEquals(2_500, figures.adjustmentsIn)
+        assertEquals(700, figures.adjustmentsOut)
+        assertEquals(10_400, figures.balanceStart)
+        assertEquals(10_400 - 3_000 + 2_500 - 700, figures.balanceEnd)
+    }
+
+    @Test
     fun aKindThisAppDoesNotKnowAndALineOutsideTheRangeCountNothing() {
         val figures = summary(
             setOf("w1"),

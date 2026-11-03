@@ -634,7 +634,7 @@ private fun CategoryOrDestination(state: TransactionEditorState, onIntent: (Tran
         }
         return
     }
-    if (state.kind == TransactionKind.Unknown) return
+    if (state.kind == TransactionKind.Unknown || state.kind.isAdjustment) return
     Text(stringResource(Res.string.tx_field_category), style = AppTheme.type.label, color = AppTheme.colors.ink2, modifier = Modifier.padding(top = 8.dp))
     val choices = state.visibleCategoryChoices
     val options = (listOfNotNull(state.category) + listOfNotNull(choices?.current) + (choices?.own.orEmpty()) + (choices?.defaults.orEmpty()))

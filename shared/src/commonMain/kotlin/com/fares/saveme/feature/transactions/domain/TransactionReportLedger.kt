@@ -193,6 +193,8 @@ class TransactionReportLedger(
     private fun parseDate(value: String): LocalDate = runCatching { LocalDate.parse(value) }.getOrDefault(LocalDate(1970, 1, 1))
 
     private companion object {
-        val KNOWN_KINDS = setOf(BalanceEffect.INCOME, BalanceEffect.EXPENSE, BalanceEffect.TRANSFER)
+        val KNOWN_KINDS = setOf(
+            BalanceEffect.INCOME, BalanceEffect.EXPENSE, BalanceEffect.TRANSFER, BalanceEffect.ADJUSTMENT_IN, BalanceEffect.ADJUSTMENT_OUT,
+        )
     }
 }

@@ -21,6 +21,7 @@
     <string name="calm_rep_under_one">أقل من 1%</string>
     <string name="calm_rep_balance">الرصيد</string>
     <string name="calm_rep_transfers">التحويلات</string>
+    <string name="calm_rep_adjustments">تعديلات الرصيد</string>
     <string name="calm_shr_invite_to">دعوة إلى %1$s</string>
     <string name="calm_shr_invited_as">مدعو بصفة %1$s</string>
     <string name="calm_shr_joined">انضم في %1$s</string>

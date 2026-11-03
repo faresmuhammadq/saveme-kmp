@@ -336,7 +336,7 @@ private fun weekFigures(state: TransactionsState): WeekFigures? {
     val today = state.today ?: return null
     val dates = (6 downTo 0).map { today.minus(DatePeriod(days = it)) }
     val perDay = state.days.associate { day ->
-        day.date to day.rows.filter { it.direction == Direction.Out && it.kind != TransactionKind.Transfer }.sumOf { abs(it.amountMinor) }
+        day.date to day.rows.filter { it.direction == Direction.Out && it.kind != TransactionKind.Transfer && !it.kind.isAdjustment }.sumOf { abs(it.amountMinor) }
     }
     val rows = state.days.flatMap { it.rows }
     return WeekFigures(

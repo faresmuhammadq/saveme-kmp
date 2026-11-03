@@ -72,6 +72,10 @@ data class TransactionsKey(val walletId: String) : NavKey
 @Serializable
 data class TransactionEditorKey(val transactionId: String? = null, val walletId: String? = null) : NavKey
 
+/** Corrects a wallet's current balance with a dated adjustment transaction (backend ADR-0028). */
+@Serializable
+data class BalanceAdjustKey(val walletId: String) : NavKey
+
 // Recurring (spec 010).
 
 /** The recurring screen of one wallet, or of every wallet when [walletId] is null (Home's "Due" card). */

@@ -92,7 +92,7 @@ data class Covered(
     val openings: Map<String, Long> = wallets.associate { it.id to it.openingMinor }
 }
 
-/** Every figure in minor units of [currency]; income, expenses and transfers are never negative. */
+/** Every figure in minor units of [currency]; income, expenses, transfers and adjustments are never negative. */
 data class SummaryFigures(
     val income: Long,
     val expenses: Long,
@@ -102,6 +102,9 @@ data class SummaryFigures(
     val balanceStart: Long,
     val balanceEnd: Long,
     val currency: String,
+    /** Balance adjustments (ADR-0028): never income or expense, never negative; zero when a server does not send them. */
+    val adjustmentsIn: Long = 0L,
+    val adjustmentsOut: Long = 0L,
 ) {
     override fun toString() = "SummaryFigures($currency)"
 }

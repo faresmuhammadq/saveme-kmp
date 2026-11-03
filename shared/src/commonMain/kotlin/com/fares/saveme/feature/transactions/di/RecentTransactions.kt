@@ -34,6 +34,7 @@ internal fun recentOf(transactions: TransactionsService, categories: CategoriesS
                     TransactionKind.Expense -> RecentKind.Expense
                     TransactionKind.Income -> RecentKind.Income
                     TransactionKind.Transfer -> RecentKind.Transfer
+                    TransactionKind.AdjustmentIn, TransactionKind.AdjustmentOut -> RecentKind.Adjustment
                     TransactionKind.Unknown -> RecentKind.Other
                 },
                 direction = when (view.direction) {
