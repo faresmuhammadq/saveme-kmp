@@ -637,10 +637,12 @@ private fun CategoryOrDestination(state: TransactionEditorState, onIntent: (Tran
     if (state.kind == TransactionKind.Unknown || state.kind.isAdjustment) return
     Text(stringResource(Res.string.tx_field_category), style = AppTheme.type.label, color = AppTheme.colors.ink2, modifier = Modifier.padding(top = 8.dp))
     val choices = state.visibleCategoryChoices
-    val options = (listOfNotNull(state.category) + listOfNotNull(choices?.current) + (choices?.own.orEmpty()) + (choices?.defaults.orEmpty()))
-        .distinctBy { it.id }
-        .let { all -> all.sortedByDescending { it.id == state.categoryId } }
-        .take(7)
+    // Stable order, full list: selecting a tile must not reorder or hide others.
+    val listed = (choices?.own.orEmpty() + choices?.defaults.orEmpty()).distinctBy { it.id }
+    // A selected category missing from the lists (archived/unavailable) still needs a tile.
+    val orphan = listOfNotNull(state.category, choices?.current)
+        .firstOrNull { it.id == state.categoryId && listed.none { l -> l.id == it.id } }
+    val options = listOfNotNull(orphan) + listed
     val tiles = options.map<CategoryDisplay, @Composable (Modifier) -> Unit> { option ->
         { modifier ->
             CategoryTileButton(

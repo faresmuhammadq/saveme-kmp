@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Icon
@@ -183,6 +185,10 @@ fun CategoryChoiceSheet(
     emptyMessage: String,
 ) {
     AppBottomSheet(onDismiss = onDismiss, title = title) {
-        CategoryChoiceList(groups, selectedId, onSelect, emptyMessage)
+        // Scrolls inside the sheet; without it rows past the sheet's height are clipped.
+        CategoryChoiceList(
+            groups, selectedId, onSelect, emptyMessage,
+            modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+        )
     }
 }
