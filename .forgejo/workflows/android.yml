@@ -36,7 +36,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # The first build without a Gradle cache downloads every dependency.
+    timeout-minutes: 120
     env:
       FLAVOR: ${{ inputs.flavor || (github.ref == 'refs/heads/main' && 'prod') || 'staging' }}
       # Backend host[:port] baked into the build as its default (changeable in the app); the flavor picks the scheme.
@@ -68,6 +69,25 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', 'gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
+
+      # GitHub release assets (where services.gradle.org redirects) are slow and erratic from the lab network,
+      # so a copy of the wrapper's distribution is kept in the forge's generic package registry:
+      #   curl -u fares:<token> --upload-file gradle-<v>-bin.zip \
+      #     https://git.lab.internal/api/packages/fares/generic/gradle/<v>/gradle-<v>-bin.zip
+      # The wrapper still checks distributionSha256Sum, so the copy is verified. No copy: keep the official URL.
+      - name: Use the forge copy of the Gradle distribution
+        run: |
+          props=gradle/wrapper/gradle-wrapper.properties
+          file=$(sed -n 's/^distributionUrl=.*\/\(gradle-[^/]*\.zip\)$/\1/p' "$props")
+          version=$(echo "$file" | sed -E 's/^gradle-(.+)-(bin|all)\.zip$/\1/')
+          mirror="$GITHUB_SERVER_URL/api/packages/fares/generic/gradle/$version/$file"
+          if curl -sfI "$mirror" >/dev/null; then
+            sed -i "s|^distributionUrl=.*|distributionUrl=${mirror/:/\\\\:}|" "$props"
+            echo "Using $mirror"
+          else
+            echo "No forge copy of $file; downloading from services.gradle.org"
+          fi
+          grep '^distributionUrl=' "$props"
 
       - name: Decode release keystore
         env:
