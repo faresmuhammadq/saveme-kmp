@@ -20,5 +20,5 @@ jobs:
     uses: ./.github/workflows/_android-build.yml
     with:
       flavor: staging
-      host: ${{ vars.STAGING_API_HOST || '192.168.1.14:8091' }}
+      host: ${{ vars.STAGING_API_HOST || 'saveme-staging.lab.internal' }}
     secrets: inherit

@@ -27,7 +27,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- Mailed verification and reset links (spec 003, contracts/deep-links.md) and invitation links (spec 013).
-                 Every flavor is the LAN backend over plain HTTP, so each injects its scheme, host and port. -->
+                 Each flavor injects its scheme and host. The port is left out on purpose: staging links have none, and an
+                 empty android:port does not parse. AuthLinkParser / InvitationLinkParser still require the exact port. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -35,7 +36,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="${linkScheme}" />
-                <data android:host="${linkHost}" android:port="${linkPort}" />
+                <data android:host="${linkHost}" />
                 <data android:path="/verify-email" />
                 <data android:path="/reset-password" />
                 <data android:path="/invite" />

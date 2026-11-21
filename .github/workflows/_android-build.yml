@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       host:
-        description: Backend host:port baked into the build as its default (changeable in the app)
+        description: Backend host[:port] baked into the build as its default (changeable in the app); the flavor picks the scheme
         required: true
         type: string
     secrets:
