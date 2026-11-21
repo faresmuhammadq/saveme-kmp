@@ -56,6 +56,8 @@ jobs:
       # The runner image has no Android SDK; AGP downloads the platform and build-tools it needs.
       - uses: android-actions/setup-android@v3
         with:
+          # The default also asks for the obsolete `tools` package, which cmdline-tools 16 no longer has.
+          packages: platform-tools
           log-accepted-android-sdk-licenses: false
 
       - name: Cache Gradle
