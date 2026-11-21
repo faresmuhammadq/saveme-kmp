@@ -8,9 +8,9 @@ data class AppConfig(
     val linkHost: String,
     val environment: Environment,
     val isDebugTools: Boolean,
-    /** Port of mailed links; set only in dev, where the backend is reached on a non-default port. */
+    /** Port of mailed links; null when the backend is reached on the scheme's default port (staging). */
     val linkPort: Int? = null,
-    /** Scheme of mailed links: `http` while every environment is the LAN backend, `https` once a hosted one exists. */
+    /** Scheme of the API and of mailed links: `http` for the LAN backends (dev, prod), `https` for the homelab staging stack. */
     val linkScheme: String = "https",
     /** Whether the server address can be changed in the app (Android only; the backend host may move on a LAN). */
     val serverAddressEditable: Boolean = false,

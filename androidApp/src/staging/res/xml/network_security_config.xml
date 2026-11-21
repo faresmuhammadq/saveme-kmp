@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Staging is the homelab stack behind the lab Traefik: HTTPS only, with a wildcard *.lab.internal certificate issued by
+     the lab CA (homelab ca/rootCA.pem, copied to res/raw/lab_ca.pem). Android ignores user-installed CAs, so the app
+     trusts that CA itself, and only for lab.internal. Every other host keeps the system CAs. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">lab.internal</domain>
+        <trust-anchors>
+            <certificates src="@raw/lab_ca" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

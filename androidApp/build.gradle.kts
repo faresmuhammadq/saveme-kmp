@@ -21,10 +21,12 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
-// Backend = host:port only (the client adds http:// and /api/v1/ itself), read from a Gradle property, then
+// Backend = host[:port] only (the client adds the flavor's scheme and /api/v1/ itself), read from a Gradle property, then
 // local.properties (outside git), then the default:
 // - devApiHost: phone over USB `localhost:43871` + `adb reverse tcp:43871 tcp:43871`; emulator `10.0.2.2:43871`
-// - stagingApiHost / prodApiHost: the LAN stacks on the host machine; CI passes the STAGING_API_HOST / PROD_API_HOST repo variables.
+// - stagingApiHost: the homelab stack behind the lab Traefik (HTTPS, lab CA, resolved by the lab Pi-hole); no port.
+// - prodApiHost: the LAN stack on the host machine.
+// CI passes the STAGING_API_HOST / PROD_API_HOST repo variables.
 // The app can override the host at runtime (Server address screen), so a moved backend needs no rebuild.
 val localProperties: List<String> = rootProject.file("local.properties").takeIf { it.exists() }?.readLines().orEmpty()
 
@@ -33,14 +35,14 @@ fun hostProperty(name: String, default: String): String {
         ?: localProperties.firstOrNull { it.startsWith("$name=") }?.substringAfter("=")?.trim()
         ?: default
     require(!host.contains("/")) {
-        "$name must be host:port only (got '$host'); the client adds http:// and /api/v1/ itself."
+        "$name must be host[:port] only (got '$host'); the client adds the scheme and /api/v1/ itself."
     }
     return host
 }
 
 val apiHosts = mapOf(
     "dev" to hostProperty("devApiHost", "10.0.2.2:8080"),
-    "staging" to hostProperty("stagingApiHost", "192.168.1.14:8091"),
+    "staging" to hostProperty("stagingApiHost", "saveme-staging.lab.internal"),
     "prod" to hostProperty("prodApiHost", "192.168.1.14:8092"),
 )
 
@@ -68,21 +70,26 @@ android {
     }
     flavorDimensions += "env"
     productFlavors {
-        // Every environment is the LAN backend over plain HTTP, mailed links included.
-        fun com.android.build.api.dsl.ApplicationProductFlavor.backend(host: String, environment: String, debugTools: Boolean) {
+        // Each flavor names its backend and scheme; mailed links use the same scheme, host and port.
+        // dev and prod reach a LAN backend over plain HTTP; staging goes through the homelab Traefik over HTTPS.
+        fun com.android.build.api.dsl.ApplicationProductFlavor.backend(
+            host: String,
+            environment: String,
+            debugTools: Boolean,
+            scheme: String = "http",
+        ) {
             dimension = "env"
             val linkHost = host.substringBefore(":")
             val linkPort = host.substringAfter(":", "")
-            buildConfigField("String", "API_BASE_URL", "\"http://$host\"")
+            buildConfigField("String", "API_BASE_URL", "\"$scheme://$host\"")
             buildConfigField("String", "DEFAULT_API_HOST", "\"$host\"")
-            buildConfigField("String", "LINK_SCHEME", "\"http\"")
+            buildConfigField("String", "LINK_SCHEME", "\"$scheme\"")
             buildConfigField("String", "LINK_HOST", "\"$linkHost\"")
             buildConfigField("String", "LINK_PORT", "\"$linkPort\"")
             buildConfigField("String", "ENVIRONMENT", "\"$environment\"")
             buildConfigField("boolean", "DEBUG_TOOLS", "$debugTools")
-            manifestPlaceholders["linkScheme"] = "http"
+            manifestPlaceholders["linkScheme"] = scheme
             manifestPlaceholders["linkHost"] = linkHost
-            manifestPlaceholders["linkPort"] = linkPort
         }
         // Distinct ids so dev, staging and production install side by side, each with its own data.
         create("dev") {
@@ -90,7 +97,7 @@ android {
             applicationIdSuffix = ".dev"
         }
         create("staging") {
-            backend(apiHosts.getValue("staging"), "Staging", debugTools = false)
+            backend(apiHosts.getValue("staging"), "Staging", debugTools = false, scheme = "https")
             applicationIdSuffix = ".staging"
         }
         create("prod") {

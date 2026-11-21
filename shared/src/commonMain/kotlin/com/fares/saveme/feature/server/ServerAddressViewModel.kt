@@ -6,7 +6,7 @@ import com.fares.saveme.core.config.ServerAddressSettings
 import com.fares.saveme.core.presentation.MviViewModel
 import kotlinx.coroutines.launch
 
-/** [probe] answers whether `GET http://<host:port>/up` succeeds. */
+/** [probe] answers whether `GET <build scheme>://<host[:port]>/up` succeeds. */
 class ServerAddressViewModel(
     private val settings: ServerAddressSettings,
     private val probe: suspend (String) -> Boolean,

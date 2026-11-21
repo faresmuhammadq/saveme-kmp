@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Every flavor reaches its backend over plain HTTP on the LAN, and the host can be changed in the app (P-09.3). -->
+<!-- dev and prod reach their backend over plain HTTP on the LAN, and the host can be changed in the app (P-09.3).
+     staging overrides this file (src/staging) to trust the homelab CA instead. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
