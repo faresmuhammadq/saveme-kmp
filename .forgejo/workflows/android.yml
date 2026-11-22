@@ -41,7 +41,7 @@ jobs:
     env:
       FLAVOR: ${{ inputs.flavor || (github.ref == 'refs/heads/main' && 'prod') || 'staging' }}
       # Backend host[:port] baked into the build as its default (changeable in the app); the flavor picks the scheme.
-      HOST: ${{ (inputs.flavor || (github.ref == 'refs/heads/main' && 'prod') || 'staging') == 'prod' && (vars.PROD_API_HOST || '192.168.1.14:8092') || (vars.STAGING_API_HOST || 'saveme-staging.lab.internal') }}
+      HOST: ${{ (inputs.flavor || (github.ref == 'refs/heads/main' && 'prod') || 'staging') == 'prod' && (vars.PROD_API_HOST || 'saveme-production.lab.internal') || (vars.STAGING_API_HOST || 'saveme-staging.lab.internal') }}
       # Forgejo run numbers start at 1; the GitHub builds used 100 + run number. The base keeps every forge build
       # above them, so it installs over a GitHub-built APK.
       VERSION_CODE_BASE: ${{ vars.VERSION_CODE_BASE || '1000' }}

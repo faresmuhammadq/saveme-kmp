@@ -20,5 +20,5 @@ jobs:
     uses: ./.github/workflows/_android-build.yml
     with:
       flavor: prod
-      host: ${{ vars.PROD_API_HOST || '192.168.1.14:8092' }}
+      host: ${{ vars.PROD_API_HOST || 'saveme-production.lab.internal' }}
     secrets: inherit

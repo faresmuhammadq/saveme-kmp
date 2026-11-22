@@ -25,7 +25,7 @@ dependencies {
 // local.properties (outside git), then the default:
 // - devApiHost: phone over USB `localhost:43871` + `adb reverse tcp:43871 tcp:43871`; emulator `10.0.2.2:43871`
 // - stagingApiHost: the homelab stack behind the lab Traefik (HTTPS, lab CA, resolved by the lab Pi-hole); no port.
-// - prodApiHost: the LAN stack on the host machine.
+// - prodApiHost: the homelab production stack, same setup as staging; no port.
 // CI passes the STAGING_API_HOST / PROD_API_HOST repo variables.
 // The app can override the host at runtime (Server address screen), so a moved backend needs no rebuild.
 val localProperties: List<String> = rootProject.file("local.properties").takeIf { it.exists() }?.readLines().orEmpty()
@@ -43,7 +43,7 @@ fun hostProperty(name: String, default: String): String {
 val apiHosts = mapOf(
     "dev" to hostProperty("devApiHost", "10.0.2.2:8080"),
     "staging" to hostProperty("stagingApiHost", "saveme-staging.lab.internal"),
-    "prod" to hostProperty("prodApiHost", "192.168.1.14:8092"),
+    "prod" to hostProperty("prodApiHost", "saveme-production.lab.internal"),
 )
 
 // Release signing comes from the environment only (CI decodes the keystore from secrets); without it the release APK stays unsigned.
@@ -71,7 +71,7 @@ android {
     flavorDimensions += "env"
     productFlavors {
         // Each flavor names its backend and scheme; mailed links use the same scheme, host and port.
-        // dev and prod reach a LAN backend over plain HTTP; staging goes through the homelab Traefik over HTTPS.
+        // dev reaches a LAN backend over plain HTTP; staging and prod go through the homelab Traefik over HTTPS.
         fun com.android.build.api.dsl.ApplicationProductFlavor.backend(
             host: String,
             environment: String,
@@ -101,8 +101,13 @@ android {
             applicationIdSuffix = ".staging"
         }
         create("prod") {
-            backend(apiHosts.getValue("prod"), "Prod", debugTools = false)
+            backend(apiHosts.getValue("prod"), "Prod", debugTools = false, scheme = "https")
         }
+    }
+    // The homelab stacks share one HTTPS-only network security config and the bundled lab CA.
+    sourceSets {
+        getByName("staging").res.srcDir("src/lab/res")
+        getByName("prod").res.srcDir("src/lab/res")
     }
     signingConfigs {
         if (releaseSigning != null) {

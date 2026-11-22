@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- dev and prod reach their backend over plain HTTP on the LAN, and the host can be changed in the app (P-09.3).
-     staging overrides this file (src/staging) to trust the homelab CA instead. -->
+<!-- dev reaches its backend over plain HTTP on the LAN or the emulator, and the host can be changed in the app (P-09.3).
+     staging and prod override this file (src/lab, added to both flavors in build.gradle.kts) to trust the homelab CA. -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

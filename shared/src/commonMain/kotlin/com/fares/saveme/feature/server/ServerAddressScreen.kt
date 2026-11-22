@@ -80,5 +80,5 @@ fun ServerAddressScreen(state: ServerAddressState, onIntent: (ServerAddressInten
 @Preview
 @Composable
 private fun ServerAddressScreenPreview() {
-    AppTheme { ServerAddressScreen(ServerAddressState(input = "192.168.1.14:8091", default = "192.168.1.14:8091")) {} }
+    AppTheme { ServerAddressScreen(ServerAddressState(input = "saveme-staging.lab.internal", default = "saveme-staging.lab.internal")) {} }
 }
