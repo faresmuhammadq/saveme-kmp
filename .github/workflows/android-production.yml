@@ -1,11 +1,10 @@
 name: android-production
 
-# Every push to main builds the signed production APK (com.fares.saveme).
+# Builds the signed production APK (com.fares.saveme) on GitHub.
 
+# Disabled while SaveMe is single-user and unreleased: nothing runs on push. Signed APKs are built
+# locally in Docker with scripts/build-apk.sh. Still runnable by hand from the Actions tab.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:

@@ -56,6 +56,25 @@ nothing has changed since they were read. Sync reads only what changed since the
 person's own, and one per wallet), and sends waiting changes in batches of up to 50. A refresh first asks the server where
 the followed wallets stand (`GET /sync/wallets/heads`) and reads only the wallets that moved.
 
+### Release build (signed APK)
+
+Nothing builds on push (the GitHub workflows are manual-only). Build the signed APK locally; it runs entirely in
+Docker (`docker/android-builder.Dockerfile`: JDK 21, Android SDK, adb), so the machine needs only Docker and git.
+
+```bash
+scripts/build-apk.sh                  # prod, from HEAD's commit -> dist/saveme-prod-<version>-<code>-<sha>.apk
+scripts/build-apk.sh staging --ref origin/staging
+scripts/build-apk.sh --install        # build, then install over USB
+scripts/install-apk.sh [file.apk]     # install the newest (or given) APK over USB
+```
+
+- Builds only committed code (`git archive`), never the working tree. `versionCode` is `2000 + commit count`, so each
+  build installs over the previous one (and over the old CI builds); `versionName` comes from `gradle.properties`.
+- Signing: `~/mobile-keys/saveme/saveme-release.jks` plus `~/mobile-keys/saveme/signing.env`
+  (`SAVEME_KEYSTORE_PASSWORD=`, `SAVEME_KEY_ALIAS=`, `SAVEME_KEY_PASSWORD=`), both outside the repo.
+- USB install: enable USB debugging on the phone and accept the prompt once. Or send the APK any other way.
+- Caches live in the Docker volumes `saveme-gradle-home` and `saveme-adb-keys`; the first build downloads everything.
+
 ### Running tests
 
 Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:

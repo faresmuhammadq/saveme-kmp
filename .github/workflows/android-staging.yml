@@ -1,11 +1,10 @@
 name: android-staging
 
-# Every push to the staging branch builds the signed staging APK (com.fares.saveme.staging).
+# Builds the signed staging APK (com.fares.saveme.staging) on GitHub.
 
+# Disabled while SaveMe is single-user and unreleased: nothing runs on push. Signed APKs are built
+# locally in Docker with scripts/build-apk.sh. Still runnable by hand from the Actions tab.
 on:
-  push:
-    branches:
-      - staging
   workflow_dispatch:
 
 permissions:
